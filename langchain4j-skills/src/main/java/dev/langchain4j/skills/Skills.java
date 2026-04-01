@@ -29,6 +29,7 @@ import static java.util.Arrays.asList;
 
 /**
  * Configures and exposes a set of {@link Skill}s to an LLM.
+ * 配置并向 LLM 公开一组 {@link Skill}。
  * <p>
  * Implements the <strong>Tool-based agents</strong> integration approach from the
  * <a href="https://agentskills.io/integrate-skills">Agent Skills specification</a>:
@@ -37,6 +38,9 @@ import static java.util.Arrays.asList;
  * and an optional {@code read_skill_resource} tool reads preloaded resource content.
  * The LLM has no access to the file system at inference time,
  * only abovementioned tools can be called and there is no risk of arbitrary code execution.
+ * 实现了 Agent Skills 规范中基于工具的代理集成方法：所有技能内容和资源在构造时加载到内存中。
+ * `activate_skill` 工具允许 LLM 按需读取技能指令，可选的 `read_skill_resource` 工具读取预加载的资源内容。
+ * LLM 在推理时无法访问文件系统，只能调用上述工具，因此不存在任意代码执行的风险。
  * <p>
  * Typical usage with an AI Service:
  * <pre>{@code

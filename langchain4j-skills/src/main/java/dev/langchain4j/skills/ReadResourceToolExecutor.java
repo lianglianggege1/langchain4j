@@ -29,6 +29,7 @@ class ReadResourceToolExecutor extends AbstractSkillToolExecutor {
         String skillName = getRequiredArgument(config.skillNameParameterName, arguments);
         String relativePath = getRequiredArgument(config.relativePathParameterName, arguments);
 
+        // 得到技能
         Skill skill = skillsByName.get(skillName);
         if (skill == null) {
             throwException("There is no skill with name '%s'".formatted(skillName));
