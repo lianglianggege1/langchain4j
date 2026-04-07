@@ -48,7 +48,7 @@ import static java.util.Arrays.asList;
  *
  * MyAiService service = AiServices.builder(MyAiService.class)
  *         .chatModel(chatModel)
- *
+ *          // langchain的思路是 不提供默认的头提示词 但是技能部门都差不多，共同组成一个系统提示词
  *         .systemMessage("You have access to the following skills:\n" + skills.formatAvailableSkills() + "\nWhen the user's request relates to one of these skills, activate it first using the `activate_skill` tool before proceeding.")
  *         // or, if you already have a system message configured:
  *         .systemMessageTransformer(systemMessage -> systemMessage + "\n\nYou have access to the following skills:\n" + skills.formatAvailableSkills() + "\nWhen the user's request relates to one of these skills, activate it first using the `activate_skill` tool before proceeding.")
