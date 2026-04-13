@@ -10,10 +10,12 @@ import java.util.Map;
 
 /**
  * Represents content relevant to a user {@link Query} with the potential to enhance and ground the LLM's response.
+ * 表示与用户｛@link Query｝相关的内容，有可能增强和巩固LLM的响应。
  * <br>
  * Currently, it is limited to text content (i.e., {@link TextSegment}),
+ * 目前，它仅限于文本内容（即{@link TextSegment}），
  * but future expansions may include support for other modalities (e.g., images, audio, video, etc.).
- *
+ * 但未来的扩展可能包括对其他模态（例如，图像、音频、视频等）的支持。
  * @see ContentRetriever
  * @see ContentAggregator
  * @see ContentInjector

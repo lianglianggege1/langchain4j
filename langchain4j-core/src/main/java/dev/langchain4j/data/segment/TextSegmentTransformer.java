@@ -9,7 +9,9 @@ import java.util.Objects;
 
 /**
  * Defines the interface for transforming a {@link TextSegment}.
+ * 定义转换{@link TextSegment}的接口。
  * Implementations can perform a variety of tasks such as transforming, filtering, enriching, etc.
+ * 实现可以执行各种任务，如转换、过滤、丰富等。
  */
 public interface TextSegmentTransformer {
 

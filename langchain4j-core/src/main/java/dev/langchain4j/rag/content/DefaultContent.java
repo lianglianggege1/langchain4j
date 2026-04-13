@@ -10,9 +10,12 @@ import static dev.langchain4j.internal.ValidationUtils.ensureNotNull;
 
 /**
  * A default implementation of a {@link Content}.
+ * 一个默认的实现{@link Content}。
  * <br>
  * The class includes optional metadata which can store additional information about the content.
+ * 这个类包含可选的元数据，该元数据可以存储有关内容的其他信息。
  * This metadata is supplementary and is intentionally excluded from equality and hash calculations.
+ * 这个元素是补充的，并且故意排除了相等性计算和哈希计算。
  * See {@link #equals(Object)} and {@link #hashCode()} for details.
  */
 public class DefaultContent implements Content {

@@ -10,13 +10,18 @@ import java.util.Map;
 
 /**
  * Aggregates all {@link Content}s retrieved from all {@link ContentRetriever}s using all {@link Query}s.
+ * 使用所有{@link查询}聚合从所有{@linkContentRetriever}检索到的所有{@LinkContent}。
  * <br>
  * The goal is to ensure that only the most relevant and non-redundant {@link Content}s are presented to the LLM.
+ * 目标是确保只向LLM呈现最相关和非冗余的{@link Content}。
  * <br>
  * Some effective approaches include:
+ * 一些有效的方法包括：
  * <pre>
  * - Re-ranking (see {@link ReRankingContentAggregator})
+ * - 重新排名（请参阅{@link ReRankingContentAggregator}）
  * - Reciprocal Rank Fusion (see {@link ReciprocalRankFuser}, utilized in both {@link DefaultContentAggregator} and {@link ReRankingContentAggregator})
+ * - 互惠排名融合（见{@link ReciprocalRankFuser}，在{@link DefaultContentAggregator}和{@link ReRankingContentAggregator}中都有使用）
  * </pre>
  *
  * @see DefaultContentAggregator
@@ -33,7 +38,11 @@ public interface ContentAggregator {
      *                        Given that each {@link Query} can be routed to multiple {@link ContentRetriever}s, the
      *                        value of this map is a {@code Collection<List<Content>>}
      *                        rather than a simple {@code List<Content>}.
-     * @return A list of aggregated {@link Content}s.
+     *                        从查询到使用该查询检索到的所有列表<Content>的映射。
+     *                        鉴于每个查询都可以路由到多个ContentRetriever，
+     *                        此映射的值是一个集合<List<Content>>，
+     *                        而不是一个简单的列表<Content>。
+     * @return A list of aggregated {@link Content}s. 聚合的｛@link内容｝列表。
      */
     List<Content> aggregate(Map<Query, Collection<List<Content>>> queryToContents);
 }

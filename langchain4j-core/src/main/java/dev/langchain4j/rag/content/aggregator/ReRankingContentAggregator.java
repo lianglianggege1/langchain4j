@@ -23,8 +23,10 @@ import static java.util.Collections.emptyList;
 
 /**
  * A {@link ContentAggregator} that performs re-ranking using a {@link ScoringModel}, such as Cohere.
+ * 一个{@link ContentAggregator}，使用{@link ScoringModel}（如Cohere）执行重新排名。
  * <br>
  * The {@link ScoringModel} scores {@link Content}s against a (single) {@link Query}.
+ * {@link ScoringModel}根据（单个）{@link Query}对{@link Content}进行评分。
  * If multiple {@link Query}s are input to this aggregator
  * (for example, when using {@link ExpandingQueryTransformer}),
  * a {@link #querySelector} must be provided to select a {@link Query} for ranking all {@link Content}s.
