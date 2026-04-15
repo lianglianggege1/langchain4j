@@ -10,7 +10,9 @@ import java.lang.annotation.Target;
 
 /**
  * Marks a method as a human-in-the-loop agent. The method can be invoked to get input or feedback from a human during the execution of a workflow.
+ * 将方法标记为循环中的人工代理。在工作流执行过程中，可以调用该方法来获取人类的输入或反馈。
  * The annotated method can have any number of parameters, which will be provided by the workflow context when the method is invoked.
+ * 带注释的方法可以有任意数量的参数，这些参数将在调用该方法时由工作流上下文提供。
  * <p>
  * Example:
  * <pre>
@@ -32,6 +34,7 @@ public @interface HumanInTheLoop {
 
     /**
      * Name of the agent. If not provided, method name will be used.
+     * 代理人的姓名。如果没有提供，将使用方法名称。
      *
      * @return name of the agent.
      */
@@ -55,6 +58,7 @@ public @interface HumanInTheLoop {
 
     /**
      * Key of the output variable that will be used to store the result of the agent's invocation.
+     * 用于存储代理调用结果的输出变量的键。
      *
      * @return name of the output variable.
      */

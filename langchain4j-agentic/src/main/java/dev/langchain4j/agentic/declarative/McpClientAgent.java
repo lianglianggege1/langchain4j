@@ -10,6 +10,7 @@ import java.lang.annotation.Target;
 
 /**
  * Marks a method as an MCP client agent that wraps a single MCP tool as a non-AI agent.
+ * 将一个方法标记为MCP客户端代理，该代理将单个MCP工具包装为非AI代理。
  */
 @Retention(RUNTIME)
 @Target({METHOD})
@@ -63,6 +64,7 @@ public @interface McpClientAgent {
 
     /**
      * If true, the agent will be invoked in an asynchronous manner, allowing the workflow to continue without waiting for the agent's result.
+     * 如果为true，则将以异步方式调用代理，允许工作流继续进行，而无需等待代理的结果。
      *
      * @return true if the agent should be invoked in an asynchronous manner, false otherwise.
      */

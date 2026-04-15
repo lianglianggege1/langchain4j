@@ -10,6 +10,7 @@ import static java.lang.annotation.RetentionPolicy.RUNTIME;
 /**
  * Marks a method as a supplier of the chat model to be used by an agent.
  * The method must be static and return an instance of {@link ChatModel}.
+ * 将方法标记为agent要使用的聊天模型的供应商。该方法必须是静态的，并返回｛@link ChatModel｝的实例。
  * <p>
  * Example:
  * <pre>
@@ -32,5 +33,6 @@ import static java.lang.annotation.RetentionPolicy.RUNTIME;
  */
 @Retention(RUNTIME)
 @Target({METHOD})
+// 聊天模型供应商
 public @interface ChatModelSupplier {
 }

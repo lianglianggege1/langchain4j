@@ -11,6 +11,7 @@ import java.util.Optional;
 
 import static dev.langchain4j.internal.Utils.getAnnotatedMethod;
 
+// 默认实现的a2a服务
 public class DefaultA2AService implements A2AService {
 
     @Override

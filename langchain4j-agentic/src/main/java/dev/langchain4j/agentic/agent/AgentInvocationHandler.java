@@ -37,6 +37,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import static dev.langchain4j.agentic.observability.ComposedAgentListener.composeWithInherited;
 import static dev.langchain4j.agentic.observability.ComposedAgentListener.listenerOfType;
 
+//代理调用处理程序
 public class AgentInvocationHandler implements InvocationHandler, InternalAgent {
 
     private final AiServiceContext context;

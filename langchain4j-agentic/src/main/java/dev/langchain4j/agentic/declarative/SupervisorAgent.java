@@ -11,6 +11,7 @@ import java.lang.annotation.Target;
 
 /**
  * Marks a method as a supervisor agent that can autonomously coordinate and invoke multiple sub-agents.
+ * 将方法标记为可以自主协调和调用多个子代理的监督代理。
  * <p>
  * Example:
  * <pre>

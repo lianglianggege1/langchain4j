@@ -62,6 +62,7 @@ import dev.langchain4j.model.chat.ChatModel;
 
 /**
  * Provides static factory methods to create and configure various types of agent services.
+ * 提供静态工厂方法来创建和配置各种类型的代理服务。
  */
 public class AgenticServices {
 
@@ -92,6 +93,7 @@ public class AgenticServices {
 
     /**
      * Explicitly set a WorkflowAgentsBuilder.
+     * 显式设置WorkflowAgentsBuilder。
      */
     public static void setWorkflowAgentsBuilder(WorkflowAgentsBuilder workflowAgentsBuilder) {
         WorkflowBuilderProvider.INSTANCE.internalSetWorkflowAgentsBuilder(workflowAgentsBuilder);
@@ -103,6 +105,7 @@ public class AgenticServices {
 
     /**
      * Creates an agent builder for untyped agents.
+     * 为非类型化agent创建代理生成器。
      *
      * @return a new UntypedAgentBuilder instance
      */
@@ -112,8 +115,10 @@ public class AgenticServices {
 
     /**
      * Creates an agent builder for the given agent service class.
+     * 为给定的agent服务类创建agent生成器。
      *
      * @param agentServiceClass the class of the agent service
+     *                          agent服务的类别
      * @return a new AgentBuilder instance
      */
     public static <T> AgentBuilder<T, AgentBuilder<T, ?>> agentBuilder(Class<T> agentServiceClass) {
@@ -122,6 +127,7 @@ public class AgenticServices {
 
     /**
      * Creates a builder for an agent implementing the human-in-the-loop pattern.
+     * 为实现人在循环模式的代理创建构建器。
      */
     public static HumanInTheLoop.HumanInTheLoopBuilder humanInTheLoopBuilder() {
         return new HumanInTheLoop.HumanInTheLoopBuilder();
@@ -129,6 +135,7 @@ public class AgenticServices {
 
     /**
      * Creates a builder for an untyped agent implementing a workflow sequence of its subagents.
+     * 为实现其subagent的工作流序列的非类型化agent创建构建器。
      */
     public static SequentialAgentService<UntypedAgent> sequenceBuilder() {
         return workflowAgentsBuilder().sequenceBuilder();

@@ -11,6 +11,7 @@ import java.lang.annotation.Target;
 /**
  * Marks a method as a definition of a loop agent, used to orchestrate the agentic workflow
  * by invoking a series of sub-agents in a loop until a certain predicate is met or a maximum number of iterations is reached.
+ * 将方法标记为循环代理的定义，用于通过调用循环中的一系列子代理来编排代理工作流，直到满足某个谓词或达到最大迭代次数。
  * <p>
  * Example:
  * <pre>
@@ -71,7 +72,9 @@ public @interface LoopAgent {
 
     /**
      * Maximum number of iterations the loop will execute.
+     * 循环将执行的最大迭代次数。
      * If the exit predicate is not met within this number of iterations, the loop will terminate.
+     * 如果在此迭代次数内未满足退出谓词，则循环将终止。
      *
      * @return maximum number of iterations.
      */

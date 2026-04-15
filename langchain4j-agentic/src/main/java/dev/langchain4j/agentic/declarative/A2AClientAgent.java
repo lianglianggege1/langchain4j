@@ -10,6 +10,7 @@ import java.lang.annotation.Target;
 
 /**
  * Marks a method as an A2A client agent.
+ * 将方法标记为A2A客户端agent。
  */
 @Retention(RUNTIME)
 @Target({METHOD})
@@ -17,6 +18,7 @@ public @interface A2AClientAgent {
 
     /**
      * URL of the A2A server to which the requests will be sent.
+     * 请求将被发送到的A2A服务器的URL。
      *
      * @return URL of the A2A server.
      */
@@ -24,6 +26,7 @@ public @interface A2AClientAgent {
 
     /**
      * Name of the agent. If not provided, method name will be used.
+     * agent的名称。如果没有提供，将使用方法名称。
      *
      * @return name of the agent.
      */

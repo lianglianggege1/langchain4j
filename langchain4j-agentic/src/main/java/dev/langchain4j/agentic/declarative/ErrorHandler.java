@@ -10,8 +10,11 @@ import java.lang.annotation.Target;
 
 /**
  * Marks a method as an error handler for a workflow agent.
+ * 将方法标记为工作流代理的错误处理程序。
  * The annotated method must be static, an {@link ErrorContext} as argument and return an instance of {@link ErrorRecoveryResult}.
+ * 带注释的方法必须是静态的，以{@link ErrorContext}作为参数，并返回{@link Error RecoveryResult}的实例。
  * It will be invoked when an error occurs during the agent's operation, allowing for custom error handling logic.
+ * 当代理操作过程中发生错误时，它将被调用，从而允许自定义错误处理逻辑。
  * <p>
  * Example:
  * <pre>

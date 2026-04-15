@@ -10,6 +10,7 @@ import java.lang.annotation.Target;
 
 /**
  * Marks a method as a definition of an agent based on a custom planner.
+ * 将方法标记为基于自定义计划器的代理定义。
  * <p>
  * Example:
  * <pre>
@@ -22,6 +23,7 @@ import java.lang.annotation.Target;
  *
  *         @PlannerSupplier
  *         static Planner planner() {
+ *             //顺序计划器
  *             return new SequentialPlanner();
  *         }
  *     }

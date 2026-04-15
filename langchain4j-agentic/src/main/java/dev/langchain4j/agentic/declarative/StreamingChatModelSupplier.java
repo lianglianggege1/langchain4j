@@ -9,7 +9,9 @@ import dev.langchain4j.model.chat.StreamingChatModel;
 
 /**
  * Marks a method as a supplier of the streaming chat model to be used by an agent.
+ * 将方法标记为代理使用的流式聊天模型的供应商。
  * The method must be static and return an instance of {@link StreamingChatModel}.
+ * 该方法必须是静态的，并返回{@link StreamingChatModel}的实例。
  * <p>
  * Example:
  * <pre>
@@ -21,6 +23,10 @@ import dev.langchain4j.model.chat.StreamingChatModel;
  *                 Generate a draft of a story long no more than 3 sentence around the given topic.
  *                 Return only the story and nothing else.
  *                 The topic is {{topic}}.
+ *                 你是一位富有创造力的作家。
+ *                 围绕给定主题生成一个不超过3句的故事草稿。
+ *                 只返回故事，不返回其他内容。
+ *                 主题为｛｛topic｝｝。
  *                 """)
  *         @Agent(description = "Generate a story based on the given topic", outputKey = "story")
  *         TokenStream generateStory(@V("topic") String topic);

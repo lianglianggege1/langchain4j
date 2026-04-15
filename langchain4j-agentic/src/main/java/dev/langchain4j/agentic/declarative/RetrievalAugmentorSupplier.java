@@ -9,7 +9,9 @@ import static java.lang.annotation.RetentionPolicy.RUNTIME;
 
 /**
  * Marks a method as a supplier of a retrieval augmentor that an agent can utilize during its operation.
+ * 将一种方法标记为代理在操作过程中可以使用的检索增强器的供应商。
  * The annotated method must be static, with no arguments, and return an instance of {@link RetrievalAugmentor}.
+ * 带注释的方法必须是静态的，没有参数，并返回{@link RetrievalAugmentor}的实例。
  * <p>
  * Example:
  * <pre>

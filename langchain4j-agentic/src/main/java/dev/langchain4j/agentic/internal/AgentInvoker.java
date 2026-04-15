@@ -24,19 +24,26 @@ import static dev.langchain4j.agentic.observability.ListenerNotifierUtil.beforeA
 
 public interface AgentInvoker extends AgentInstance, InternalAgent {
 
+    // 方法
     Method method();
 
+    // 调用参数
     AgentInvocationArguments toInvocationArguments(AgenticScope agenticScope) throws MissingArgumentException;
 
     default Object invoke(DefaultAgenticScope agenticScope, Object agent, AgentInvocationArguments args) throws AgentInvocationException {
+        // 监听器
         AgentListener listener = listener();
+        // 在agent调用之前
         beforeAgentInvocation(listener, agenticScope, this, args.namedArgs());
+        // 调用
         Object result = internalInvoke(agenticScope, listener, agent, args);
         if (agent instanceof ChatMessagesAccess chatMessagesAccess) {
+            // 在agent调用之后
             afterAgentInvocation(listener, agenticScope, this, args.namedArgs(), result,
                     chatMessagesAccess.lastChatRequest(agenticScope.memoryId()),
                     chatMessagesAccess.lastChatResponse(agenticScope.memoryId()));
         } else {
+            // 在agent调用之后
             afterAgentInvocation(listener, agenticScope, this, args.namedArgs(), result);
         }
         return result;

@@ -9,7 +9,9 @@ import static java.lang.annotation.RetentionPolicy.RUNTIME;
 
 /**
  * Marks a method as a supplier of a listener for this agent.
+ * 将方法标记为此agent的侦听器的提供者。
  * The method must be static and return an instance of {@link AgentListener}.
+ * 该方法必须是静态的，并返回{@link AgentListener}的实例。
  * <p>
  * Example:
  * <pre>

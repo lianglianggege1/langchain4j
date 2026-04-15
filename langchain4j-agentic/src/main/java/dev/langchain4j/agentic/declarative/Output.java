@@ -11,6 +11,7 @@ import java.lang.annotation.Target;
  * Marks a method as the output definition of a workflow agent,
  * generally combining results from different states of the {@link AgenticScope}.
  * The method must be static and return the output of the agent.
+ * 将方法标记为工作流agent的输出定义，通常组合来自AgentScope不同状态的结果。该方法必须是静态的，并返回代理的输出。
  * <p>
  * Example:
  * <pre>

@@ -10,6 +10,8 @@ import static java.lang.annotation.RetentionPolicy.RUNTIME;
  * Marks a method as a supplier of tools that an agent can utilize during its operation.
  * The annotated method must be static, with no arguments, and return a single Object, an array of Objects,
  * or a Map&lt;ToolSpecifications, ToolExecutors&gt;.
+ * 将一种方法标记为代理在操作过程中可以使用的工具供应商。
+ * 带注释的方法必须是静态的，没有参数，并返回单个对象、对象数组或映射<ToolSpecifications，ToolExecutors>。
  * <p>
  * Example:
  * <pre>

@@ -8,7 +8,9 @@ import java.lang.annotation.Target;
 
 /**
  * Marks a parameter that will receive the current loop iteration count in a loop-based agent.
+ * 标记一个参数，该参数将在基于循环的代理中接收当前循环迭代计数。
  * The parameter must be of type int or Integer.
+ * 参数的类型必须为int或Integer。
  * <p>
  * Example:
  * <pre>

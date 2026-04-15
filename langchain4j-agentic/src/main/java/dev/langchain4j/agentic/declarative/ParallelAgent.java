@@ -11,6 +11,7 @@ import java.lang.annotation.Target;
 /**
  * Marks a method as a definition of a parallel agent, used to orchestrate the agentic workflow
  * by invoking a series of sub-agents in parallel.
+ * 将方法标记为并行agent的定义，用于通过并行调用一系列子代理来编排代理工作流。
  * <p>
  * Example:
  * <pre>

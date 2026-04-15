@@ -8,6 +8,7 @@ import java.lang.annotation.Target;
 
 /**
  * Marks a method as a definition of the request that will be sent to the supervisor.
+ * 将方法标记为将发送给主管的请求的定义。
  * <p>
  * Example:
  * <pre>

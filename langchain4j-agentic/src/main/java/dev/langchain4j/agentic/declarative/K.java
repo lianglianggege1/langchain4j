@@ -20,6 +20,12 @@ import java.util.function.Function;
  * The variable name to be used in the prompt template corresponds to the one returned by the {@link TypedKey#name()}
  * method of the class specified as the value of this annotation, which by default is the simple name of the class
  * implementing the {@link TypedKey} interface.
+ * 代理方法的参数用@K注释，表示它填充了表示代理系统中特定类型状态的键的值。
+ * 该参数也成为提示模板变量，因此其值将被注入到通过@UserMessage、@SystemMessage和AiServices定义的提示模板中。
+ * systemMessageProvider（函数）。
+ * 提示模板中使用的变量名与TypedKey返回的变量名相对应。
+ * 指定为此注释值的类的name（）方法，
+ * 默认情况下，该方法是实现TypedKey接口的类的简单名称。
  * <p>
  * Example:
  * <pre>

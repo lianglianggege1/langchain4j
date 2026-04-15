@@ -11,6 +11,7 @@ import java.lang.annotation.Target;
 /**
  * Marks a method as a definition of a sequence agent, used to orchestrate the agentic workflow
  * by invoking a series of sub-agents in a predefined order.
+ * 将方法标记为序列代理的定义，用于通过按预定义顺序调用一系列子代理来编排代理工作流。
  * <p>
  * Example:
  * <pre>
@@ -61,6 +62,7 @@ public @interface SequenceAgent {
 
     /**
      * Array of sub-agents that will be invoked in sequence.
+     * 将按顺序调用的子代理数组。
      *
      * @return array of sub-agents.
      */

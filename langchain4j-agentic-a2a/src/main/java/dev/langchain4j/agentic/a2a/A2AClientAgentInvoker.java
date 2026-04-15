@@ -22,14 +22,20 @@ import static dev.langchain4j.agentic.observability.ComposedAgentListener.compos
 
 public class A2AClientAgentInvoker implements AgentInvoker {
 
+    // agent id
     private String agentId;
+    //agent 输入keys
     private final String[] inputKeys;
 
+    // a2a client 实例
     private final A2AClientInstance a2AClientInstance;
 
+    // agent card
     private final AgentCard agentCard;
+    // agent method
     private final Method method;
 
+    // agent 父级
     private InternalAgent parent;
 
     public A2AClientAgentInvoker(A2AClientInstance a2AClientInstance, Method method) {

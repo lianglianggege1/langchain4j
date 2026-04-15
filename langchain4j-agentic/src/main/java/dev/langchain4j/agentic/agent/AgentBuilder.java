@@ -62,9 +62,13 @@ import java.util.function.Function;
 import java.util.function.UnaryOperator;
 
 public class AgentBuilder<T, B extends AgentBuilder<T, ?>> {
+    // Agent
     final Class<T> agentServiceClass;
+    //Agentic方法
     final Method agenticMethod;
+    //返回类型
     final Class<?> agentReturnType;
+    //参数
     List<AgentArgument> arguments;
 
     String name;
@@ -72,36 +76,63 @@ public class AgentBuilder<T, B extends AgentBuilder<T, ?>> {
     String outputKey;
     boolean async;
 
+    //默认值
     private final Map<String, Object> defaultValues = new HashMap<>();
 
+    //模型
     private ChatModel model;
+    //流式模型
     private StreamingChatModel streamingChatModel;
+    //会话内存
     private ChatMemory chatMemory;
+    //会话内存提供者
     private ChatMemoryProvider chatMemoryProvider;
+    //上下文提供者
     private Function<AgenticScope, String> contextProvider;
     private String[] contextProvidingAgents;
+    //内容检索器
     private ContentRetriever contentRetriever;
+    //检索增强
     private RetrievalAugmentor retrievalAugmentor;
+    //系统消息
     private Function<Object, String> systemMessageProvider;
+    //系统消息转换
     private BiFunction<String, InvocationContext, String> systemMessageTransformer;
+    //用户消息
     private Function<Object, String> userMessageProvider;
 
+    //输入护栏配置
     private InputGuardrailsConfig inputGuardrailsConfig;
+    //输出护栏配置
     private OutputGuardrailsConfig outputGuardrailsConfig;
+    //输入护栏类
     private Class<? extends InputGuardrail>[] inputGuardrailClasses;
+    //输出护栏类
     private Class<? extends OutputGuardrail>[] outputGuardrailClasses;
+    //输入护栏
     private InputGuardrail[] inputGuardrails;
+    //输出护栏
     private OutputGuardrail[] outputGuardrails;
 
+    // 带工具的对象
     private Object[] objectsWithTools;
+    // 工具地图
     private Map<ToolSpecification, ToolExecutor> toolsMap;
+    // 立即返回工具名称
     private Set<String> immediateReturnToolNames;
+    // 工具提供者
     private final List<ToolProvider> toolProviders = new ArrayList<>();
+    // 最大并发工具调用次数
     private Integer maxSequentialToolsInvocations;
+    // 幻觉工具名策略
     private Function<ToolExecutionRequest, ToolExecutionResultMessage> hallucinatedToolNameStrategy;
+    // 同时执行工具
     private boolean executeToolsConcurrently;
+    // 并发工具执行器
     private Executor concurrentToolsExecutor;
+    // 工具参数错误处理程序
     private ToolArgumentsErrorHandler toolArgumentsErrorHandler;
+    // 工具执行错误处理程序
     private ToolExecutionErrorHandler toolExecutionErrorHandler;
 
     AgentListener agentListener;

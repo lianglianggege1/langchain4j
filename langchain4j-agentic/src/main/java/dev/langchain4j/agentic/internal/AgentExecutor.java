@@ -39,8 +39,11 @@ public record AgentExecutor(AgentInvoker agentInvoker, Object agent) implements 
             AgentInvocationException e, DefaultAgenticScope agenticScope, Object invokedAgent, PlannerExecutor planner) {
         ErrorRecoveryResult recoveryResult = agenticScope.handleError(agentInvoker.name(), e);
         return switch (recoveryResult.type()) {
+            // 抛出异常
             case THROW_EXCEPTION -> throw e;
+            // 重试
             case RETRY -> internalExecute(agenticScope, invokedAgent, planner, false);
+            // 返回结果
             case RETURN_RESULT -> recoveryResult.result();
         };
     }
@@ -53,9 +56,12 @@ public record AgentExecutor(AgentInvoker agentInvoker, Object agent) implements 
             if (outputKey != null && !outputKey.isBlank()) {
                 agenticScope.writeState(outputKey, response);
             }
+            // 记录调用
             AgentInvocation agentInvocation = new AgentInvocation(type(), name(), agentId(), args.namedArgs(), response);
+            // 注册调用
             agenticScope.registerAgentInvocation(agentInvocation, invokedAgent);
             if (planner != null) {
+                // 添加调用
                 planner.onSubagentInvoked(agentInvocation);
             }
             return response;
@@ -68,6 +74,7 @@ public record AgentExecutor(AgentInvoker agentInvoker, Object agent) implements 
         if (async) {
             return new AsyncResponse<>(() -> {
                 try {
+                    // 执行代理， agent response
                     return agentInvoker.invoke(agenticScope, invokedAgent, args);
                 } catch (AgentInvocationException e) {
                     return handleAgentFailure(e, agenticScope, invokedAgent, planner);
@@ -172,6 +179,7 @@ public record AgentExecutor(AgentInvoker agentInvoker, Object agent) implements 
         propagateParentIndex(agentInvoker, index);
     }
 
+    // 递归设置父代理的索引
     private void propagateParentIndex(InternalAgent agent, int index) {
         agent.appendId("$" + index);
         for (AgentInstance subagent : agent.subagents()) {

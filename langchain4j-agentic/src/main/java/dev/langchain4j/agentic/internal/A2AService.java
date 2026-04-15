@@ -6,8 +6,10 @@ import java.util.ServiceLoader;
 
 public interface A2AService {
 
+    // a2a client  builder
     <T> A2AClientBuilder<T> a2aBuilder(String a2aServerUrl, Class<T> agentServiceClass);
 
+    // 方法代理执行器
     Optional<AgentExecutor> methodToAgentExecutor(InternalAgent a2aClient, Method method);
 
     static A2AService get() {
@@ -15,7 +17,7 @@ public interface A2AService {
     }
 
     class Provider {
-
+        // 加载a2a服务
         static A2AService a2aService = loadA2AService();
 
         private Provider() { }
@@ -31,6 +33,7 @@ public interface A2AService {
         }
     }
 
+    //虚拟A2A服务
     class DummyA2AService implements A2AService {
 
         private DummyA2AService() { }

@@ -14,6 +14,7 @@ import dev.langchain4j.agentic.planner.Planner;
 import dev.langchain4j.agentic.scope.AgenticScope;
 import dev.langchain4j.agentic.scope.DefaultAgenticScope;
 
+// agent 抽象调用者
 public abstract class AbstractAgentInvoker implements AgentInvoker, InternalAgent {
     protected final Method method;
     protected final InternalAgent agent;

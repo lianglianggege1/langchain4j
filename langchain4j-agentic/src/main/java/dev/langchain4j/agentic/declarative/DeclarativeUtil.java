@@ -48,6 +48,7 @@ public class DeclarativeUtil {
     }
 
     private static void configureAgent(Class<?> agentType, ChatModel chatModel, boolean allowNullChatModel, AgentBuilder<?, ?> agentBuilder, Consumer<DeclarativeAgentCreationContext<?>> agentConfigurator) {
+        //工具供应商
         getAnnotatedMethodOnClass(agentType, ToolsSupplier.class)
                 .ifPresent(method -> {
                     checkArguments(method);
@@ -60,7 +61,7 @@ public class DeclarativeUtil {
                         agentBuilder.tools(tools);
                     }
                 });
-
+        // 工具提供者
         getAnnotatedMethodOnClass(agentType, ToolProviderSupplier.class)
                 .ifPresent(method -> {
                     checkArguments(method);
@@ -68,6 +69,7 @@ public class DeclarativeUtil {
                     agentBuilder.toolProvider(invokeStatic(method));
                 });
 
+        //内容检索供应商
         getAnnotatedMethodOnClass(agentType, ContentRetrieverSupplier.class)
                 .ifPresent(method -> {
                     checkArguments(method);
@@ -75,6 +77,7 @@ public class DeclarativeUtil {
                     agentBuilder.contentRetriever(invokeStatic(method));
                 });
 
+        //检索增强供应商
         getAnnotatedMethodOnClass(agentType, RetrievalAugmentorSupplier.class)
                 .ifPresent(method -> {
                     checkArguments(method);
@@ -82,6 +85,7 @@ public class DeclarativeUtil {
                     agentBuilder.retrievalAugmentor(invokeStatic(method));
                 });
 
+        // 聊天内存供应商
         getAnnotatedMethodOnClass(agentType, ChatMemoryProviderSupplier.class)
                 .ifPresent(method -> {
                     checkArguments(method, Object.class);
@@ -89,6 +93,7 @@ public class DeclarativeUtil {
                     agentBuilder.chatMemoryProvider(memoryId -> invokeStatic(method, memoryId));
                 });
 
+        // 聊天记忆供应商
         getAnnotatedMethodOnClass(agentType, ChatMemorySupplier.class)
                 .ifPresent(method -> {
                     checkArguments(method);
@@ -96,12 +101,14 @@ public class DeclarativeUtil {
                     agentBuilder.chatMemory(invokeStatic(method));
                 });
 
+        // 聊天模型供应商
         getAnnotatedMethodOnClass(agentType, ChatModelSupplier.class)
                 .ifPresentOrElse(method -> {
                             checkArguments(method);
                             checkReturnType(method, ChatModel.class);
                             agentBuilder.chatModel(invokeStatic(method));
                         },
+                        // 流式聊天模型供应商
                         () -> getAnnotatedMethodOnClass(agentType, StreamingChatModelSupplier.class)
                                 .ifPresentOrElse(method -> {
                                             checkArguments(method);

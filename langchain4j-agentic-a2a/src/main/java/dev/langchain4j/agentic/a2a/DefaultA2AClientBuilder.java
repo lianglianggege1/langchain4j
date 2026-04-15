@@ -43,22 +43,35 @@ import static dev.langchain4j.agentic.observability.ComposedAgentListener.compos
 
 public class DefaultA2AClientBuilder<T> implements A2AClientBuilder<T>, InternalAgent, InvocationHandler {
 
+    //服务输出解析器
     private final ServiceOutputParser serviceOutputParser = new ServiceOutputParser();
 
+    //agent服务类
     private final Class<T> agentServiceClass;
     private static final Logger LOG = LoggerFactory.getLogger(DefaultA2AClientBuilder.class);
 
+    //a2a服务卡片
     private final AgentCard agentCard;
+
+    //a2a客户端
     private final Client a2aClient;
 
+    //agent名称
     private final String name;
+    //agent id
     private String agentId;
+
+    //agent父级
     private InternalAgent parent;
 
+    //输入参数
     private String[] inputKeys;
+    //输出参数
     private String outputKey;
+    //异步执行
     private boolean async;
 
+    //agent监听器
     private AgentListener agentListener;
 
     DefaultA2AClientBuilder(String a2aServerUrl, Class<T> agentServiceClass) {

@@ -10,6 +10,7 @@ import java.lang.annotation.Target;
 /**
  * Marks a method as a definition of a parallel multi-instance agent, used to orchestrate the agentic workflow
  * by creating multiple instances of the same sub-agent, one for each item in a collection read from the agentic scope.
+ * 将方法标记为并行多实例代理的定义，用于通过创建同一子代理的多个实例来编排代理工作流，每个实例对应从代理作用域读取的集合中的每个项目。
  * <p>
  * Example:
  * <pre>
@@ -54,6 +55,7 @@ public @interface ParallelMapperAgent {
      * Strongly typed key of the output variable that will be used to store the result of the agent's invocation.
      * It enforces type safety when retrieving the output from the agent's state and can be used in alternative
      * to the {@code outputKey()} attribute. Note that only one of those two attributes can be used at a time.
+     * 输出变量的强类型键，将用于存储代理调用的结果。它在从代理的状态检索输出时强制执行类型安全，可以替代outputKey（）属性使用。请注意，一次只能使用这两个属性中的一个。
      *
      * @return class representing the typed output variable.
      */
@@ -69,6 +71,7 @@ public @interface ParallelMapperAgent {
     /**
      * Variable name referencing a collection in the agentic scope. For each item in this collection,
      * an instance of the sub-agent will be created and executed in parallel.
+     * 引用代理作用域中集合的变量名。对于此集合中的每个项目，将创建并并行执行子代理的实例。
      *
      * @return the name of the input collection.
      */

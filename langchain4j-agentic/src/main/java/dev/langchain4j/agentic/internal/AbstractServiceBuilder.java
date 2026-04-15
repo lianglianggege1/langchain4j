@@ -29,24 +29,37 @@ import java.util.function.Supplier;
 
 public abstract class AbstractServiceBuilder<T, S> {
 
+    // 默认初始化函数
     private static final Consumer<AgenticScope> DEFAULT_INIT_FUNCTION = agenticScope -> {};
 
+    // 服务类
     protected final Class<T> agentServiceClass;
+
+    // 待执行方法
     protected final Method agenticMethod;
 
+    // 初始化函数
     protected Consumer<AgenticScope> beforeCall = DEFAULT_INIT_FUNCTION;
 
+    // agent名称
     protected String name;
+    // agent描述
     protected String description;
+    // agent输出key
     protected String outputKey;
+    // agent输出函数
     protected Function<AgenticScope, Object> output;
 
+    // agent监听器
     protected AgentListener agentListener;
 
+    // 子代理
     protected final List<AgentExecutor> subagents = new ArrayList<>();
 
+    // 错误处理函数
     protected Function<ErrorContext, ErrorRecoveryResult> errorHandler;
 
+    // 执行器
     protected Executor executor;
 
     protected AbstractServiceBuilder(Class<T> agentServiceClass, Method agenticMethod) {

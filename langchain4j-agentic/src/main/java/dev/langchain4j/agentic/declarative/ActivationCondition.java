@@ -8,7 +8,9 @@ import java.lang.annotation.Target;
 
 /**
  * Marks a method as an activation predicate for one or more sub-agents of a conditional agent.
+ * 将方法标记为条件代理的一个或多个subagent的激活谓词。
  * The method must be static and return a boolean indicating whether the sub-agent(s) should be activated.
+ * 该方法必须是静态的，并返回一个布尔值，指示是否应激活subagent。
  * <p>
  * Example:
  * <pre>
@@ -46,6 +48,7 @@ public @interface ActivationCondition {
 
     /**
      * One or more sub-agent classes that this activation condition applies to.
+     * 此激活条件适用于的一个或多个subagent类。
      *
      * @return array of sub-agent classes.
      */
@@ -54,6 +57,7 @@ public @interface ActivationCondition {
     /**
      * Description of the activation condition.
      * It should be clear and descriptive to allow understanding the purpose of the condition.
+     * 激活条件的描述。它应该是清晰和描述性的，以便理解条件的目的。
      *
      * @return description of the activation condition.
      */

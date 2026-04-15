@@ -10,7 +10,9 @@ import static java.lang.annotation.RetentionPolicy.RUNTIME;
 
 /**
  * Marks a method as a supplier of a tool provider that an agent can utilize during its operation.
+ * 将一种方法标记为工具提供商的供应商，代理可以在其操作过程中使用该供应商。
  * The annotated method must be static, with no arguments, and return an instance of {@link ToolProvider}.
+ * 带注释的方法必须是静态的，没有参数，并返回｛@link ToolProvider｝的实例。
  * <p>
  * Example:
  * <pre>

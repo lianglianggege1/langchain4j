@@ -10,6 +10,8 @@ import static java.lang.annotation.RetentionPolicy.RUNTIME;
 /**
  * Marks a method as a supplier of chat memory that an agent can utilize during its operation.
  * The annotated method must be static, with no arguments, and return an instance of {@link ChatMemory}.
+ * 将一种方法标记为聊天内存的提供者，代理可以在其操作过程中使用。
+ * 带注释的方法必须是静态的，没有参数，并返回{@link ChatMemory}的实例。
  * <p>
  * Example:
  * <pre>
@@ -26,6 +28,7 @@ import static java.lang.annotation.RetentionPolicy.RUNTIME;
  * }
  * </pre>
  */
+// 聊天记录提供者
 @Retention(RUNTIME)
 @Target({METHOD})
 public @interface ChatMemorySupplier {
