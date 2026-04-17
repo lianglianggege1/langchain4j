@@ -3,6 +3,7 @@ package dev.langchain4j.agentic.internal;
 import dev.langchain4j.agentic.scope.AgenticScope;
 import java.lang.reflect.Method;
 
+// 未键入的代理调用器
 public final class UntypedAgentInvoker extends AbstractAgentInvoker {
 
     public UntypedAgentInvoker(Method method, InternalAgent agent) {

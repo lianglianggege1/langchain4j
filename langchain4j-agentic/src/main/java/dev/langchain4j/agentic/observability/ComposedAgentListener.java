@@ -9,6 +9,7 @@ import java.util.List;
 import java.util.Set;
 import java.util.function.Predicate;
 
+// 组合代理侦听器
 @Internal
 public class ComposedAgentListener implements AgentListener {
 

@@ -14,6 +14,7 @@ public class ListenerNotifierUtil {
 
     private ListenerNotifierUtil() { }
 
+    // 在agent调用之前
     public static void beforeAgentInvocation(AgentListener listener, AgenticScope agenticScope, AgentInstance agent, Map<String, Object> inputs) {
         if (listener != null) {
             try {

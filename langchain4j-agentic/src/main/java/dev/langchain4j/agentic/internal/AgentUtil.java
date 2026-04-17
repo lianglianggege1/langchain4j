@@ -43,6 +43,7 @@ public class AgentUtil {
     public static final String AGENTIC_SCOPE_ARG_NAME = "@AgenticScope";
     public static final String LOOP_COUNTER_ARG_NAME = "@LoopCounter";
 
+    // state instances 状态实例
     private static final Map<Class<? extends TypedKey<?>>, TypedKey<?>> STATE_INSTANCES = new ConcurrentHashMap<>();
 
     private AgentUtil() {}
@@ -66,6 +67,7 @@ public class AgentUtil {
             return typedOutputKey != Agent.NoTypedKey.class ? keyName(typedOutputKey) : null;
         }
         if (typedOutputKey != Agent.NoTypedKey.class) {
+            //  outputKey和typedOutputKey都已设置。请只设置其中一个。
             throw new AgenticSystemConfigurationException("Both outputKey and typedOutputKey are set. Please set only one of them.");
         }
         return outputKey;
@@ -96,6 +98,7 @@ public class AgentUtil {
                 : nonAiAgentToExecutor(agent, validateAgentClass(agent.getClass()));
     }
 
+    // 非AI代理
     public static AgentExecutor nonAiAgentToExecutor(Object agent, Method agenticMethod) {
         Agent annotation = agenticMethod.getAnnotation(Agent.class);
         String name = isNullOrBlank(annotation.name()) ? agenticMethod.getName() : annotation.name();
@@ -104,12 +107,14 @@ public class AgentUtil {
         return new AgentExecutor(nonAiAgentInvoker(agent, agenticMethod, name, description, outputKey, annotation.async()), agent);
     }
 
+    // 非AI代理调用者
     private static AgentInvoker nonAiAgentInvoker(Object agent, Method agenticMethod, String name, String description, String outputKey, boolean async) {
         return agent instanceof AgentSpecsProvider spec
                 ? AgentInvoker.fromSpec(spec, agenticMethod, name)
                 : nonAiAgentInvoker(agenticMethod, name, description, outputKey, async);
     }
 
+    // 非AI代理调用者
     public static AgentInvoker nonAiAgentInvoker(Method agenticMethod, String name, String description, String outputKey, boolean async) {
         return AgentInvoker.fromMethod(
                 new NonAiAgentInstance(agenticMethod.getDeclaringClass(),
@@ -118,6 +123,7 @@ public class AgentUtil {
                 agenticMethod);
     }
 
+    // AI代理
     public static AgentExecutor agentToExecutor(InternalAgent agent) {
         for (Method method : agent.getClass().getMethods()) {
             Optional<AgentExecutor> executor = McpService.get().methodToAgentExecutor(agent, method);

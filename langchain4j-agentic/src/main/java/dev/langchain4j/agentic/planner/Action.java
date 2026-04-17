@@ -4,14 +4,17 @@ import dev.langchain4j.agentic.internal.AgentExecutor;
 import java.util.List;
 import java.util.stream.Stream;
 
+// 行动
 public interface Action {
 
+    // 是否完成
     boolean isDone();
 
     default Object result() {
         return null;
     }
 
+    // 完成动作
     class DoneAction implements Action {
 
         static final Action INSTANCE = new DoneAction();
@@ -27,6 +30,7 @@ public interface Action {
         }
     }
 
+    // 完成动作
     class DoneWithResultAction implements Action {
 
         private final Object result;

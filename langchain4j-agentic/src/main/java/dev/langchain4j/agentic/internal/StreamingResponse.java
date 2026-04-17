@@ -4,6 +4,7 @@ import dev.langchain4j.model.chat.response.ChatResponse;
 import dev.langchain4j.service.TokenStream;
 import java.util.concurrent.CompletableFuture;
 
+// 流式响应
 public class StreamingResponse implements DelayedResponse<String> {
 
     private final CompletableFuture<ChatResponse> futureResponse = new CompletableFuture<>();

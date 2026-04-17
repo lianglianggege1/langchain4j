@@ -6,6 +6,7 @@ import dev.langchain4j.model.chat.request.ChatRequest;
 import java.util.List;
 import java.util.function.BiFunction;
 
+// 用户消息转换器
 @FunctionalInterface
 public interface UserMessageTransformer extends BiFunction<ChatRequest, Object, ChatRequest> {
 

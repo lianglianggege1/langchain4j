@@ -14,16 +14,24 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
+// agent调用
 public class AgentInvocation {
 
+    // 嵌套调用
     private final List<AgentInvocation> nestedInvocations = Collections.synchronizedList(new ArrayList<>());
+    // 工具调用
     private final List<ToolExecution> toolExecutions = Collections.synchronizedList(new ArrayList<>());
 
+    // agent调用请求
     private final AgentRequest agentRequest;
+    // agent调用开始时间
     private final LocalDateTime startTime;
 
+    // agent调用结果
     private AgentResponse agentResponse;
+    // 结束时间
     private LocalDateTime finishTime;
+    // 迭代索引
     private int iterationIndex = -1;
 
     AgentInvocation(AgentRequest agentRequest) {

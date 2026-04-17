@@ -16,9 +16,11 @@ import java.util.Map;
 
 import static com.fasterxml.jackson.annotation.JsonInclude.Include.NON_NULL;
 
+// Jackson 映射器
 @Internal
 class JacksonAgenticScopeJsonCodec implements AgenticScopeJsonCodec {
 
+    // Jackson 构建器
     static JsonMapper.Builder agenticScopeJsonMapperBuilder() {
         return JacksonChatMessageJsonCodec.chatMessageJsonMapperBuilder()
                 .addMixIn(DefaultAgenticScope.class, AgenticScopeMixin.class)

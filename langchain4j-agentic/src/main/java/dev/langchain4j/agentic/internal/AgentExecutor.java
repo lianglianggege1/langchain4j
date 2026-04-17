@@ -19,10 +19,12 @@ public record AgentExecutor(AgentInvoker agentInvoker, Object agent) implements 
 
     private static final Logger LOG = LoggerFactory.getLogger(AgentExecutor.class);
 
+    // 异步执行agent
     public Object execute(DefaultAgenticScope agenticScope, PlannerExecutor planner) {
         return execute(agenticScope, planner, agentInvoker.async());
     }
 
+    // 同步执行agent
     public Object syncExecute(DefaultAgenticScope agenticScope, PlannerExecutor planner) {
         if (agentInvoker.async()) {
             LOG.info("Executing '{}' agent in a sync way even if declared as async", agentInvoker.name());

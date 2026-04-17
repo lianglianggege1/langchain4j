@@ -1,8 +1,11 @@
 package dev.langchain4j.agentic.supervisor;
 
+// 响应分数
 public class ResponseScore {
 
+    // 分数1
     private double score1;
+    // 分数2
     private double score2;
 
     public double getScore1() {

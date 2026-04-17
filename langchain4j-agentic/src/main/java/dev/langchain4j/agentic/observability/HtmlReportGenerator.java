@@ -23,6 +23,7 @@ import java.util.Set;
 /**
  * Generates HTML reports for agent executions.
  * This class has been vibe-coded and is not expected to be maintainable manually by a human without LLM's help.
+ * 为代理执行生成HTML报告。这个类已经过vibe编码，没有LLM的帮助，预计人类无法手动维护。
  */
 public record HtmlReportGenerator(AgentMonitor monitor, AgentInstance rootAgent, Object memoryId) {
 

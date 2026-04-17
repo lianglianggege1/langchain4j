@@ -7,6 +7,7 @@ import dev.langchain4j.agentic.scope.AgenticScope;
 import java.util.function.Function;
 import java.util.function.Supplier;
 
+// 智能助手
 public record HumanInTheLoop(
         String outputKey,
         String description,
@@ -15,6 +16,7 @@ public record HumanInTheLoop(
         AgentListener listener)
         implements AgentSpecsProvider {
 
+    // 向用户询问缺失信息的代理
     @Agent("An agent that asks the user for missing information")
     public Object askUser(AgenticScope scope) {
         return responseProvider.apply(scope);
@@ -23,6 +25,7 @@ public record HumanInTheLoop(
     public static class HumanInTheLoopBuilder {
 
         private String outputKey = "response";
+        // 向用户询问缺失信息的代理
         private String description = "An agent that asks the user for missing information";
         private boolean async = false;
         private Function<AgenticScope, ?> responseProvider;

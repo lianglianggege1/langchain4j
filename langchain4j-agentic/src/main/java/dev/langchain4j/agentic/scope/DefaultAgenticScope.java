@@ -38,19 +38,27 @@ public class DefaultAgenticScope implements AgenticScope {
 
     public record AgentMessage(String agentName, String agentId, ChatMessage message) {}
 
+    // 记忆id
     private final Object memoryId;
+    // 状态
     private final Map<String, Object> state = new ConcurrentHashMap<>();
+    // agent 上下文
     private final List<AgentInvocation> agentInvocations = Collections.synchronizedList(new ArrayList<>());
+    // 上下文
     private final List<AgentMessage> context = Collections.synchronizedList(new ArrayList<>());
 
+    // agent
     private final transient Map<String, Object> agents = new ConcurrentHashMap<>();
 
+    // 错误处理
     private static final Function<ErrorContext, ErrorRecoveryResult> DEFAULT_ERROR_RECOVERY =
             errorContext -> ErrorRecoveryResult.throwException();
 
+    // 错误处理
     private transient Function<ErrorContext, ErrorRecoveryResult> errorHandler = DEFAULT_ERROR_RECOVERY;
 
     public enum Kind {
+        // 短暂的、注册的、持久的
         EPHEMERAL, REGISTERED, PERSISTENT
     }
     private final Kind kind;
@@ -61,6 +69,10 @@ public class DefaultAgenticScope implements AgenticScope {
      * when accessed. In essence multiple changes are allowed at the same time, but it is not allowed to persist a
      * AgenticScope that is not in a frozen state. That's why the read lock is acquired for the first and a write lock
      * when the second happens.
+     * 此锁用于确保AgentScope在持久化时不会被并发修改。
+     * AgentScope的内部数据结构都是线程安全的，因此在访问时不需要由读取锁保护。
+     * 本质上，允许同时进行多个更改，但不允许持久化未处于冻结状态的AgentScope。
+     * 这就是为什么第一次获取读锁，第二次发生时获取写锁的原因。
      */
     private final transient ReadWriteLock lock;
 

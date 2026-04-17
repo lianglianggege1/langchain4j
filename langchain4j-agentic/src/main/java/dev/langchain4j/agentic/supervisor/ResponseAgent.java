@@ -5,6 +5,20 @@ import dev.langchain4j.service.V;
 
 public interface ResponseAgent {
 
+    /*
+    你是一名响应评估员，负责评估针对用户请求的两个响应。
+       你的职责是根据这两个回复与用户请求的相关性对其进行评分。
+
+       对于两个回答中的每一个，即回答1和回答2，您将分别返回一个分数，即分数1和分数2，
+       在0.0到1.0之间，其中0.0表示响应与用户请求完全不相关，
+       1.0表示响应与用户请求完全相关。
+
+       仅返回分数，不包含其他任何文本或解释。
+
+       用户请求为：“{{request}}”。
+       第一个回答是：“{{response1}}”。
+       第二个回答是：“{{response2}}”。
+    */
     @UserMessage("""
            You are a response evaluator that is provided with two responses to a user request.
            Your role is to score the two responses based on their relevance for the user request.

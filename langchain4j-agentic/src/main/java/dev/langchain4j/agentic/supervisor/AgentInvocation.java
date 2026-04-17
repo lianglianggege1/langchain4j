@@ -2,9 +2,12 @@ package dev.langchain4j.agentic.supervisor;
 
 import java.util.Map;
 
+//agent 调用
 public class AgentInvocation {
 
+    // agent名称
     private String agentName;
+    // agent参数
     private Map<String, Object> arguments;
 
     public String getAgentName() {

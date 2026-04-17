@@ -13,6 +13,9 @@ import static dev.langchain4j.agentic.observability.ListenerNotifierUtil.beforeA
  * Singleton registry for managing AgenticScope instances.
  * Provides methods to register, retrieve, and manage AgenticScope objects.
  * Supports persistence through a pluggable store.
+ * 用于管理AgentScope实例的Singleton注册表。
+ * 提供注册、检索和管理AgentScope对象的方法。
+ * 通过可插拔存储支持持久性。
  */
 @Internal
 public class AgenticScopeRegistry {
@@ -20,6 +23,7 @@ public class AgenticScopeRegistry {
     private final String agentId;
     private final AgenticScopeStore store;
 
+    // 内存中的AgentScope
     private final Map<AgenticScopeKey, DefaultAgenticScope> inMemoryAgenticScope = new ConcurrentHashMap<>();
 
     public AgenticScopeRegistry(String agentId) {

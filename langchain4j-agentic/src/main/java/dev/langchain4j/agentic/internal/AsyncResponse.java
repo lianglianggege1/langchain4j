@@ -6,8 +6,10 @@ import java.util.function.Supplier;
 
 public class AsyncResponse<T> implements DelayedResponse<T> {
 
+    // 响应
     private final CompletableFuture<T> futureResponse;
 
+    // 构造函数
     public AsyncResponse(Supplier<T> responseSupplier) {
         this.futureResponse = CompletableFuture.supplyAsync(responseSupplier, DefaultExecutorProvider.getDefaultExecutorService());
     }

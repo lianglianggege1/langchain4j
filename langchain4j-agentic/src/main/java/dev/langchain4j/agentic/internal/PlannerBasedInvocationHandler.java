@@ -53,37 +53,59 @@ import dev.langchain4j.service.ParameterNameResolver;
 import dev.langchain4j.service.TokenStream;
 import dev.langchain4j.service.memory.ChatMemoryAccess;
 
+// 基于Planner的调用处理程序
 public class PlannerBasedInvocationHandler implements InvocationHandler, InternalAgent {
+
+    // 执行器
     private final Executor executor;
 
+    // 输出
     private final Function<AgenticScope, Object> output;
 
+    // 监听器
     protected AgentListener agentListener;
 
+    // 在调用方法之前调用
     private final Consumer<AgenticScope> beforeCall;
 
+    // 默认的AgenticScope
     private final DefaultAgenticScope agenticScope;
 
+    // 错误处理
     private final Function<ErrorContext, ErrorRecoveryResult> errorHandler;
 
+    // agentScope注册表
     private final AtomicReference<AgenticScopeRegistry> agenticScopeRegistry = new AtomicReference<>();
 
+    // 服务构建器
     private final AbstractServiceBuilder<?, ?> service;
 
+    // 默认的Planner提供者
     private final Supplier<Planner> plannerSupplier;
 
+    // 默认的Planner实例
     private final Planner defaultPlannerInstance;
 
+    // 类型
     private final Class<?> type;
+    // 名称
     private final String name;
+    // 描述
     private final String description;
+    // 输出类型
     private final Type outputType;
+    // 输出键
     private boolean allowStreamingOutput;
+    // 输出键
     private final String outputKey;
+    // 参数
     private final List<AgentArgument> arguments;
+    // 子代理
     private final List<AgentInstance> subagents;
 
+    // agent id
     private String agentId;
+    // 父agent
     private InternalAgent parent;
 
     public PlannerBasedInvocationHandler(AbstractServiceBuilder<?, ?> service, Supplier<Planner> plannerSupplier) {
@@ -179,6 +201,7 @@ public class PlannerBasedInvocationHandler implements InvocationHandler, Interna
         return executeAgentMethod(registry, method, args);
     }
 
+    // 获取或创建AgenticScope
     private AgenticScopeRegistry agenticScopeRegistry() {
         if (isRootCall()) {
             agenticScopeRegistry.compareAndSet(null, new AgenticScopeRegistry(type.getName()));
@@ -337,6 +360,7 @@ public class PlannerBasedInvocationHandler implements InvocationHandler, Interna
         return agentListener;
     }
 
+    // 执行Planner
     private class PlannerLoop implements PlannerExecutor {
         private final Planner planner;
         private final DefaultAgenticScope agenticScope;

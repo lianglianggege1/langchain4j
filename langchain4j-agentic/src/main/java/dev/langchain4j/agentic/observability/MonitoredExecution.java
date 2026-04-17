@@ -10,6 +10,7 @@ import java.util.concurrent.ConcurrentHashMap;
  * Represents a monitored execution of an agentic system, tracking the top-level agent invocation
  * and any other nested invocations, along with all the invocation currently in progress and
  * any errors that occur during execution.
+ * 表示代理系统的受监视执行，跟踪顶级代理调用和任何其他嵌套调用，以及当前正在进行的所有调用和执行过程中发生的任何错误。
  */
 public class MonitoredExecution {
 
@@ -24,6 +25,7 @@ public class MonitoredExecution {
         ongoingInvocations.put(firstAgentRequest.agentId(), this.topLevelInvocations);
     }
 
+    // 在代理执行之前
     void beforeAgentInvocation(AgentRequest agentRequest) {
         AgentInvocation parentInvocation = ongoingInvocations.get(agentRequest.agent().parent().agentId());
         if (parentInvocation == null) {
@@ -46,6 +48,7 @@ public class MonitoredExecution {
         ongoingInvocations.put(agentRequest.agentId(), newInvocation);
     }
 
+    // 在代理执行之后
     void afterAgentInvocation(AgentResponse agentResponse) {
         AgentInvocation finishedInvocation = ongoingInvocations.remove(agentResponse.agentId());
         if (finishedInvocation == null) {
@@ -54,10 +57,12 @@ public class MonitoredExecution {
         finishedInvocation.finished(agentResponse);
     }
 
+    // 在代理执行错误时
     void onAgentInvocationError(AgentInvocationError agentInvocationError) {
         this.agentInvocationError = agentInvocationError;
     }
 
+    // 代理工具执行继承
     void afterToolExecution(AfterAgentToolExecution afterToolExecution) {
         String agentId = afterToolExecution.agentInstance().agentId();
         AgentInvocation invocation = ongoingInvocations.get(agentId);

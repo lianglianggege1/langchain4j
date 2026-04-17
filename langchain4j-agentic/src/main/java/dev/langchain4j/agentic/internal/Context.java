@@ -14,6 +14,12 @@ public class Context {
 
     public interface ContextSummarizer {
 
+        /**
+         * 创建一个或多个AI代理与用户之间以下对话的简短摘要。
+         * 提及参与对话的所有代理人。
+         * 不要提供任何额外信息，只提供摘要。
+         * 用户对话为：“｛｛it｝｝”。
+         */
         @UserMessage("""
             Create a short summary of the following conversation between one or more AI agents and a user.
             Mention all the agents involved in the conversation.
@@ -62,6 +68,7 @@ public class Context {
             if (isNullOrBlank(agenticScopeContext)) {
                 return userMessage;
             }
+            // 考虑到这一背景
             return "Considering this context \"" + agenticScopeContext + "\"\n" + userMessage;
         }
     }
@@ -69,6 +76,7 @@ public class Context {
     public static class Summarizer extends AgenticScopeContextGenerator {
         public Summarizer(AgenticScope agenticScope, ChatModel chatModel, String... agentNames) {
             super(agenticScope, c -> {
+                // 创建一个或多个AI代理与用户之间以下对话的简短摘要。
                 String context = c.contextAsConversation(agentNames);
                 return context.isBlank() ? context : initSummarizer(chatModel).summarize(context).getSummary();
             });

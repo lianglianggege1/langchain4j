@@ -4,6 +4,7 @@ import java.util.ServiceLoader;
 
 /**
  * Utility class for serializing AgenticScope objects to JSON format.
+ * 用于将AgentScope对象序列化为JSON格式的实用程序类。
  */
 public class AgenticScopeSerializer {
 
@@ -20,6 +21,7 @@ public class AgenticScopeSerializer {
 
     /**
      * Serializes a AgenticScope into a JSON string.
+     * 将AgentScope序列化为JSON字符串。
      *
      * @param agenticScope AgenticScope to be serialized.
      * @return A JSON string with the contents of the AgenticScope.
@@ -31,6 +33,7 @@ public class AgenticScopeSerializer {
 
     /**
      * Deserializes a JSON string into a AgenticScope object.
+     * 将JSON字符串反序列化为AgentScope对象。
      *
      * @param json JSON string to be deserialized.
      * @return A AgenticScope object constructed from the JSON.

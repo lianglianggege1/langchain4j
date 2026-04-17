@@ -12,6 +12,7 @@ import java.util.Objects;
 
 import static dev.langchain4j.agentic.observability.ComposedAgentListener.composeWithInherited;
 
+// 非AI代理实例
 public class NonAiAgentInstance implements AgentInstance, InternalAgent {
     private final Class<?> type;
     private final String name;

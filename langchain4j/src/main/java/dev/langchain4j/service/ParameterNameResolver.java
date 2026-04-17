@@ -4,7 +4,9 @@ import java.lang.reflect.Parameter;
 import java.util.ServiceLoader;
 
 public interface ParameterNameResolver {
+    // 参数名解析器
     boolean hasVariableName(Parameter parameter);
+    // 获取参数名
     String getVariableName(Parameter parameter);
 
     static String name(Parameter parameter) {

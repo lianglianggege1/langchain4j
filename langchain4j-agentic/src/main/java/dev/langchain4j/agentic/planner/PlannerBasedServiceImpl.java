@@ -12,6 +12,7 @@ import java.util.function.Supplier;
 import dev.langchain4j.agentic.declarative.PlannerSupplier;
 import dev.langchain4j.agentic.internal.AbstractServiceBuilder;
 
+// 基于规划的服务实现
 public class PlannerBasedServiceImpl<T> extends AbstractServiceBuilder<T, PlannerBasedService<T>> implements PlannerBasedService<T> {
 
     private Supplier<Planner> plannerSupplier;

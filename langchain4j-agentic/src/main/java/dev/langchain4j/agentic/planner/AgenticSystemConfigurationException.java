@@ -2,6 +2,7 @@ package dev.langchain4j.agentic.planner;
 
 import dev.langchain4j.exception.LangChain4jException;
 
+// agentic 系统配置异常
 public class AgenticSystemConfigurationException extends LangChain4jException {
 
     public AgenticSystemConfigurationException(Exception cause) {
