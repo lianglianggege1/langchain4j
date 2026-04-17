@@ -6,6 +6,7 @@ import dev.langchain4j.agentic.planner.AgenticService;
 import dev.langchain4j.agentic.scope.AgenticScope;
 import dev.langchain4j.agentic.internal.AgentExecutor;
 
+// 条件agent服务
 public interface ConditionalAgentService<T> extends AgenticService<ConditionalAgentService<T>, T> {
 
     ConditionalAgentService<T> subAgents(Predicate<AgenticScope> condition, Object... agents);

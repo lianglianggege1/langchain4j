@@ -9,6 +9,7 @@ import static dev.langchain4j.agentic.declarative.DeclarativeUtil.buildAgentFeat
 import static dev.langchain4j.agentic.declarative.DeclarativeUtil.configureOutput;
 import static dev.langchain4j.agentic.internal.AgentUtil.validateAgentClass;
 
+// 顺序agent服务实现
 public class SequentialAgentServiceImpl<T> extends AbstractServiceBuilder<T, SequentialAgentService<T>> implements SequentialAgentService<T> {
 
     public SequentialAgentServiceImpl(Class<T> agentServiceClass, Method agenticMethod) {

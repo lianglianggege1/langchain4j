@@ -12,6 +12,7 @@ import static dev.langchain4j.agentic.declarative.DeclarativeUtil.configureOutpu
 import static dev.langchain4j.agentic.declarative.DeclarativeUtil.selectMethod;
 import static dev.langchain4j.agentic.internal.AgentUtil.validateAgentClass;
 
+// 并行agent服务实现
 public class ParallelAgentServiceImpl<T> extends AbstractServiceBuilder<T, ParallelAgentService<T>> implements ParallelAgentService<T> {
 
     public ParallelAgentServiceImpl(Class<T> agentServiceClass, Method agenticMethod) {
@@ -41,6 +42,7 @@ public class ParallelAgentServiceImpl<T> extends AbstractServiceBuilder<T, Paral
         configureOutput(agentServiceClass, this);
         buildAgentFeatures(agentServiceClass, this);
 
+        // 查找到并行的执行方法
         selectMethod(
                 agentServiceClass,
                 method -> method.isAnnotationPresent(ParallelExecutor.class)

@@ -8,6 +8,7 @@ import java.lang.reflect.Type;
 import java.util.List;
 
 abstract class AbstractAgentInstance implements AgentInstance {
+    // 代表一个agent实例
     private final AgentInstance delegate;
 
     AbstractAgentInstance(final AgentInstance delegate) {

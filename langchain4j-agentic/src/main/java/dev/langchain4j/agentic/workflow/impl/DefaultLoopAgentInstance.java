@@ -3,6 +3,7 @@ package dev.langchain4j.agentic.workflow.impl;
 import dev.langchain4j.agentic.planner.AgentInstance;
 import dev.langchain4j.agentic.workflow.LoopAgentInstance;
 
+// 循环代理实例
 public class DefaultLoopAgentInstance extends AbstractAgentInstance implements LoopAgentInstance {
 
     private final LoopPlanner planner;

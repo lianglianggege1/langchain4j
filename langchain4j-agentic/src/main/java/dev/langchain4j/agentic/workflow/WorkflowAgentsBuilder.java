@@ -2,6 +2,7 @@ package dev.langchain4j.agentic.workflow;
 
 import dev.langchain4j.agentic.UntypedAgent;
 
+//工作流agent构建器
 public interface WorkflowAgentsBuilder {
     SequentialAgentService<UntypedAgent> sequenceBuilder();
 

@@ -13,15 +13,22 @@ import dev.langchain4j.agentic.workflow.LoopAgentInstance;
 
 public class LoopPlanner implements Planner {
 
+    // 最大迭代次数
     private final int maxIterations;
+    // 当前迭代次数
     private int iterationsCounter = 1;
 
+    // 测试退出条件
     private final boolean testExitAtLoopEnd;
 
+    // 退出条件
     private final BiPredicate<AgenticScope, Integer> exitCondition;
+    // 退出条件描述
     private final String exitConditionDescription;
 
+    // 循环的子代理
     private List<AgentInstance> agents;
+    // 当前代理索引
     private int agentCursor = 0;
 
     public LoopPlanner(int maxIterations, boolean testExitAtLoopEnd, BiPredicate<AgenticScope, Integer> exitCondition, String exitConditionDescription) {
@@ -36,15 +43,20 @@ public class LoopPlanner implements Planner {
         this.agents = initPlanningContext.subagents();
     }
 
+    // 第一个动作
     @Override
     public Action firstAction(PlanningContext planningContext) {
+        // 调用子代理
         return call(agents.get(agentCursor));
     }
 
+    // 下一个动作
     @Override
     public Action nextAction(PlanningContext planningContext) {
+        // agent光标
         agentCursor = (agentCursor+1) % agents.size();
         if (agentCursor == 0) {
+            // 当agent光标大于最大迭代次数后，该task就已经完成了
             if (iterationsCounter > maxIterations || exitCondition.test(planningContext.agenticScope(), iterationsCounter)) {
                 return done();
             }
@@ -68,14 +80,17 @@ public class LoopPlanner implements Planner {
         return (T) new DefaultLoopAgentInstance(agentInstance, this);
     }
 
+    // 最大迭代次数
     public int maxIterations() {
         return maxIterations;
     }
 
+    // 测试退出条件
     public boolean testExitAtLoopEnd() {
         return testExitAtLoopEnd;
     }
 
+    // 退出条件
     public String exitCondition() {
         return exitConditionDescription;
     }

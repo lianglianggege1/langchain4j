@@ -21,6 +21,7 @@ import static dev.langchain4j.agentic.internal.AgentUtil.agentInvocationArgument
 import static dev.langchain4j.agentic.internal.AgentUtil.argumentsFromMethod;
 import static dev.langchain4j.agentic.internal.AgentUtil.validateAgentClass;
 
+// 循环agent
 public class LoopAgentServiceImpl<T> extends AbstractServiceBuilder<T, LoopAgentService<T>> implements LoopAgentService<T> {
 
     private int maxIterations = Integer.MAX_VALUE;

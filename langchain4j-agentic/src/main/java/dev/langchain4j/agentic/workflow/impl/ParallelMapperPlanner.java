@@ -15,15 +15,23 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import static java.util.Arrays.copyOf;
 
+// 并行映射计划器
 public class ParallelMapperPlanner implements Planner {
 
+    // 物品提供商
     private final String itemsProvider;
+    // 是否返回数组
     private final boolean isArrayResult;
+    // 数组类
     private final Class<? extends Object[]> arrayclass;
 
+    // 子代理执行器
     private AgentExecutor subagent;
+    // 结果键前缀
     private String resultKeyPrefix;
+    // 项目数
     private int itemCount;
+    // 已完成项目数
     private final AtomicInteger completedCount = new AtomicInteger();
 
     public ParallelMapperPlanner(String itemsProvider, boolean isArrayResult, Class<? extends Object[]> arrayclass) {
@@ -32,11 +40,13 @@ public class ParallelMapperPlanner implements Planner {
         this.arrayclass = arrayclass;
     }
 
+    // 初始化
     @Override
     public void init(InitPlanningContext initPlanningContext) {
         this.subagent = (AgentExecutor) initPlanningContext.subagents().get(0);
     }
 
+    // 第一个动作
     @Override
     public Action firstAction(PlanningContext planningContext) {
         Object collectionObj = planningContext.agenticScope().readState(itemsProvider);
@@ -79,6 +89,7 @@ public class ParallelMapperPlanner implements Planner {
         return items;
     }
 
+    // 下一个动作
     @Override
     public Action nextAction(PlanningContext planningContext) {
         if (completedCount.incrementAndGet() >= itemCount) {

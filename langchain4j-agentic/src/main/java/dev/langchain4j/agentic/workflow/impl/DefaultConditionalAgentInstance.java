@@ -5,6 +5,7 @@ import dev.langchain4j.agentic.workflow.ConditionalAgent;
 import dev.langchain4j.agentic.workflow.ConditionalAgentInstance;
 import java.util.List;
 
+// 默认条件agent实例
 public class DefaultConditionalAgentInstance extends AbstractAgentInstance implements ConditionalAgentInstance {
 
     private final ConditionalPlanner planner;
