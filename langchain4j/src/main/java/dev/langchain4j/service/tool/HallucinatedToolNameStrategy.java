@@ -6,6 +6,7 @@ import dev.langchain4j.agent.tool.ToolExecutionRequest;
 import dev.langchain4j.data.message.ToolExecutionResultMessage;
 import java.util.function.Function;
 
+//幻觉工具名称策略
 public enum HallucinatedToolNameStrategy implements Function<ToolExecutionRequest, ToolExecutionResultMessage> {
     THROW_EXCEPTION;
 

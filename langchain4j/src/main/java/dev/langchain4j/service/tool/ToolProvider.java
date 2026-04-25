@@ -7,6 +7,7 @@ import dev.langchain4j.service.MemoryId;
 
 /**
  * A tool provider. It is called when an AI service is invoked and supplies tools for that invocation.
+ * 一个工具提供商。它在调用AI服务时被调用，并为该调用提供工具。
  * <p>
  * Tools returned in {@link ToolProviderResult} will be included in the request to the LLM.
  * <p>

@@ -10,9 +10,12 @@ import dev.langchain4j.invocation.InvocationParameters;
 /**
  * @since 1.4.0
  */
+// 工具错误上下文
 public class ToolErrorContext {
 
+    // 工具执行请求
     private final ToolExecutionRequest toolExecutionRequest;
+    // 调用上下文
     private final InvocationContext invocationContext;
 
     public ToolErrorContext(Builder builder) {
@@ -70,7 +73,9 @@ public class ToolErrorContext {
 
     public static class Builder {
 
+        // 工具执行请求
         private ToolExecutionRequest toolExecutionRequest;
+        // 调用上下文
         private InvocationContext invocationContext;
 
         public Builder toolExecutionRequest(ToolExecutionRequest toolExecutionRequest) {

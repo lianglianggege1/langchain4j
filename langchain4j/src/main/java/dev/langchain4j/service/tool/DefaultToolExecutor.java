@@ -83,6 +83,9 @@ public class DefaultToolExecutor implements ToolExecutor {
      * When methods annotated with @Tool are wrapped into proxies (AOP),
      * the parameters of the proxied method do not retain their original names.
      * Therefore, access to the original method is required to retrieve those names.
+     * <p>
+     *  当用@Tool注释的方法被包装到代理（AOP）中时，被代理方法的参数不会保留其原始名称。因此，需要访问原始方法来检索这些名称。
+     * </p>
      *
      * @param object         the object on which the method should be invoked
      * @param originalMethod the original method, used to retrieve parameter names and prepare arguments
@@ -96,6 +99,7 @@ public class DefaultToolExecutor implements ToolExecutor {
         this.propagateToolExecutionExceptions = false;
     }
 
+    // 执行过程中会对异常进行一些兼容，使其尽量不要执行失败!
     @Override
     public ToolExecutionResult executeWithContext(ToolExecutionRequest request, InvocationContext context) {
         Object[] arguments = prepareArguments(request, context);
@@ -142,6 +146,7 @@ public class DefaultToolExecutor implements ToolExecutor {
 
     private Object[] prepareArguments(ToolExecutionRequest toolExecutionRequest, InvocationContext context) {
         try {
+            // 参数转换成Map
             Map<String, Object> argumentsMap = argumentsAsMap(toolExecutionRequest.arguments());
             return prepareArguments(originalMethod, argumentsMap, context);
         } catch (Exception e) {

@@ -24,6 +24,8 @@ public class BeforeToolExecution {
 
     /**
      * Returns the tool execution request that is about to be executed.
+     * <p>
+     * 返回即将执行的工具执行请求。
      *
      * @return the tool execution request
      */
@@ -33,6 +35,9 @@ public class BeforeToolExecution {
 
     /**
      * Returns the invocation context of the tool request that is about to be executed.
+     * <p>
+     *     返回工具请求的调用上下文。
+     * </p>
      */
     public InvocationContext invocationContext() {
         return invocationContext;

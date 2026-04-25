@@ -30,6 +30,7 @@ import static java.util.stream.Collectors.toSet;
 
 /**
  * @since 1.12.0
+ * 工具搜索服务
  */
 @Internal
 public class ToolSearchService {

@@ -11,15 +11,23 @@ import static dev.langchain4j.internal.ValidationUtils.ensureNotNull;
 
 /**
  * The result of a tool search.
+ * <p></p>
+ * 工具搜索结果
+ * <p></p>
  * Contains a list of the found tool names
  * and the text to be sent to the LLM inside the {@link ToolExecutionResultMessage}.
+ * <p></p>
+ * 包含已找到的工具名称列表以及要发送到{@link ToolExecutionResultMessage}内LLM的文本。
+ *
  *
  * @since 1.12.0
  */
 @Experimental
 public class ToolSearchResult {
 
+    // 已经找到的工具名称
     private final List<String> foundToolNames;
+    // 工具结果消息的文本
     private final String toolResultMessageText;
 
     /**

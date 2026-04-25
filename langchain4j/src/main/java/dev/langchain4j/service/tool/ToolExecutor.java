@@ -8,12 +8,15 @@ import dev.langchain4j.service.MemoryId;
 
 /**
  * A low-level executor/handler of a {@link ToolExecutionRequest}.
+ * <p>
+ * {@link ToolExecutionRequest}的低级执行器/处理程序。
  */
 @FunctionalInterface
 public interface ToolExecutor {
 
     /**
      * Executes a tool request.
+     * 执行工具请求。
      *
      * @param request  The tool execution request. Contains tool name and arguments.
      * @param memoryId The ID of the chat memory. .
@@ -23,9 +26,12 @@ public interface ToolExecutor {
 
     /**
      * Executes a tool request. Override this method if you wish to:
+     * 执行工具请求。如果您希望：
      * <pre>
      * - access the {@link InvocationParameters} when passing extra data into the tool
+     * - 在向工具传递额外数据时访问{@link调用参数}
      * - propagate the tool result object ({@link ToolExecutionResult#result()}) into the {@link ToolExecution}
+     * - 将工具结果对象（{@link ToolExecutionResult#result（）}）传播到{@link ToolsExecution}
      * </pre>
      *
      * @param request The tool execution request. Contains tool name and arguments.

@@ -28,21 +28,30 @@ import static java.util.Comparator.comparingInt;
  * A {@link ToolSearchStrategy} that allows an LLM to search for available tools
  * using simple case-insensitive {@code contains} matching.
  * <p>
+ *     允许LLM使用简单的不区分大小写搜索可用工具的ToolSearchStrategy包含匹配。
+ * </p>
+ * <p>
  * The LLM provides a list of search terms. Each term contributes to a tool's score:
+ * LLM提供了一个搜索词列表。每个术语都会对工具的得分产生影响：
  * <ul>
- *     <li>{@code +2} if the tool name contains the term</li>
- *     <li>{@code +1} if the tool description contains the term</li>
+ *     <li>{@code +2} if the tool name contains the term 如果工具名字包含该术语</li>
+ *     <li>{@code +1} if the tool description contains the term 如果工具描述中包含该术语</li>
  * </ul>
  * <p>
  * Scores are accumulated across all terms. Tools are ranked by score (descending)
  * and limited by {@link #maxResults}.
+ * <p>
+ *     所有学期的分数都是累加的。工具按分数（降序）排列，并受maxResults限制。
+ * </p>
  */
 @Experimental
 public class SimpleToolSearchStrategy implements ToolSearchStrategy {
 
     private static final String DEFAULT_TOOL_NAME = "tool_search_tool";
+//    查找名称或描述包含给定搜索词的可用工具
     private static final String DEFAULT_TOOL_DESCRIPTION = "Finds available tools whose name or description contains given search terms";
     private static final String DEFAULT_TOOL_ARGUMENT_NAME = "terms";
+//    用于查找相关工具的单个搜索词（单个单词）列表
     private static final String DEFAULT_TOOL_ARGUMENT_DESCRIPTION = "A list of individual search terms (single words) used to find relevant tools";
     private static final int DEFAULT_MAX_RESULTS = 5;
     private static final int DEFAULT_MIN_SCORE = 1;

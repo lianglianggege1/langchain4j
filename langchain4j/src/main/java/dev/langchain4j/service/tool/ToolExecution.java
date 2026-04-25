@@ -14,13 +14,19 @@ import static dev.langchain4j.internal.ValidationUtils.ensureNotNull;
 
 /**
  * Represents the execution of a tool, including the request and the result.
+ * 表示一个工具执行的生命周期，包括请求和结果
  */
 public class ToolExecution {
 
+    // 请求参数
     private final ToolExecutionRequest request;
+    // 结果
     private final ToolExecutionResult result;
+    // 开始时间
     private final LocalDateTime startTime;
+    // 结束时间
     private final LocalDateTime finishTime;
+    // 调用上下文
     private final InvocationContext invocationContext;
 
     private ToolExecution(Builder builder) {
@@ -33,6 +39,7 @@ public class ToolExecution {
 
     /**
      * Returns the request of the tool execution.
+     * 返回一个工具执行的请求
      *
      * @return the request of the tool execution.
      */
@@ -42,6 +49,7 @@ public class ToolExecution {
 
     /**
      * Returns the tool execution result as text.
+     * 以文本形式返回工具执行结果。
      *
      * @return the result of the tool execution.
      * @see #resultContents()
@@ -54,6 +62,7 @@ public class ToolExecution {
     /**
      * Returns the contents of the tool execution result.
      * For text-only results, returns a singleton list containing a {@link TextContent}.
+     * 返回工具执行结果的内容。对于纯文本结果，返回一个包含TextContent的单例列表。
      *
      * @see #result()
      * @see #resultObject()
@@ -67,6 +76,7 @@ public class ToolExecution {
     /**
      * Returns the tool execution result as object.
      * This object is the actual value returned by the tool.
+     * 将工具执行结果作为对象返回。此对象是工具返回的实际值。
      *
      * @return the result of the tool execution.
      * @see #result()
@@ -77,6 +87,7 @@ public class ToolExecution {
 
     /**
      * Indicates whether the tool execution result represents an error.
+     * 指示工具执行结果是否表示错误。
      */
     public boolean hasFailed() {
         return result.isError();

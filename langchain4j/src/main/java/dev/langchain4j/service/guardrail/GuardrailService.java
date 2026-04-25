@@ -96,6 +96,9 @@ public interface GuardrailService {
     /**
      * Creates a new instance of {@link Builder} for the specified AI service class.
      * <p>
+     *     为指定的AI服务类创建｛@link Builder｝的新实例。
+     * </p>
+     * <p>
      *     Attempts to retrieve an instance through a {@link dev.langchain4j.service.guardrail.spi.GuardrailServiceBuilderFactory}, if available.
      *     If no factory is present, it uses its own default instance.
      * </p>

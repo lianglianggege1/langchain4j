@@ -12,10 +12,15 @@ import dev.langchain4j.model.output.TokenUsage;
 @Internal
 public class ToolServiceResult {
 
+    // 中间响应
     private final List<ChatResponse> intermediateResponses;
+    // 最终响应
     private final ChatResponse finalResponse;
+    // 工具执行
     private final List<ToolExecution> toolExecutions;
+    // 聚合的token使用
     private final TokenUsage aggregateTokenUsage;
+    // 是否立即返回工具结果
     private final boolean immediateToolReturn;
 
     /**

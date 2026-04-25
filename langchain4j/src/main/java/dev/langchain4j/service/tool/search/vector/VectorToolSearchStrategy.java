@@ -33,6 +33,9 @@ import static dev.langchain4j.internal.ValidationUtils.ensureNotNull;
  * A {@link ToolSearchStrategy} that uses vector similarity search
  * to find relevant tools based on the semantic meaning of their names and descriptions.
  * <p>
+ *     <p>
+ *         一种工具搜索策略，使用向量相似性搜索，根据工具名称和描述的语义含义找到相关工具。
+ *     </p>
  * NOTE: It is important that the tool description ({@link ToolSpecification#description()})
  * is present and comprehensive to ensure that vector search performs effectively.
  * <p>

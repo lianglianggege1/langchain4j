@@ -57,6 +57,7 @@ import java.util.function.Function;
 @Internal
 public class ToolService {
 
+    // 默认工具参数错误处理
     private static final ToolArgumentsErrorHandler DEFAULT_TOOL_ARGUMENTS_ERROR_HANDLER = (error, context) -> {
         if (error instanceof RuntimeException re) {
             throw re;
@@ -64,6 +65,8 @@ public class ToolService {
             throw new RuntimeException(error);
         }
     };
+
+    // 默认工具执行错误处理
     private static final ToolExecutionErrorHandler DEFAULT_TOOL_EXECUTION_ERROR_HANDLER = (error, context) -> {
         String errorMessage =
                 isNullOrBlank(error.getMessage()) ? error.getClass().getName() : error.getMessage();

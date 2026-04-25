@@ -17,6 +17,7 @@ import static dev.langchain4j.internal.Utils.copy;
 
 /**
  * Represents the result of a tool execution.
+ * 表示一个工具执行结果
  *
  * <p>The result can be provided in three mutually exclusive ways via the builder:
  * <ul>
@@ -31,6 +32,10 @@ import static dev.langchain4j.internal.Utils.copy;
  * <p>Regardless of which builder method was used, the canonical accessor is {@link #resultContents()},
  * which always returns a {@code List<Content>}. The convenience method {@link #resultText()} can be used
  * when the result is known to be a single {@link TextContent}; it throws {@link IllegalStateException} otherwise.
+ * <p>
+ * 无论使用哪种构建器方法，规范的访问器都是resultContents（），
+ * 它总是返回List<Content>。当已知结果是单个TextContent时，可以使用便利方法resultText（）；
+ * 否则会抛出IllegalStateException。
  *
  * @since 1.6.0
  */

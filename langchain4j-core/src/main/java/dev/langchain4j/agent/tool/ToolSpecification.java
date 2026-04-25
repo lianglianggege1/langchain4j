@@ -14,6 +14,8 @@ import java.util.Objects;
 /**
  * Describes a tool that language model can execute.
  * <p>
+ *     描述语言模型可以执行的工具。
+ *     <p></p>
  * Can be generated automatically from methods annotated with {@link Tool} using {@link ToolSpecifications} helper.
  */
 public class ToolSpecification {

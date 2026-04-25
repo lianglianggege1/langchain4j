@@ -12,8 +12,11 @@ import static dev.langchain4j.internal.ValidationUtils.ensureNotNull;
 
 public class ToolProviderRequest {
 
+    // 基本内容
     private final InvocationContext invocationContext;
+    // 用户信息
     private final UserMessage userMessage;
+    // 对话信息
     private final List<ChatMessage> messages;
 
     /**

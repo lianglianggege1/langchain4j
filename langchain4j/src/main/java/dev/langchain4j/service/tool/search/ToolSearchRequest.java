@@ -13,8 +13,10 @@ import static dev.langchain4j.internal.ValidationUtils.ensureNotNull;
 
 /**
  * A request to search for tools.
+ * 搜索工具的请求
  * Contains a {@link ToolExecutionRequest} representing an LLM tool call (including search terms or a query),
  * as well as all searchable tools in the AI Service.
+ * 包含一个 {@link ToolExecutionRequest} LLM 工具调用（包括搜索条款或查询），以及所有可搜索的工具。
  *
  * @since 1.12.0
  */
