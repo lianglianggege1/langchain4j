@@ -8,6 +8,7 @@ import dev.langchain4j.agent.tool.ToolExecutionRequest;
 
 /**
  * @since 1.2.0
+ * 工具执行之前
  */
 @Experimental
 public class BeforeToolExecution {

@@ -77,24 +77,32 @@ import java.util.concurrent.Future;
 @Internal
 class DefaultAiServices<T> extends AiServices<T> {
 
+    // 服务输出解析器
     private final ServiceOutputParser serviceOutputParser = new ServiceOutputParser();
+    // token 流适配器
     private final Collection<TokenStreamAdapter> tokenStreamAdapters = loadFactories(TokenStreamAdapter.class);
 
+    // 有效的参数注释
     private static final Set<Class<? extends Annotation>> VALID_PARAM_ANNOTATIONS =
             Set.of(dev.langchain4j.service.UserMessage.class, V.class, MemoryId.class, UserName.class);
 
+    // 默认的 AI 服务上下文
     DefaultAiServices(AiServiceContext context) {
         super(context);
     }
 
+    // 验证
     protected void validate() {
         performBasicValidation();
         AiServiceValidation.validate(context);
     }
 
+    // 处理聊天内存访问
     private Object handleChatMemoryAccess(Method method, Object[] args) {
         return switch (method.getName()) {
+            // 获取聊天内存
             case "getChatMemory" -> context.chatMemoryService.getChatMemory(args[0]);
+            // 删除聊天内存
             case "evictChatMemory" -> context.chatMemoryService.evictChatMemory(args[0]) != null;
             default ->
                 throw new UnsupportedOperationException(
@@ -131,6 +139,7 @@ class DefaultAiServices<T> extends AiServices<T> {
                         }
 
                         if (method.getDeclaringClass() == ChatMemoryAccess.class) {
+                            // 处理聊天内存访问
                             return handleChatMemoryAccess(method, args);
                         }
 
@@ -164,11 +173,14 @@ class DefaultAiServices<T> extends AiServices<T> {
 
                     public Object invoke(Method method, Object[] args, InvocationContext invocationContext) {
 
+                        // 记忆Id
                         Object memoryId = invocationContext.chatMemoryId();
+                        // 聊天内存
                         ChatMemory chatMemory = context.hasChatMemory()
                                 ? context.chatMemoryService.getOrCreateChatMemory(memoryId)
                                 : null;
 
+                        // 准备系统消息
                         Optional<SystemMessage> systemMessage = prepareSystemMessage(memoryId, method, args);
                         if (context.systemMessageTransformer != null) {
                             String transformedSystemMessage = context.systemMessageTransformer.apply(
@@ -178,6 +190,7 @@ class DefaultAiServices<T> extends AiServices<T> {
                                     : Optional.empty();
                         }
                         var userMessageTemplate = getUserMessageTemplate(memoryId, method, args);
+                        // 变量
                         var variables = InternalReflectionVariableResolver.findTemplateVariables(
                                 userMessageTemplate, method, args);
                         UserMessage originalUserMessage =
@@ -209,11 +222,17 @@ class DefaultAiServices<T> extends AiServices<T> {
                         UserMessage userMessage = addContentsToUserMessage(method, args, userMessageForAugmentation);
 
                         var commonGuardrailParam = GuardrailRequestParams.builder()
+                                // 对话内存
                                 .chatMemory(chatMemory)
+                                // 增强结果
                                 .augmentationResult(augmentationResult)
+                                // 用户消息模板
                                 .userMessageTemplate(userMessageTemplate)
+                                // 调用上下文
                                 .invocationContext(invocationContext)
+                                // 事件监听注册器
                                 .aiServiceListenerRegistrar(context.eventListenerRegistrar)
+                                // 变量
                                 .variables(variables)
                                 .build();
 
@@ -258,16 +277,26 @@ class DefaultAiServices<T> extends AiServices<T> {
 
                         if (streaming) {
                             var tokenStreamParameters = AiServiceTokenStreamParameters.builder()
+                                    // 消息
                                     .messages(messages)
+                                    // 工具服务上下文
                                     .toolServiceContext(toolServiceContext)
+                                    // 技能服务上下文
                                     .toolArgumentsErrorHandler(context.toolService.argumentsErrorHandler())
+                                    // 技能服务执行错误处理器
                                     .toolExecutionErrorHandler(context.toolService.executionErrorHandler())
+                                    // 技能服务执行器
                                     .toolExecutor(context.toolService.executor())
+                                    // 检索内容
                                     .retrievedContents(
                                             augmentationResult != null ? augmentationResult.contents() : null)
+                                    // 上下文
                                     .context(context)
+                                    // 调用上下文
                                     .invocationContext(invocationContext)
+                                    // 公共护栏参数
                                     .commonGuardrailParams(commonGuardrailParam)
+                                    // 方法键
                                     .methodKey(method)
                                     .build();
 

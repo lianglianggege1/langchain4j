@@ -44,18 +44,27 @@ import java.util.concurrent.CopyOnWriteArrayList;
 
 /**
  * An {@link EmbeddingStore} that stores embeddings in memory.
+ * <p/>
+ * 存储嵌入在内存中的一个{@link EmbeddingStore}。
  * <p>
  * Uses a brute force approach by iterating over all embeddings to find the best matches.
  * <p>
+ * 使用暴力方法，迭代所有嵌入以找到最佳匹配。
+ * <p>
  * This store can be persisted using the {@link #serializeToJson()} and {@link #serializeToFile(Path)} methods.
  * <p>
+ * 可以使用{@link#serializeToJson}和{@link#serializeToFile（Path）}方法持久化此存储。
+ * <p>
  * It can also be recreated from JSON or a file using the {@link #fromJson(String)} and {@link #fromFile(Path)} methods.
+ * <p>
+ * 它也可以使用{@link#fromJson（String）}和{@link#fromFile（Path）}方法从JSON或文件中重新创建。
  *
  * @param <Embedded> The class of the object that has been embedded.
  *                   Typically, it is {@link dev.langchain4j.data.segment.TextSegment}.
  */
 public class InMemoryEmbeddingStore<Embedded> implements EmbeddingStore<Embedded> {
 
+    // 存入的字段是并发安全的，写入过程是复制写的
     final CopyOnWriteArrayList<Entry<Embedded>> entries;
 
     public InMemoryEmbeddingStore() {

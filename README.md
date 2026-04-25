@@ -80,3 +80,26 @@ Please let us know what features you need by [opening an issue](https://github.c
 
 ## Contribute
 Contribution guidelines can be found [here](https://github.com/langchain4j/langchain4j/blob/main/CONTRIBUTING.md).
+
+## 代码合并
+
+‘’‘
+# 添加原始仓库为 upstream（如果还没加过）
+git remote add upstream https://github.com/langchain4j/langchain4j.git
+
+# 查看所有远端
+git remote -v
+
+# 获取 upstream 的更新
+git fetch upstream
+
+# 切换到本地 main 并把 upstream/main 合并或重置
+git switch main
+git merge upstream/main        # 普通合并
+# 或者如果你想让本地完全同步
+# git reset --hard upstream/main
+
+# 最后将最新的本地 main 推送到你的 origin
+git push origin main
+’‘’
+

@@ -15,6 +15,11 @@ import static dev.langchain4j.internal.ValidationUtils.ensureNotNull;
  * Includes a default {@link ChatMemory} (a message window with maximum 10 messages), which can be overridden.
  * <br>
  * Chains are not going to be developed further, it is recommended to use {@link AiServices} instead.
+ *
+ * 用于与指定的 {@link ChatModel} 进行对话并保留对话记录的链式交互。
+ * 包含一个默认的 {@link ChatMemory}（最多可容纳 10 条消息的消息窗口），该设置可被覆盖。
+ * <br>
+ * 链式交互功能将不再开发，建议改用 {@link AiServices}。
  */
 public class ConversationalChain implements Chain<String, String> {
 

@@ -58,47 +58,77 @@ import org.slf4j.LoggerFactory;
 /**
  * Handles response from a language model for AI Service that is streamed token-by-token. Handles both regular (text)
  * responses and responses with the request to execute one or multiple tools.
+ * 处理来自 AI 服务语言模型的逐词流式响应。处理常规（文本）响应以及包含执行一个或多个工具请求的响应。
  */
 @Internal
 class AiServiceStreamingResponseHandler implements StreamingChatResponseHandler {
 
     private static final Logger LOG = LoggerFactory.getLogger(AiServiceStreamingResponseHandler.class);
 
+    // 对话执行器
     private final ChatExecutor chatExecutor;
+    // 对话请求
     private final ChatRequest chatRequest;
+    // AI服务上下文
     private final AiServiceContext context;
+    // 调用上下文
     private final InvocationContext invocationContext;
+    // 常用护栏参数
     private final GuardrailRequestParams commonGuardrailParams;
+    // 方法键
     private final Object methodKey;
 
+    // 部分响应处理程序
     private final Consumer<String> partialResponseHandler;
+    // 部分响应处理程序（带上下文）
     private final BiConsumer<PartialResponse, PartialResponseContext> partialResponseWithContextHandler;
+    // 部分思考处理者
     private final Consumer<PartialThinking> partialThinkingHandler;
+    // 部分思考处理程序（带上下文）
     private final BiConsumer<PartialThinking, PartialThinkingContext> partialThinkingWithContextHandler;
+    // 部分工具调用处理程序
     private final Consumer<PartialToolCall> partialToolCallHandler;
+    // 部分工具调用处理程序（带上下文）
     private final BiConsumer<PartialToolCall, PartialToolCallContext> partialToolCallWithContextHandler;
+    // 在工具执行处理程序之前
     private final Consumer<BeforeToolExecution> beforeToolExecutionHandler;
+    // 工具执行处理程序
     private final Consumer<ToolExecution> toolExecutionHandler;
+    // 中间响应处理程序
     private final Consumer<ChatResponse> intermediateResponseHandler;
+    // 完整响应处理程序
     private final Consumer<ChatResponse> completeResponseHandler;
 
+    // 错误处理程序
     private final Consumer<Throwable> errorHandler;
 
+    // 临时内存
     private final ChatMemory temporaryMemory;
+    // token消耗
     private final TokenUsage tokenUsage;
 
+    // 工具服务上下文
     private final ToolServiceContext toolServiceContext;
+    // 工具执行者
     private final Map<String, ToolExecutor> toolExecutors;
+    // 工具参数错误处理程序
     private final ToolArgumentsErrorHandler toolArgumentsErrorHandler;
+    // 工具执行错误处理程序
     private final ToolExecutionErrorHandler toolExecutionErrorHandler;
+    // 工具执行者
     private final Executor toolExecutor;
+    // 工具执行队列
     private final Queue<Future<ToolRequestResult>> toolExecutionFutures = new ConcurrentLinkedQueue<>();
 
+    // 响应缓冲区
     private final List<String> responseBuffer = new ArrayList<>();
+    // 具有输出保护机制
     private final boolean hasOutputGuardrails;
 
+    // 顺序工具调用剩余
     private int sequentialToolsInvocationsLeft;
 
+    // 工具请求与结果
     private record ToolRequestResult(ToolExecutionRequest request, ToolExecutionResult result) {}
 
     AiServiceStreamingResponseHandler(
@@ -159,6 +189,7 @@ class AiServiceStreamingResponseHandler implements StreamingChatResponseHandler 
         this.sequentialToolsInvocationsLeft = sequentialToolsInvocationsLeft;
     }
 
+    // 部分响应处理程序
     @Override
     public void onPartialResponse(String partialResponse) {
         // If we're using output guardrails, then buffer the partial response until the guardrails have completed
@@ -184,6 +215,7 @@ class AiServiceStreamingResponseHandler implements StreamingChatResponseHandler 
         }
     }
 
+    // 部分思考处理程序
     @Override
     public void onPartialThinking(PartialThinking partialThinking) {
         if (partialThinkingHandler != null) {
@@ -203,6 +235,7 @@ class AiServiceStreamingResponseHandler implements StreamingChatResponseHandler 
         }
     }
 
+    // 部分工具调用处理程序
     @Override
     public void onPartialToolCall(PartialToolCall partialToolCall) {
         if (partialToolCallHandler != null) {
@@ -222,6 +255,7 @@ class AiServiceStreamingResponseHandler implements StreamingChatResponseHandler 
         }
     }
 
+    // 部分工具调用完成处理程序
     @Override
     public void onCompleteToolCall(CompleteToolCall completeToolCall) {
         if (toolExecutor != null) {
@@ -236,6 +270,7 @@ class AiServiceStreamingResponseHandler implements StreamingChatResponseHandler 
         }
     }
 
+    // 火焰召唤完成
     private <T> void fireInvocationComplete(T result) {
         context.eventListenerRegistrar.fireEvent(AiServiceCompletedEvent.builder()
                 .invocationContext(invocationContext)
@@ -243,6 +278,7 @@ class AiServiceStreamingResponseHandler implements StreamingChatResponseHandler 
                 .build());
     }
 
+    // 工具执行完成事件
     private void fireToolExecutedEvent(ToolRequestResult toolRequestResult) {
         context.eventListenerRegistrar.fireEvent(ToolExecutedEvent.builder()
                 .invocationContext(invocationContext)
@@ -251,6 +287,7 @@ class AiServiceStreamingResponseHandler implements StreamingChatResponseHandler 
                 .build());
     }
 
+    // 响应接收事件
     private void fireResponseReceivedEvent(ChatResponse chatResponse) {
         context.eventListenerRegistrar.fireEvent(AiServiceResponseReceivedEvent.builder()
                 .invocationContext(invocationContext)
@@ -259,6 +296,7 @@ class AiServiceStreamingResponseHandler implements StreamingChatResponseHandler 
                 .build());
     }
 
+    // 请求问题事件
     private void fireRequestIssuedEvent(ChatRequest chatRequest) {
         context.eventListenerRegistrar.fireEvent(AiServiceRequestIssuedEvent.builder()
                 .invocationContext(invocationContext)
@@ -266,6 +304,7 @@ class AiServiceStreamingResponseHandler implements StreamingChatResponseHandler 
                 .build());
     }
 
+    // 错误接收事件
     private void fireErrorReceived(Throwable error) {
         context.eventListenerRegistrar.fireEvent(AiServiceErrorEvent.builder()
                 .invocationContext(invocationContext)
@@ -273,6 +312,7 @@ class AiServiceStreamingResponseHandler implements StreamingChatResponseHandler 
                 .build());
     }
 
+    // 完整响应处理程序
     @Override
     public void onCompleteResponse(ChatResponse chatResponse) {
         fireResponseReceivedEvent(chatResponse);
@@ -432,6 +472,7 @@ class AiServiceStreamingResponseHandler implements StreamingChatResponseHandler 
         }
     }
 
+    // 最后响应
     private ChatResponse finalResponse(ChatResponse completeResponse, AiMessage aiMessage) {
         return ChatResponse.builder()
                 .aiMessage(aiMessage)
@@ -441,6 +482,7 @@ class AiServiceStreamingResponseHandler implements StreamingChatResponseHandler 
                 .build();
     }
 
+    // 执行工具
     private ToolExecutionResult execute(ToolExecutionRequest toolRequest) {
         return context.toolService.executeTool(
                 invocationContext, toolExecutors, toolRequest, beforeToolExecutionHandler, toolExecutionHandler);

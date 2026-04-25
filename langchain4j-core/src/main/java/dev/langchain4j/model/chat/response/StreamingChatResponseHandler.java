@@ -5,6 +5,7 @@ import dev.langchain4j.model.chat.StreamingChatModel;
 
 /**
  * Represents a handler for a {@link StreamingChatModel} response.
+ * 表示 {@link StreamingChatModel} 响应的处理程序。
  *
  * @see StreamingChatModel
  */

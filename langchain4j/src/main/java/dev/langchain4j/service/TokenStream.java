@@ -22,6 +22,10 @@ import java.util.function.Consumer;
  * when a new partial response (usually a single token) is available,
  *  when the model finishes streaming, or when an error occurs during streaming.
  * It is intended to be used as a return type in AI Service.
+ * <p/>
+ * 表示来自模型的令牌流，
+ * 当有新的部分响应（通常是单个令牌）可用、模型完成流式传输或流式传输过程中发生错误时，
+ * 您可以订阅该令牌流并接收更新。它旨在用作AI服务中的返回类型。
  */
 public interface TokenStream {
 

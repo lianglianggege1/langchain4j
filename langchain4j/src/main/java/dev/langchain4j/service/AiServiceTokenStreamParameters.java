@@ -22,15 +22,26 @@ import java.util.concurrent.Executor;
 @Internal
 public class AiServiceTokenStreamParameters {
 
+    // 消息
     private final List<ChatMessage> messages;
+    // 工具服务上下文
     private final ToolServiceContext toolServiceContext;
+
+    // 工具参数的错误处理
     private final ToolArgumentsErrorHandler toolArgumentsErrorHandler;
+    // 工具执行中的错误处理
     private final ToolExecutionErrorHandler toolExecutionErrorHandler;
+    // 工具执行器
     private final Executor toolExecutor;
+    // 检索内容
     private final List<Content> retrievedContents;
+    // 上下文
     private final AiServiceContext context;
+    // 调用上下文
     private final InvocationContext invocationContext;
+    // 通用的guardrail参数
     private final GuardrailRequestParams commonGuardrailParams;
+    // 方法的key
     private final Object methodKey;
 
     protected AiServiceTokenStreamParameters(Builder builder) {

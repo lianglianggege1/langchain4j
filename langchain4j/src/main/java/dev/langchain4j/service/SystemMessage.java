@@ -11,6 +11,7 @@ import static java.lang.annotation.RetentionPolicy.RUNTIME;
 /**
  * Specifies either a complete system message (prompt) or a system message template to be used each time an AI service is invoked.
  * <br>
+ * 指定每次调用AI服务时要使用的完整系统消息（提示）或系统消息模板。
  * An example:
  * <pre>
  * interface Assistant {

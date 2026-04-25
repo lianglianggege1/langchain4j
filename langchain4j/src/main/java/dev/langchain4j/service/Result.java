@@ -16,6 +16,8 @@ import static dev.langchain4j.internal.ValidationUtils.ensureNotNull;
  * Represents the result of an AI Service invocation.
  * It contains actual content (LLM response) and additional information associated with it,
  * such as:
+ * <p/>
+ * 表示AI服务调用的结果。它包含实际内容（LLM响应）和与之相关的其他信息，例如：
  * <pre>
  * - Aggregate {@link TokenUsage} over all calls to the {@link ChatModel}
  * - {@link FinishReason} of the final {@link ChatResponse}
@@ -30,12 +32,19 @@ import static dev.langchain4j.internal.ValidationUtils.ensureNotNull;
  */
 public class Result<T> {
 
+    // 响应内容
     private final T content;
+    // 响应的token使用情况
     private final TokenUsage tokenUsage;
+    // 源内容
     private final List<Content> sources;
+    // 结束原因
     private final FinishReason finishReason;
+    // 工具执行
     private final List<ToolExecution> toolExecutions;
+    // 中间响应
     private final List<ChatResponse> intermediateResponses;
+    // 最终响应
     private final ChatResponse finalResponse;
 
     /**

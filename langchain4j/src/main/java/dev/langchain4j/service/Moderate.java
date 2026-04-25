@@ -14,6 +14,13 @@ import static java.lang.annotation.RetentionPolicy.RUNTIME;
  * If the moderation model flags the content, a ModerationException will be thrown.
  * There is also an option to moderate user input *before* sending it to the LLM. If you require this functionality,
  * please open an issue.
+ * <p/>
+ * 当AI服务中的一个方法被注释为@Moderate时，
+ * 每次调用此方法不仅会调用LLM，还会并行调用审核模型（必须在构建AI服务期间提供）。
+ * 这确保了用户不会提供恶意内容。在该方法从LLM返回答案之前，
+ * 它将等待审核模型返回结果。如果审核模型标记了内容，
+ * 将抛出ModerationException。
+ * 还有一个选项可以在将用户输入发送到LLM之前对其进行调节。如果您需要此功能，请打开问题。
  */
 @Target(METHOD)
 @Retention(RUNTIME)

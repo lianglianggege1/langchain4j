@@ -39,14 +39,21 @@ import java.util.function.Consumer;
 @Internal
 public class AiServiceTokenStream implements TokenStream {
 
+    // 对话消息
     private final List<ChatMessage> messages;
 
+    // 工具服务内容
     private final ToolServiceContext toolServiceContext;
+    // 工具参数错误处理器
     private final ToolArgumentsErrorHandler toolArgumentsErrorHandler;
+    // 工具执行错误处理器
     private final ToolExecutionErrorHandler toolExecutionErrorHandler;
+    // 工具执行器
     private final Executor toolExecutor;
 
+    // 检索内容
     private final List<Content> retrievedContents;
+    // AI服务内容
     private final AiServiceContext context;
     private final InvocationContext invocationContext;
     private final GuardrailRequestParams commonGuardrailParams;

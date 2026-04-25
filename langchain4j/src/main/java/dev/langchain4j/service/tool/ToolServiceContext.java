@@ -16,10 +16,15 @@ import static dev.langchain4j.internal.Utils.copy;
 @Internal
 public class ToolServiceContext {
 
+    // 有效的工具
     private final List<ToolSpecification> effectiveTools;
+    // 所有可用的工具
     private final List<ToolSpecification> availableTools;
+    // 工具执行器
     private final Map<String, ToolExecutor> toolExecutors;
+    // 及时返回工具
     private final Set<String> immediateReturnTools;
+    // 动态工具提供者
     private final List<ToolProvider> dynamicToolProviders;
 
     public ToolServiceContext(Builder builder) {
@@ -35,15 +40,21 @@ public class ToolServiceContext {
      */
     @Deprecated(since = "1.12.0")
     public ToolServiceContext(List<ToolSpecification> toolSpecifications, Map<String, ToolExecutor> toolExecutors) {
+        // 有效的工具s
         this.effectiveTools = copy(toolSpecifications);
+        // 所有可用的工具
         this.availableTools = copy(toolSpecifications);
+        // 工具执行器
         this.toolExecutors = copy(toolExecutors);
+        // 及时返回工具
         this.immediateReturnTools = Set.of();
+        // 动态工具提供者
         this.dynamicToolProviders = List.of();
     }
 
     /**
      * Returns <b>effective</b> tool specifications that should be included in the next {@link ChatRequest}.
+     * 返回应包含在下一个{@link ChatRequest}中的<b>有效</b>工具规范。
      *
      * @see #availableTools()
      */

@@ -16,10 +16,15 @@ import java.util.Map;
 /**
  * Utility class responsible for resolving variable names and values for prompt templates
  * by leveraging method parameters and their annotations.
+ * <p/>
+ * 实用程序类负责通过利用方法参数及其注释来解析提示模板的变量名和值。
  * <p>
  * This class is intended for internal use only and is designed to extract and map
  * parameter values to template variables in methods defined within AI services.
+ * <p></>
+ * 此类仅供内部使用，旨在提取参数值并将其映射到AI服务中定义的方法中的模板变量。
  */
+// 内部反射变量解析器
 @Internal
 public class InternalReflectionVariableResolver {
 
