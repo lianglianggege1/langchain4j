@@ -27,6 +27,8 @@ public class ParallelMapperPlanner implements Planner {
 
     // 子代理执行器
     private AgentExecutor subagent;
+    // 输出关键字
+    private String outputKey;
     // 结果键前缀
     private String resultKeyPrefix;
     // 项目数
@@ -44,6 +46,7 @@ public class ParallelMapperPlanner implements Planner {
     @Override
     public void init(InitPlanningContext initPlanningContext) {
         this.subagent = (AgentExecutor) initPlanningContext.subagents().get(0);
+        this.outputKey = initPlanningContext.plannerAgent().outputKey();
     }
 
     // 第一个动作
@@ -89,15 +92,19 @@ public class ParallelMapperPlanner implements Planner {
         return items;
     }
 
-    // 下一个动作
     @Override
     public Action nextAction(PlanningContext planningContext) {
         if (completedCount.incrementAndGet() >= itemCount) {
             List<Object> results = new ArrayList<>(itemCount);
             for (int i = 0; i < itemCount; i++) {
                 results.add(planningContext.agenticScope().readState(resultKeyPrefix + "_" + i));
+                planningContext.agenticScope().writeState(resultKeyPrefix + "_" + i, null);
             }
-            return done(isArrayResult ? copyOf(results.toArray(), results.size(), arrayclass) : results);
+            Object result = isArrayResult ? copyOf(results.toArray(), results.size(), arrayclass) : results;
+            if (outputKey != null && !outputKey.isBlank()) {
+                planningContext.agenticScope().writeState(outputKey, result);
+            }
+            return done(result);
         }
         return done();
     }

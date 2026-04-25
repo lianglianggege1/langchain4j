@@ -1,8 +1,11 @@
 package dev.langchain4j.service.tool;
 
-import dev.langchain4j.Internal;
+import dev.langchain4j.agent.tool.ReturnBehavior;
 import dev.langchain4j.agent.tool.ToolSpecification;
 
+import java.util.Objects;
+
+import static dev.langchain4j.internal.Utils.getOrDefault;
 import static dev.langchain4j.internal.ValidationUtils.ensureNotNull;
 
 /**
@@ -10,16 +13,12 @@ import static dev.langchain4j.internal.ValidationUtils.ensureNotNull;
  * 表示由AI Service管理的工具，组合:
  * <ul>
  *     <li>{@link ToolSpecification} — what is sent to the LLM</li>
- *         {@link ToolSpecification} - 发生给大模型的东西
  *     <li>{@link ToolExecutor} — what is called when the LLM invokes the tool</li>
- *         {@link ToolExecutor} — 当大模型执行工具时调用的东西
- *     <li>Metadata that controls how the AI Service handles this tool (e.g., immediate return)</li>
- *         控制AI服务如何处理此工具的元数据（例如，立即返回）
+ *     <li>Metadata that controls how the AI Service handles this tool (e.g., {@link ReturnBehavior})</li>
  * </ul>
  *
  * @since 1.13.0
  */
-@Internal
 public class AiServiceTool {
 
     // 工具规范
@@ -27,12 +26,16 @@ public class AiServiceTool {
     // 工具执行
     private final ToolExecutor toolExecutor;
     // 立刻返回
-    private final boolean immediateReturn;
+    private final ReturnBehavior returnBehavior;
 
     private AiServiceTool(Builder builder) {
         this.toolSpecification = ensureNotNull(builder.toolSpecification, "toolSpecification");
         this.toolExecutor = ensureNotNull(builder.toolExecutor, "toolExecutor");
-        this.immediateReturn = builder.immediateReturn;
+        this.returnBehavior = getOrDefault(builder.returnBehavior, ReturnBehavior.TO_LLM);
+    }
+
+    public String name() {
+        return toolSpecification.name();
     }
 
     public ToolSpecification toolSpecification() {
@@ -43,8 +46,49 @@ public class AiServiceTool {
         return toolExecutor;
     }
 
+    /**
+     * @since 1.14.0
+     */
+    public ReturnBehavior returnBehavior() {
+        return returnBehavior;
+    }
+
+    /**
+     * @deprecated use {@link #returnBehavior()} instead
+     */
+    @Deprecated(since = "1.14.0")
     public boolean immediateReturn() {
-        return immediateReturn;
+        return returnBehavior == ReturnBehavior.IMMEDIATE;
+    }
+
+    @Override
+    public boolean equals(final Object o) {
+        if (o == null || getClass() != o.getClass()) return false;
+        AiServiceTool that = (AiServiceTool) o;
+        return Objects.equals(toolSpecification, that.toolSpecification)
+                && Objects.equals(toolExecutor, that.toolExecutor)
+                && returnBehavior == that.returnBehavior;
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(toolSpecification, toolExecutor, returnBehavior);
+    }
+
+    @Override
+    public String toString() {
+        return "AiServiceTool{" +
+                "toolSpecification=" + toolSpecification +
+                ", toolExecutor=" + toolExecutor +
+                ", returnBehavior=" + returnBehavior +
+                '}';
+    }
+
+    public Builder toBuilder() {
+        return builder()
+                .toolSpecification(toolSpecification)
+                .toolExecutor(toolExecutor)
+                .returnBehavior(returnBehavior);
     }
 
     public static Builder builder() {
@@ -55,7 +99,7 @@ public class AiServiceTool {
 
         private ToolSpecification toolSpecification;
         private ToolExecutor toolExecutor;
-        private boolean immediateReturn;
+        private ReturnBehavior returnBehavior;
 
         public Builder toolSpecification(ToolSpecification toolSpecification) {
             this.toolSpecification = toolSpecification;
@@ -67,8 +111,22 @@ public class AiServiceTool {
             return this;
         }
 
+        /**
+         * @since 1.14.0
+         */
+        public Builder returnBehavior(ReturnBehavior returnBehavior) {
+            this.returnBehavior = returnBehavior;
+            return this;
+        }
+
+        /**
+         * @deprecated use {@link #returnBehavior(ReturnBehavior)} instead
+         */
+        @Deprecated(since = "1.14.0")
         public Builder immediateReturn(boolean immediateReturn) {
-            this.immediateReturn = immediateReturn;
+            if (immediateReturn) {
+                this.returnBehavior = ReturnBehavior.IMMEDIATE;
+            }
             return this;
         }
 

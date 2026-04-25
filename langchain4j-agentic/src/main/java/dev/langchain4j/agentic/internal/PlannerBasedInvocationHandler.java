@@ -23,6 +23,7 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Future;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
@@ -222,7 +223,7 @@ public class PlannerBasedInvocationHandler implements InvocationHandler, Interna
 
         Planner planner = plannerSupplier.get();
         planner.init(new InitPlanningContext(currentScope, this, subagents));
-        Object result = new PlannerLoop(planner, currentScope).loop();
+        Object result = new PlannerLoop(planner, currentScope, registry).loop();
         Object output = outputKey != null ? currentScope.readState(outputKey) : result;
 
         if (isRootCall()) {
@@ -362,17 +363,28 @@ public class PlannerBasedInvocationHandler implements InvocationHandler, Interna
 
     // 执行Planner
     private class PlannerLoop implements PlannerExecutor {
+        static final String EXECUTION_STATE_PREFIX = "__planner_state_";
+
         private final Planner planner;
         private final DefaultAgenticScope agenticScope;
+        private final AgenticScopeRegistry registry;
+        private final ReentrantLock lock = new ReentrantLock();
 
-        private Action nextAction = null;
+        private volatile Action nextAction = null;
 
-        private PlannerLoop(Planner planner, DefaultAgenticScope agenticScope) {
+        private PlannerLoop(Planner planner, DefaultAgenticScope agenticScope, AgenticScopeRegistry registry) {
             this.planner = planner;
             this.agenticScope = agenticScope;
+            this.registry = registry;
         }
 
+        @SuppressWarnings("unchecked")
         public Object loop() {
+            Map<String, Object> savedState = agenticScope.readState(executionStateId(), Map.of());
+            if (!savedState.isEmpty()) {
+                planner.restoreExecutionState(savedState);
+            }
+
             nextAction = planner.firstAction(new PlanningContext(agenticScope, null));
             while (nextAction == null || !nextAction.isDone()) {
                 if (nextAction == null) {
@@ -387,7 +399,15 @@ public class PlannerBasedInvocationHandler implements InvocationHandler, Interna
                     default -> parallelExecution(agents);
                 }
             }
+
+            // Clear execution state when planner is done
+            agenticScope.writeState(executionStateId(), null);
+
             return result();
+        }
+
+        private String executionStateId() {
+            return EXECUTION_STATE_PREFIX + agentId();
         }
 
         private void parallelExecution(List<AgentExecutor> agents) {
@@ -406,9 +426,9 @@ public class PlannerBasedInvocationHandler implements InvocationHandler, Interna
                 throw new RuntimeException(e);
             }
         }
-
         private Object result() {
             Object result = output != null ? output.apply(agenticScope) : nextAction.result();
+
             if (outputKey != null) {
                 if (result != null) {
                     agenticScope.writeState(outputKey, result);
@@ -422,7 +442,22 @@ public class PlannerBasedInvocationHandler implements InvocationHandler, Interna
 
         @Override
         public void onSubagentInvoked(AgentInvocation agentInvocation) {
-            this.nextAction = composeActions(this.nextAction, planner.nextAction(new PlanningContext(agenticScope, agentInvocation)));
+            lock.lock();
+            try {
+                this.nextAction = composeActions(this.nextAction, planner.nextAction(new PlanningContext(agenticScope, agentInvocation)));
+
+                // Save planner execution state after each agent invocation
+                Map<String, Object> execState = planner.executionState();
+                if (!execState.isEmpty()) {
+                    agenticScope.writeState(executionStateId(), execState);
+                }
+
+                if (registry != null) {
+                    agenticScope.checkpoint(registry);
+                }
+            } finally {
+                lock.unlock();
+            }
         }
 
         @Override
@@ -431,10 +466,10 @@ public class PlannerBasedInvocationHandler implements InvocationHandler, Interna
         }
 
         private static Action composeActions(Action first, Action second) {
-            if (first == null || first.isDone()) {
+            if (first == null || first.isDone() || isEmptyCall(first)) {
                 return second;
             }
-            if (second == null || second.isDone()) {
+            if (second == null || second.isDone() || isEmptyCall(second)) {
                 return first;
             }
 
@@ -442,6 +477,10 @@ public class PlannerBasedInvocationHandler implements InvocationHandler, Interna
             agentsToCall.addAll(((Action.AgentCallAction) first).agentsToCall());
             agentsToCall.addAll(((Action.AgentCallAction) second).agentsToCall());
             return new Action.AgentCallAction(agentsToCall);
+        }
+
+        private static boolean isEmptyCall(Action action) {
+            return action instanceof Action.AgentCallAction aca && aca.agentsToCall().isEmpty();
         }
     }
 

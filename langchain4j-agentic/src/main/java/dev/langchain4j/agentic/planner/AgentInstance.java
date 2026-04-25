@@ -30,6 +30,10 @@ public interface AgentInstance {
     //是否异步
     boolean async();
 
+    default boolean optional() {
+        return false;
+    }
+
     //参数
     List<AgentArgument> arguments();
 
