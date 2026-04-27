@@ -25,17 +25,36 @@ import static java.util.stream.Collectors.joining;
  * along with a chat memory (previous conversation history) into a concise {@link Query}.
  * This is applicable only when a {@link ChatMemory} is in use.
  * Refer to {@link #DEFAULT_PROMPT_TEMPLATE} and implementation for more details.
+ * 一个{@link QueryTransformer}，它利用{@link ChatModel}将给定的{@link Query}和聊天记忆（以前的对话历史）压缩成简洁的{@link Query}。
+ * 这仅适用于正在使用｛@link ChatMemory｝的情况。
+ * 有关更多详细信息，请参阅{@link#DEFAULT_PROMPT_TEMPLATE}和实现。
  * <br>
  * <br>
  * Configurable parameters (optional):
+ * 配置参数（可选）：
  * <br>
  * - {@link #promptTemplate}: The prompt template used to instruct the LLM to compress the specified {@link Query}.
+ * - ｛@link#promptTemplate｝：用于指示LLM压缩指定｛@link Query｝的提示模板。
  *
  * @see DefaultQueryTransformer
  * @see ExpandingQueryTransformer
  */
 public class CompressingQueryTransformer implements QueryTransformer {
 
+    /**
+     阅读并理解用户与人工智能之间的对话\
+     然后，分析用户的新查询。 \
+     从对话和新查询中识别所有相关的细节、术语和上下文。 \
+     将此查询重新格式化为适合信息检索的清晰、简洁和自包含的格式。
+
+     对话：
+     ｛｛chatMemory｝｝
+
+     用户查询：｛｛query｝｝
+
+     只提供重新表述的查询而不提供其他内容非常重要！ \
+     不要在查询前添加任何内容！"
+     */
     public static final PromptTemplate DEFAULT_PROMPT_TEMPLATE = PromptTemplate.from(
             """
                     Read and understand the conversation between the User and the AI. \

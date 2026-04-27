@@ -20,30 +20,44 @@ import java.util.Map;
 
 /**
  * Default implementation of {@link ContentInjector} intended to be suitable for the majority of use cases.
+ * {@link ContentInjector}的默认实现旨在适用于大多数用例。
  * <br>
  * <br>
  * It's important to note that while efforts will be made to avoid breaking changes,
  * the default behavior of this class may be updated in the future if it's found
  * that the current behavior does not adequately serve the majority of use cases.
  * Such changes would be made to benefit both current and future users.
+ * 值得注意的是，虽然将努力避免破坏性更改，但如果发现当前行为不能充分服务于大多数用例，
+ * 则该类的默认行为可能会在未来进行更新。这些变化将使当前和未来的用户受益。
  * <br>
  * <br>
  * This implementation appends all given {@link Content}s to the end of the given {@link UserMessage}
  * in their order of iteration.
  * Refer to {@link #DEFAULT_PROMPT_TEMPLATE} and implementation for more details.
+ * 此实现按照迭代顺序将所有给定的{@link Content}附加到给定的{@link UserMessage}的末尾。
+ * 有关更多详细信息，请参阅{@link #DEFAULT_PROMPT_TEMPLATE}和实现。
  * <br>
  * <br>
  * Configurable parameters (optional):
+ * 可配置参数（可选）：
  * <br>
  * - {@link #promptTemplate}: The prompt template that defines how the original {@code userMessage}
  * and {@code contents} are combined into the resulting {@link UserMessage}.
+ * - {@link#promptTemplate}：定义如何将原始{@code userMessage}和{@code contents}组合成结果{@link UserMessage}的提示模板。
  * The text of the template should contain the {@code {{userMessage}}} and {@code {{contents}}} variables.
+ * 模板的文本应包含｛@code｛｛userMessage｝｝｝和｛@code｝｛contents｝｝｝变量。
  * <br>
  * - {@link #metadataKeysToInclude}: A list of {@link Metadata} keys that should be included
  * with each {@link Content#textSegment()}.
  */
 public class DefaultContentInjector implements ContentInjector {
 
+    /**
+     {{userMessage}}
+
+     使用以下信息回答：
+     {{contents}}
+     */
     public static final PromptTemplate DEFAULT_PROMPT_TEMPLATE = PromptTemplate.from(
             """
                     {{userMessage}}
@@ -81,6 +95,7 @@ public class DefaultContentInjector implements ContentInjector {
             return chatMessage;
         }
 
+        // 提示词
         Prompt prompt = createPrompt(chatMessage, contents);
         if (chatMessage instanceof UserMessage userMessage) {
             return userMessage.toBuilder()

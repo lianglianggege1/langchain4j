@@ -25,34 +25,47 @@ import java.util.stream.Collectors;
 
 /**
  * A {@link ContentRetriever} that retrieves from an {@link EmbeddingStore}.
+ * 从 ｛@link EmbeddingStore｝ 检索的 ｛@link ContentRetriever｝。
  * <br>
  * By default, it retrieves the 3 most similar {@link Content}s to the provided {@link Query},
  * without any {@link Filter}ing.
+ * 默认情况下，它检索与提供的｛@link Query｝最相似的3个｛@link Content｝，而不进行任何｛@link Filter｝。
  * <br>
  * <br>
  * Configurable parameters (optional):
+ * 可配置参数（可选）：
  * <br>
  * - {@code displayName}: Display name for logging purposes, e.g. when multiple instances are used.
+ * - {@code displayName}：用于日志记录的显示名称，例如当使用多个实例时。
  * <br>
  * - {@code maxResults}: The maximum number of {@link Content}s to retrieve.
+ * - ｛@code maxResults｝：要检索的｛@link Content｝的最大数量。
  * <br>
  * - {@code dynamicMaxResults}: It is a {@link Function} that accepts a {@link Query} and returns a {@code maxResults} value.
+ * - {@code dynamicMaxResults}：它是一个{@link Function}，接受{@link Query}并返回{@code maxResults}值。
  * It can be used to dynamically define {@code maxResults} value, depending on factors such as the query,
  * the user (using Metadata#chatMemoryId()} from {@link Query#metadata()}), etc.
+ * 它可用于动态定义{@code maxResults}值，具体取决于查询、用户（使用{@link query#Metadata（）}中的Metadata#chatMemoryId（）}）等因素。
  * <br>
  * - {@code minScore}: The minimum relevance score for the returned {@link Content}s.
+ * - {@code minScore}：返回的｛@link Content｝的 relevancy score 的最小值。
  * {@link Content}s scoring below {@code #minScore} are excluded from the results.
+ * ｛@link Content｝得分低于｛@code #minScore｝的将被排除在结果之外。
  * <br>
  * - {@code dynamicMinScore}: It is a {@link Function} that accepts a {@link Query} and returns a {@code minScore} value.
  * It can be used to dynamically define {@code minScore} value, depending on factors such as the query,
  * the user (using Metadata#chatMemoryId()} from {@link Query#metadata()}), etc.
+ * - {@code dynamicMinScore}：它是一个{@link函数}，接受{@link查询}并返回{@code minScore}值。
+ * 它可用于动态定义{@code minScore}值，具体取决于查询、用户（使用{@link query#Metadata（）}中的Metadata#chatMemoryId（）}）等因素。
  * <br>
  * - {@code filter}: The {@link Filter} that will be applied to a {@link dev.langchain4j.data.document.Metadata} in the
  * {@link Content#textSegment()}.
+ * - {@code filter}：将应用于{@link Content#textSegment（）}中的{@link dev.langchain4j.data.docue.Metadata}的{@link Filter}。
  * <br>
  * - {@code dynamicFilter}: It is a {@link Function} that accepts a {@link Query} and returns a {@code filter} value.
  * It can be used to dynamically define {@code filter} value, depending on factors such as the query,
  * the user (using Metadata#chatMemoryId()} from {@link Query#metadata()}), etc.
+ * - {@code dynamicFilter}：它是一个{@link Function}，接受{@link Query}并返回{@code filter}值。它可用于动态定义{@code filter}值，具体取决于查询、用户（使用 {@link Query#metadata()} 中的Metadata#chatMemoryId（）}）等因素。
  */
 public class EmbeddingStoreContentRetriever implements ContentRetriever {
 

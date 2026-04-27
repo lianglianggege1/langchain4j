@@ -22,7 +22,9 @@ import java.util.concurrent.ConcurrentHashMap;
 @Internal
 final class ListeningContentRetriever implements ContentRetriever {
 
+    // 委托的内容检索器
     private final ContentRetriever delegate;
+    // 内容检索器的监听
     private final List<ContentRetrieverListener> listeners;
 
     ListeningContentRetriever(ContentRetriever delegate, List<ContentRetrieverListener> listeners) {
@@ -39,9 +41,11 @@ final class ListeningContentRetriever implements ContentRetriever {
         return new ListeningContentRetriever(delegate, merged);
     }
 
+    // 检索
     @Override
     public List<Content> retrieve(Query query) {
         Map<Object, Object> attributes = new ConcurrentHashMap<>();
+        // 内容检索请求
         ContentRetrieverRequestContext requestContext = ContentRetrieverRequestContext.builder()
                 .query(query)
                 .contentRetriever(this)

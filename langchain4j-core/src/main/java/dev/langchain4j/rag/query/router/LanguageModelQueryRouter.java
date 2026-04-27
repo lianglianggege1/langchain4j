@@ -23,24 +23,39 @@ import static java.util.stream.Collectors.toList;
 
 /**
  * A {@link QueryRouter} that utilizes a {@link ChatModel} to make a routing decision.
+ * 一个利用{@link ChatModel}进行路由决策的{@link QueryRouter}。
  * <br>
  * Each {@link ContentRetriever} provided in the constructor should be accompanied by a description which
  * should help the LLM to decide where to route a {@link Query}.
+ * 构造函数中提供的每个{@link ContentRetriever}都应附有一个描述，该描述应有助于LLM决定将{@link Query}路由到何处。
  * <br>
  * Refer to {@link #DEFAULT_PROMPT_TEMPLATE} and implementation for more details.
+ * 有关更多详细信息，请参阅{@link#DEFAULT_PROMPT_TEMPLATE}和实现。
  * <br>
  * <br>
  * Configurable parameters (optional):
+ * 配置参数（可选）：
  * <br>
  * - {@link #promptTemplate}: The prompt template used to ask the LLM for routing decisions.
+ * - {@link#promptTemplate}：用于向LLM询问路由决策的提示模板。
  * <br>
  * - {@link #fallbackStrategy}: The strategy applied if the call to the LLM fails of if LLM does not return a valid response.
  * Please check {@link FallbackStrategy} for more details. Default value: {@link FallbackStrategy#DO_NOT_ROUTE}
+ * - ｛@link #fallbackStrategy｝：如果对LLM的调用失败或LLM没有返回有效响应，则应用的策略。
+ * 请查看｛@link FallbackStrategy｝了解更多详细信息。默认值：{@link回退策略#DO_NOT_ROUTE}
  *
  * @see DefaultQueryRouter
  */
 public class LanguageModelQueryRouter implements QueryRouter {
 
+    /**
+     根据用户查询，确定最合适的数据源
+     从以下选项中检索相关信息：
+     ｛｛options｝｝
+     你的答案必须由一个数字组成，这一点非常重要
+     或者用逗号分隔的多个数字，没有别的！
+     用户查询：｛｛query｝｝
+     */
     public static final PromptTemplate DEFAULT_PROMPT_TEMPLATE = PromptTemplate.from(
             """
                     Based on the user query, determine the most suitable data source(s) \
@@ -135,28 +150,35 @@ public class LanguageModelQueryRouter implements QueryRouter {
     /**
      * Strategy applied if the call to the LLM fails of if LLM does not return a valid response.
      * It could be because it was formatted improperly, or it is unclear where to route.
+     * 如果对LLM的调用失败或LLM未返回有效响应，则应用策略。这可能是因为它的格式不正确，或者不清楚在哪里路由。
      */
     public enum FallbackStrategy {
 
         /**
          * In this case, the {@link Query} will not be routed to any {@link ContentRetriever},
          * thus skipping the RAG flow. No content will be appended to the original {@link UserMessage}.
+         * 在这种情况下，｛@link Query｝将不会被路由到任何｛@link ContentRetriever｝，
+         * 从而跳过RAG流。原始｛@link UserMessage｝将不会附加任何内容。
          */
         DO_NOT_ROUTE,
 
         /**
          * In this case, the {@link Query} will be routed to all {@link ContentRetriever}s.
+         * 在这种情况下，｛@link查询｝将被路由到所有｛@link ContentRetriever｝。
          */
         ROUTE_TO_ALL,
 
         /**
          * In this case, an original exception will be re-thrown, and the RAG flow will fail.
+         * 在这种情况下，原始异常将被重新抛出，RAG流将失败。
          */
         FAIL
     }
 
     public static class LanguageModelQueryRouterBuilder {
+        // 语言模型
         private ChatModel chatModel;
+        //  检索器描述
         private Map<ContentRetriever, String> retrieverToDescription;
         private PromptTemplate promptTemplate;
         private FallbackStrategy fallbackStrategy;

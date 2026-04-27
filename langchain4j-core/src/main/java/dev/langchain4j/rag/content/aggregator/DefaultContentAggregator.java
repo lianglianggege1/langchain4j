@@ -32,6 +32,7 @@ import java.util.Map;
  * <br>
  * Stage 1: For each {@link Query}, all {@code List<Content>} retrieved with that {@link Query}
  * are merged into a single {@code List<Content>}.
+ * 第一阶段：对于每个{@link Query}，使用该{@link Query}检索到的所有{@code List<Content>}都被合并到一个{@code List<Content>｝中。
  * <br>
  * Stage 2: All {@code List<Content>} (results from stage 1) are merged into a single {@code List<Content>}.
  * <br>

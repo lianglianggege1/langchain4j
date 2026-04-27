@@ -8,9 +8,11 @@ import java.util.List;
 
 /**
  * Injects given {@link Content}s into a given {@link UserMessage}.
+ * 将给定的｛@link Content｝注入到给定的｛@link UserMessage｝中。
  * <br>
  * The goal is to format and incorporate the {@link Content}s into the original {@link UserMessage}
  * enabling the LLM to utilize it for generating a grounded response.
+ * 目标是将{@link Content}格式化并合并到原始的{@link UserMessage}中，使LLM能够利用它来生成固定的响应。
  *
  * @see DefaultContentInjector
  */
@@ -18,6 +20,7 @@ public interface ContentInjector {
 
     /**
      * Injects given {@link Content}s into a given {@link ChatMessage}.
+     * 将给定的{@link Content｝注入到给定的｛@link ChatMessage｝中。
      *
      * @param contents    The list of {@link Content} to be injected.
      * @param chatMessage The {@link ChatMessage} into which the {@link Content}s are to be injected.

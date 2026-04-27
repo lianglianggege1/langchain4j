@@ -15,6 +15,7 @@ import java.util.Objects;
 
 /**
  * Represents metadata that may be useful or necessary for retrieval or augmentation purposes.
+ * 表示可能对检索或增强有用或必要的元数据。
  */
 public class Metadata {
 

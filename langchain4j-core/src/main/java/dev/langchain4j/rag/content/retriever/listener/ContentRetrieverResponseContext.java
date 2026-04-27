@@ -12,18 +12,25 @@ import java.util.Map;
 
 /**
  * The content retriever response context.
+ * 内容检索器响应上下文。
  * It contains retrieved {@link Content}s, corresponding {@link Query}, {@link ContentRetriever} and attributes.
+ * 它包含检索到的{@link Content｝、相应的{@link Query}、{@link ContentRetriever｝和属性。
  * The attributes can be used to pass data between methods of a {@link ContentRetrieverListener}
  * or between multiple {@link ContentRetrieverListener}s.
+ * 这些属性可用于在{@link ContentRetrieverListener}的方法之间或在多个{{@link ContentRetrieverListener}之间传递数据。
  *
  * @since 1.11.0
  */
 @Experimental
 public class ContentRetrieverResponseContext {
 
+    // 内容
     private final List<Content> contents;
+    // 查询
     private final Query query;
+    // 内容检索器
     private final ContentRetriever contentRetriever;
+    // 属性
     private final Map<Object, Object> attributes;
 
     public ContentRetrieverResponseContext(Builder builder) {

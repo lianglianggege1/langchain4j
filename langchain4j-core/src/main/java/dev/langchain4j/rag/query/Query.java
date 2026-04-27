@@ -10,14 +10,18 @@ import static dev.langchain4j.internal.ValidationUtils.ensureNotNull;
 
 /**
  * Represents a query from the user intended for retrieving relevant {@link Content}s.
+ * 表示来自用户的用于检索相关｛@link Content｝s的查询。
  * <br>
  * Currently, it is limited to text,
  * but future extensions may include support for other modalities (e.g., images, audio, video, etc.).
+ * 目前，它仅限于文本，但未来的扩展可能包括对其他模态的支持（例如，图像、音频、视频等）。
  * <br>
  * Includes {@link Metadata} that may be useful or necessary for retrieval or augmentation.
+ * 包括可能对检索或增强有用或必要的{@link Metadata}。
  */
 public class Query {
 
+    // query text
     private final String text;
     private final Metadata metadata;
 

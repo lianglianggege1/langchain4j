@@ -9,9 +9,12 @@ import java.util.Map;
 
 /**
  * The content retriever request context.
+ * 内容检索器请求上下文。
  * It contains the {@link Query}, {@link ContentRetriever} and attributes.
+ * 它包含｛@link Query｝、｛@link ContentRetriever｝和属性。
  * The attributes can be used to pass data between methods of a {@link ContentRetrieverListener}
  * or between multiple {@link ContentRetrieverListener}s.
+ * 这些属性可用于在{@link ContentRetrieverListener}的方法之间或在多个{@link ContentRetrieverListener}之间传递数据。
  *
  * @since 1.11.0
  */

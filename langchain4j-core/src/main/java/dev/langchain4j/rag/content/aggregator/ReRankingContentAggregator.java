@@ -131,6 +131,7 @@ public class ReRankingContentAggregator implements ContentAggregator {
                 .map(Content::textSegment)
                 .collect(Collectors.toList());
 
+        // 分数
         List<Double> scores = scoringModel.scoreAll(segments, query.text()).content();
 
         Map<TextSegment, Double> segmentToScore = new HashMap<>();

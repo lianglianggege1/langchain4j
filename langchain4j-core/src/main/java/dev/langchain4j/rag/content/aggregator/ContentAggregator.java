@@ -10,7 +10,7 @@ import java.util.Map;
 
 /**
  * Aggregates all {@link Content}s retrieved from all {@link ContentRetriever}s using all {@link Query}s.
- * 使用所有{@link查询}聚合从所有{@linkContentRetriever}检索到的所有{@LinkContent}。
+ * 使用所有{@link Query}聚合从所有{@link ContentRetriever}检索到的所有{@link Content}。
  * <br>
  * The goal is to ensure that only the most relevant and non-redundant {@link Content}s are presented to the LLM.
  * 目标是确保只向LLM呈现最相关和非冗余的{@link Content}。
@@ -33,6 +33,8 @@ public interface ContentAggregator {
      * Aggregates all {@link Content}s retrieved by all {@link ContentRetriever}s using all {@link Query}s.
      * The {@link Content}s, both on input and output, are sorted by relevance,
      * with the most relevant {@link Content}s appearing at the beginning of {@code List<Content>}.
+     * 聚合所有{@link ContentRetriever｝使用所有{@link Query｝s检索到的所有{@link Content｝。
+     * 输入和输出的{@link Content｝都按相关性排序，最相关的｛@linkContent｝出现在 {@code List<Content>}的开头。
      *
      * @param queryToContents A map from a {@link Query} to all {@code List<Content>} retrieved with that {@link Query}.
      *                        Given that each {@link Query} can be routed to multiple {@link ContentRetriever}s, the
