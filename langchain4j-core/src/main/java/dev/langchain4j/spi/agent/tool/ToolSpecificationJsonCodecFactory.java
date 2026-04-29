@@ -5,6 +5,7 @@ import dev.langchain4j.agent.tool.ToolSpecificationJsonCodec;
 
 /**
  * A factory for creating {@link ToolSpecificationJsonCodec} instances through SPI.
+ * 创建一个{@link ToolSpecificationJsonCodec}实例的工厂
  */
 @Internal
 public interface ToolSpecificationJsonCodecFactory {

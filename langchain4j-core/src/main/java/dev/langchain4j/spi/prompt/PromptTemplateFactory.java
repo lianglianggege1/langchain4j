@@ -6,6 +6,7 @@ import java.util.Map;
 
 /**
  * A factory for creating prompt templates.
+ * 一个创建提示词模版的工厂接口
  */
 @Internal
 public interface PromptTemplateFactory {

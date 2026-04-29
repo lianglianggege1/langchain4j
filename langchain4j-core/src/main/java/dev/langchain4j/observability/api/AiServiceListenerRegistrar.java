@@ -8,6 +8,7 @@ import dev.langchain4j.spi.observability.AiServiceListenerRegistrarFactory;
 
 /**
  * A registrar for registering {@link AiServiceListener}s.
+ * 一个监听器注册器，用于注册和注销 {@link AiServiceListener}
  */
 public interface AiServiceListenerRegistrar {
     /**
