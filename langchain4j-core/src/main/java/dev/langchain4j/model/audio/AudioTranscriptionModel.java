@@ -8,12 +8,14 @@ import static dev.langchain4j.model.ModelProvider.OTHER;
 
 /**
  * A model that can transcribe audio into text.
+ * 一个模型，用于将音频转录为文本。
  */
 @Experimental
 public interface AudioTranscriptionModel {
 
     /**
      * Given an audio transcription request, generates a transcription.
+     * 给定一个音频转写请求，生成文本转写结果。
      *
      * @param request The transcription request containing the audio file and optional parameters
      * @return The generated transcription response

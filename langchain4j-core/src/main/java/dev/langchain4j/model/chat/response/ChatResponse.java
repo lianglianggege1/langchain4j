@@ -47,6 +47,7 @@ public class ChatResponse {
     /**
      * Converts the current instance of {@code ChatResponse} into a {@link Builder},
      * allowing modifications to the current object's fields.
+     * 将当前 {@code ChatResponse} 实例转换为 {@link Builder}，允许修改当前对象的字段。
      *
      * @return a new {@link Builder} instance initialized with the current state of this {@code ChatResponse}.
      */

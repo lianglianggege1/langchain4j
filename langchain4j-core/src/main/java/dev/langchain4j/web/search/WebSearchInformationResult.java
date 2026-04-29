@@ -9,11 +9,15 @@ import static dev.langchain4j.internal.ValidationUtils.ensureNotNull;
 /**
  * Represents general information about the web search performed.
  * This includes the total number of results, the page number, and metadata.
+ * 表示所执行网络搜索的通用信息，包括结果数、页数和元数据。
  * <p>
  * The total number of results is the total number of web pages that are found by the search engine in response to a search query.
  * The page number is the current page number of the search results.
  * The metadata is a map of key-value pairs that provide additional information about the search.
  * For example, it could include the search query, the search engine used, the time it took to perform the search, etc.
+ * 搜索结果总数是搜索引擎针对搜索查询所检索到的网页总数量。
+ * 页码指搜索结果的当前页面编号。
+ * 元数据为键值对映射结构，用于提供本次搜索的额外信息，例如可包含搜索关键词、所用搜索引擎、搜索耗时等内容。
  */
 public class WebSearchInformationResult {
 

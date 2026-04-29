@@ -12,11 +12,13 @@ public interface StreamingHandle {
 
     /**
      * Cancels the streaming.
+     * 退出流
      */
     void cancel();
 
     /**
      * Returns {@code true} if streaming was cancelled by calling {@link #cancel()}.
+     * 若通过调用{@link #cancel()}取消流式传输，则返回{@code true}。
      */
     boolean isCancelled();
 }

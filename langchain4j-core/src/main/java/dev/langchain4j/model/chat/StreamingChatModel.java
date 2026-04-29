@@ -29,6 +29,7 @@ import static dev.langchain4j.model.chat.ChatModelListenerUtils.onResponse;
 
 /**
  * Represents a language model that has a chat API and can stream a response one token at a time.
+ * 表示具备聊天API且能够逐令牌流式返回响应的语言模型。
  *
  * @see ChatModel
  */
@@ -36,6 +37,7 @@ public interface StreamingChatModel {
 
     /**
      * This is the main API to interact with the chat model.
+     * 这是与聊天模型交互的主要API。
      *
      * @param request a {@link ChatRequest}, containing all the inputs to the LLM
      * @param handler a {@link StreamingChatResponseHandler} that will handle streaming response from the LLM
@@ -46,6 +48,7 @@ public interface StreamingChatModel {
 
     /**
      * Sends a streaming chat request with additional invocation options.
+     * 携带额外调用选项发送流式聊天请求。
      *
      * @param request a {@link ChatRequest}, containing all the inputs to the LLM
      * @param options a {@link ChatRequestOptions} carrying listener attributes and other per-call metadata

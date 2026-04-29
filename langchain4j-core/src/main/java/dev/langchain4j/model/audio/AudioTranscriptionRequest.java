@@ -5,13 +5,18 @@ import dev.langchain4j.data.audio.Audio;
 
 /**
  * Request to transcribe audio.
+ * 转写音频请求
  */
 @Experimental
 public class AudioTranscriptionRequest {
 
+    // 音频数据
     private final Audio audio;
+    // 提示词
     private final String prompt;
+    // 语言
     private final String language;
+    // 模型温度参数
     private final Double temperature;
 
     private AudioTranscriptionRequest(Builder builder) {

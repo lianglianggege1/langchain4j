@@ -21,6 +21,17 @@ import static dev.langchain4j.internal.Utils.copy;
  *
  * @since 1.13.0
  */
+/**
+ * 伴随 {@link ChatRequest} 通过
+ * {@link ChatModel#chat(ChatRequest, ChatRequestOptions)} 或
+ * {@link StreamingChatModel#chat(ChatRequest, ChatRequestOptions, StreamingChatResponseHandler)}
+ * 调用时使用的配置选项。
+ *
+ * <p>这些选项不会发送至大语言模型服务提供商；仅用于
+ * LangChain4j 调用链路（监听器、钩子等）。
+ *
+ * @since 1.13.0
+ */
 public class ChatRequestOptions {
 
     public static final ChatRequestOptions EMPTY = new ChatRequestOptions(Collections.emptyMap());

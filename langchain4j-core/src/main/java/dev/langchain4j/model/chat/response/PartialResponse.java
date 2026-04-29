@@ -15,6 +15,7 @@ public class PartialResponse {
 
     private final String text;
 
+//    部分响应
     public PartialResponse(String text) {
         this.text = ensureNotEmpty(text, "text");
     }

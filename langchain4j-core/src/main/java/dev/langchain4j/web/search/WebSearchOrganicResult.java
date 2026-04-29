@@ -27,6 +27,21 @@ import java.util.Objects;
  * - <b>Tavily:</b> Snippet contains a short extract of content that is most relevant to the search query; content includes the full raw page content.
  * </p>
  */
+/**
+ * 表示自然搜索结果，即搜索引擎响应查询后返回的网页内容。
+ * 包含网页的标题、网址、摘要和/或正文内容，以及元数据。
+ * <p>
+ * 这类结果通常按与搜索查询的相关性排序。
+ * </p>
+ * <b>摘要与正文的区别：</b><br>
+ * <i>摘要（snippet）</i>是从网页中提取的、与查询相关的精简片段，仅用于预览。<br>
+ * <i>正文（content）</i>（若有）指从网页中提取的完整文本内容。
+ * <p>
+ * <b>不同搜索引擎的特性：</b><br>
+ * - <b>谷歌（Google）：</b>摘要是简短预览（来自谷歌API）；正文通常为<code>null</code>。<br>
+ * - <b>Tavily：</b>摘要包含与搜索查询最相关的内容片段；正文包含页面完整原始内容。
+ * </p>
+ */
 public class WebSearchOrganicResult {
 
     private final String title;

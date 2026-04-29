@@ -11,7 +11,9 @@ import java.util.Objects;
 
 /**
  * Represents a complete tool call.
+ * 表示一次完整的工具调用。
  * Includes the index, and complete {@link ToolExecutionRequest}.
+ * 包含索引以及完整的{@link ToolExecutionRequest}。
  *
  * @see PartialToolCall
  * @since 1.2.0

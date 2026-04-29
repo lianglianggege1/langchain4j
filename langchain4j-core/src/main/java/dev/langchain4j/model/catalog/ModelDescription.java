@@ -10,25 +10,38 @@ import static dev.langchain4j.internal.ValidationUtils.ensureNotNull;
 
 /**
  * Represents metadata about an available model from a provider.
+ * 表示服务商提供的可用模型的元数据信息
  * This class provides a unified view of model information across different providers.
+ * 此类为不同服务商的模型信息提供统一视图
  *
  * <p>Only {@code name} and {@code provider} are required fields.
+ * 仅 @code name} and {@code provider} 是必须字段
  * All other fields are optional and may be <code>null</code> depending on what information
  * the provider makes available.
+ * 其他的字段都是可选字段，根据服务商提供的信息不同，这些字段可能为 <code>null</code>。
  *
  * @since 1.10.0
  */
 @Experimental
 public class ModelDescription {
 
+    // 模型名称
     private final String name;
+    // 模型显示名称
     private final String displayName;
+    // 模型描述
     private final String description;
+    // 模型提供商
     private final ModelProvider provider;
+    // 模型类型
     private final ModelType type;
+    // 模型最大输入token数 - 最大上下文窗口大小
     private final Integer maxInputTokens;
+    // 模型最大输出token数 - 模型生成的文本长度
     private final Integer maxOutputTokens;
+    // 模型创建时间
     private final Instant createdAt;
+    // 模型拥有者
     private final String owner;
 
     private ModelDescription(Builder builder) {

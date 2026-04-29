@@ -8,7 +8,9 @@ import java.util.Objects;
 
 /**
  * Represents common chat response metadata supported by most LLM providers.
+ * 表示大多数大语言模型服务商所支持的通用聊天响应元数据。
  * Specific LLM provider integrations can extend this interface to add provider-specific metadata.
+ * 特定大语言模型提供商的集成可扩展此接口，以添加提供商专属元数据。
  */
 @JacocoIgnoreCoverageGenerated
 public class ChatResponseMetadata {

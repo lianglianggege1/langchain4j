@@ -21,6 +21,7 @@ import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * Represents a language model that has a chat API.
+ * 表示一个LLM的chat API。
  *
  * @see StreamingChatModel
  */
@@ -28,6 +29,7 @@ public interface ChatModel {
 
     /**
      * This is the main API to interact with the chat model.
+     * 这是与聊天模型进行交互的**核心主API**。
      *
      * @param chatRequest a {@link ChatRequest}, containing all the inputs to the LLM
      * @return a {@link ChatResponse}, containing all the outputs from the LLM
@@ -38,9 +40,12 @@ public interface ChatModel {
 
     /**
      * Sends a chat request with additional invocation options.
+     * 发送携带额外调用配置选项的聊天请求。
      *
      * @param chatRequest a {@link ChatRequest}, containing all the inputs to the LLM
+     *                    {@link ChatRequest} 对象，包含向大语言模型传入的所有输入参数。
      * @param options     a {@link ChatRequestOptions} carrying listener attributes and other per-call metadata
+     *                    一个 {@link ChatRequestOptions} 对象，携带监听器属性以及每次调用相关的元数据。
      * @return a {@link ChatResponse}, containing all the outputs from the LLM
      * @since 1.13.0
      */

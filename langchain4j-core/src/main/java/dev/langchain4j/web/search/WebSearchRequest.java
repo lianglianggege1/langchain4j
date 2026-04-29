@@ -30,6 +30,27 @@ import static dev.langchain4j.internal.ValidationUtils.ensureNotBlank;
  *    <li>{@link #additionalParams} - The additional parameters for the search request are a map of key-value pairs that represent additional parameters for the search request. It's a way to be flex and add custom param for each search engine.</li>
  * </ul>
  */
+/**
+ * 表示用户可发起的搜索请求，用于在任意 {@link WebSearchEngine} 实现类中执行搜索。
+ * <p>
+ * {@link WebSearchRequest} 遵循开放搜索基金会标准，谷歌、必应、雅虎等大多数网络搜索引擎库均实现了该标准。
+ * <a href="https://github.com/dewitt/opensearch/blob/master/opensearch-1-1-draft-6.md#opensearch-11-parameters">OpenSearch#参数</a>
+ * </p>
+ * <p>
+ * {@link #searchTerms} 是搜索客户端想要搜索的关键词，该参数是执行搜索的必填项。
+ * </p>
+ * <br>
+ * 可配置参数（可选）：
+ * <ul>
+ *    <li>{@link #maxResults} - 搜索请求期望获取的结果数量，各搜索引擎对可返回的最大结果数可能设有不同限制。</li>
+ *    <li>{@link #language} - 搜索结果的目标语言，用于指定搜索客户端期望的结果语言，各搜索引擎支持的语言集合可能不同。</li>
+ *    <li>{@link #geoLocation} - 搜索结果的目标地理区域，用于指定搜索客户端期望的结果地域，各搜索引擎支持的地理区域集合可能不同。</li>
+ *    <li>{@link #startPage} - 搜索结果的起始页码，即搜索用户期望获取的结果页页码。</li>
+ *    <li>{@link #startIndex} - 搜索结果的起始索引，即搜索用户期望获取的第一条结果的索引值，各搜索引擎结合起始页码支持的起始索引范围可能不同。</li>
+ *    <li>{@link #safeSearch} - 安全搜索开关，布尔值，用于指定搜索客户端是否启用安全搜索。</li>
+ *    <li>{@link #additionalParams} - 搜索请求的附加参数，以键值对映射形式存储，可灵活为各搜索引擎添加自定义参数。</li>
+ * </ul>
+ */
 public class WebSearchRequest {
 
     private final String searchTerms;

@@ -24,6 +24,17 @@ import static java.util.stream.Collectors.toList;
  * The organic search results are the web pages that are returned by the search engine in response to a search query.
  * These results are typically ranked by relevance to the search query.
  */
+/**
+ * 表示一次网络搜索执行后的响应结果。
+ * 包含自然搜索结果列表、本次搜索相关信息以及分页信息。
+ * <p>
+ * {@link WebSearchResults} 遵循开放搜索基金会标准，谷歌、必应、雅虎等绝大多数搜索引擎库均适配该标准。
+ * <a href="https://github.com/dewitt/cdwitt/opensearch/blob/master/opensearch-1-1-draft-6.md#examples-of-opensearch-responses">OpenSearch 响应示例</a>
+ * </p>
+ * <p>
+ * 自然搜索结果是搜索引擎根据搜索查询返回的网页集合。
+ * 这类结果通常按照与搜索关键词的相关性进行排序。
+ */
 public class WebSearchResults {
 
     private final Map<String, Object> searchMetadata;

@@ -10,15 +10,19 @@ import static java.util.Collections.singletonList;
 
 /**
  * Represents a model capable of scoring a text against a query.
+ * 表示能够根据查询对文本进行评分的模型。
  * <br>
  * Useful for identifying the most relevant texts when scoring multiple texts against the same query.
+ * 适用于同一查询对多条文本进行评分时筛选最相关文本。
  * <br>
  * The scoring model can be employed for re-ranking purposes.
+ * 评分模型可用于重排序。
  */
 public interface ScoringModel {
 
     /**
      * Scores a given text against a given query.
+     * 根据给定查询对指定文本进行评分。
      *
      * @param text  The text to be scored.
      * @param query The query against which to score the text.
@@ -30,6 +34,7 @@ public interface ScoringModel {
 
     /**
      * Scores a given {@link TextSegment} against a given query.
+     * 对给定的 {@link TextSegment} 文本片段，依据指定查询进行评分。
      *
      * @param segment The {@link TextSegment} to be scored.
      * @param query   The query against which to score the segment.
@@ -44,6 +49,7 @@ public interface ScoringModel {
 
     /**
      * Scores all provided {@link TextSegment}s against a given query.
+     * 根据指定查询，对所有传入的 {@link TextSegment} 进行评分。
      *
      * @param segments The list of {@link TextSegment}s to score.
      * @param query    The query against which to score the segments.
