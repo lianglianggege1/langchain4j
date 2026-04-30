@@ -9,6 +9,9 @@ import java.util.Optional;
 /**
  * Represents the parameter passed to {@link OutputGuardrail#validate(OutputGuardrailRequest)}.
  */
+/**
+ * 表示传递给 {@link OutputGuardrail#validate(OutputGuardrailRequest)} 方法的参数。
+ */
 public final class OutputGuardrailRequest implements GuardrailRequest<OutputGuardrailRequest> {
     private final ChatResponse responseFromLLM;
     private final ChatExecutor chatExecutor;

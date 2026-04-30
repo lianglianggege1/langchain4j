@@ -21,6 +21,7 @@ public final class InputGuardrailRequest implements GuardrailRequest<InputGuardr
 
     /**
      * Returns the user message.
+     * 返回用户消息。
      *
      * @return the user message
      */
@@ -30,6 +31,7 @@ public final class InputGuardrailRequest implements GuardrailRequest<InputGuardr
 
     /**
      * Returns the common parameters shared between types of guardrails.
+     * 返回各类护栏共享的通用参数。
      *
      * @return the common parameters
      */

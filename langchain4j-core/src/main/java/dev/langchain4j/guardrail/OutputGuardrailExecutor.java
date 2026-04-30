@@ -23,6 +23,13 @@ import java.util.stream.Collectors;
  *     passes all the output guardrails.
  * </p>
  */
+/**
+ * 用于执行 {@link OutputGuardrail} 输出护栏的执行器 {@link GuardrailExecutor}。
+ * <p>
+ *     执行输出护栏时，若任意一个 {@link OutputGuardrail} 触发了重新提示（reprompt）或重试（retry），
+ *     新生成的模型响应必须重新经过**完整的输出护栏链**校验，确保新响应通过所有输出护栏规则。
+ * </p>
+ */
 public non-sealed class OutputGuardrailExecutor
         extends AbstractGuardrailExecutor<
                 OutputGuardrailsConfig,
@@ -32,6 +39,11 @@ public non-sealed class OutputGuardrailExecutor
                 OutputGuardrailExecutedEvent,
                 Failure> {
 
+    /**
+     * 输出校验失败。护栏已达到最大重试次数。
+     * 护栏消息：
+     * %s
+     */
     public static final String MAX_RETRIES_MESSAGE_TEMPLATE =
             """
             Output validation failed. The guardrails have reached the maximum number of retries.
@@ -49,6 +61,12 @@ public non-sealed class OutputGuardrailExecutor
      *
      * @param request     The {@link OutputGuardrailRequest} to validate
      * @return The {@link OutputGuardrailResult} of the validation
+     */
+    /**
+     * 基于给定的 {@link OutputGuardrailRequest} 执行所有输出护栏校验。
+     *
+     * @param request 待校验的输出护栏请求对象
+     * @return 护栏校验后的结果对象 {@link OutputGuardrailResult}
      */
     @Override
     public OutputGuardrailResult execute(OutputGuardrailRequest request) {

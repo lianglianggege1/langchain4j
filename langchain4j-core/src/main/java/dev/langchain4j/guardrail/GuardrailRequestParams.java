@@ -14,6 +14,12 @@ import java.util.Optional;
  * between a user and a language model. This class encapsulates the chat memory, user message
  * template, and additional variables required for guardrail processing.
  */
+/**
+ * 表示在校验用户与大语言模型之间的交互时，
+ * 所有护栏校验过程共享的通用参数。
+ * 该类封装了护栏处理所需的对话上下文、用户消息模板
+ * 以及其他附加变量。
+ */
 public final class GuardrailRequestParams {
 
     private final ChatMemory chatMemory;
@@ -38,6 +44,11 @@ public final class GuardrailRequestParams {
      *
      * @return the chat memory, may be null
      */
+    /**
+     * 获取对话记忆（聊天上下文）。
+     *
+     * @return 对话记忆对象，可能为 null
+     */
     public ChatMemory chatMemory() {
         return chatMemory;
     }
@@ -46,6 +57,11 @@ public final class GuardrailRequestParams {
      * Returns the augmentation result.
      *
      * @return the augmentation result, may be null
+     */
+    /**
+     * 获取增强处理结果。
+     *
+     * @return 增强结果对象，可能为 null
      */
     public AugmentationResult augmentationResult() {
         return augmentationResult;
@@ -56,6 +72,11 @@ public final class GuardrailRequestParams {
      *
      * @return the user message template, never null
      */
+    /**
+     * 获取用户消息模板。
+     *
+     * @return 用户消息模板，永不为 null
+     */
     public String userMessageTemplate() {
         return userMessageTemplate;
     }
@@ -65,6 +86,11 @@ public final class GuardrailRequestParams {
      *
      * @return the variables, never null
      */
+    /**
+     * 获取变量集合。
+     *
+     * @return 变量集合，永不为 null
+     */
     public Map<String, Object> variables() {
         return variables;
     }
@@ -73,6 +99,11 @@ public final class GuardrailRequestParams {
      * Returns the {@link InvocationContext}, which contains general information about the AI Service invocation.
      *
      * @return the invocation context
+     */
+    /**
+     * 获取调用上下文（InvocationContext），该上下文包含AI服务调用的通用信息。
+     *
+     * @return AI服务调用上下文对象
      */
     public InvocationContext invocationContext() {
         return invocationContext;
@@ -84,6 +115,12 @@ public final class GuardrailRequestParams {
      * service invocation events.
      *
      * @return the {@link AiServiceListenerRegistrar}
+     */
+    /**
+     * 获取 AI 服务监听器注册器（AiServiceListenerRegistrar），
+     * 该对象提供注册、注销监听器以及通知 AI 服务调用事件的功能。
+     *
+     * @return AI 服务监听器注册器实例
      */
     public AiServiceListenerRegistrar aiservicelistenerregistrar() {
         return aiServiceListenerRegistrar;

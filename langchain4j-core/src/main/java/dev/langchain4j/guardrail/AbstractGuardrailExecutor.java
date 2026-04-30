@@ -27,6 +27,16 @@ import java.util.Optional;
  * @param <F>
  *            The type of {@link Failure} to return
  */
+/**
+ * {@link GuardrailExecutor} 的抽象基类。
+ *
+ * @param <C> 用于配置的 {@link GuardrailsConfig} 类型
+ * @param <P> 待校验的 {@link GuardrailRequest} 类型
+ * @param <R> 要返回的 {@link GuardrailResult} 类型
+ * @param <G> 正在执行的 {@link Guardrail} 护栏类型
+ * @param <E> 要触发的 {@link GuardrailExecutedEvent} 事件类型
+ * @param <F> 要返回的 {@link Failure} 失败结果类型
+ */
 @Internal
 public abstract sealed class AbstractGuardrailExecutor<
                 C extends GuardrailsConfig,
@@ -51,11 +61,20 @@ public abstract sealed class AbstractGuardrailExecutor<
      * @param failures The failures
      * @return A {@link GuardrailResult} containing the failures
      */
+    /**
+     * 根据若干失败结果创建护栏执行失败结果。
+     * @param failures 失败信息集合
+     * @return 包含失败信息的 {@link GuardrailResult} 护栏结果
+     */
     protected abstract R createFailure(List<F> failures);
 
     /**
      * Creates a success result.
      * @return A {@link GuardrailResult} representing success
+     */
+    /**
+     * 创建成功结果。
+     * @return 表示执行成功的 {@link GuardrailResult} 护栏结果
      */
     protected abstract R createSuccess();
 
@@ -66,12 +85,24 @@ public abstract sealed class AbstractGuardrailExecutor<
      * @param cause   The underlying cause of the exception, or null if no cause is available.
      * @return A new instance of {@link GuardrailException} constructed with the provided message and cause.
      */
+    /**
+     * 根据提供的消息和可选的异常原因创建 {@link GuardrailException}。
+     *
+     * @param message 异常的详细描述信息
+     * @param cause   异常的根本原因（无可用原因时传 null）
+     * @return 使用指定消息和原因构造的 {@link GuardrailException} 新实例
+     */
     protected abstract GuardrailException createGuardrailException(String message, Throwable cause);
 
     /**
      * Creates an empty instance of {@link GuardrailExecutedEventBuilder} used for constructing observability event objects.
      *
      * @return An initialized instance of {@link GuardrailExecutedEventBuilder} with the appropriate type parameters.
+     */
+    /**
+     * 创建一个空的 {@link GuardrailExecutedEventBuilder} 实例，用于构建可观测性事件对象。
+     *
+     * @return 已初始化、携带正确类型参数的 {@link GuardrailExecutedEventBuilder} 实例
      */
     protected abstract GuardrailExecutedEventBuilder<P, R, G, E> createEmptyObservabilityEventBuilderInstance();
 
@@ -95,6 +126,16 @@ public abstract sealed class AbstractGuardrailExecutor<
      * @throws GuardrailException If any kind of {@link Exception} is thrown during validation
      * @return The {@link GuardrailResult} of the validation
      */
+    /**
+     * 依据一组请求对护栏规则进行校验。
+     * <p>
+     *     若校验过程中抛出任何类型的 {@link Exception}，都会被包装为 {@link GuardrailException}。
+     * </p>
+     * @param request 待校验的 {@link GuardrailRequest} 请求
+     * @param guardrail 要进行评估校验的 {@link Guardrail} 护栏规则
+     * @throws GuardrailException 校验过程中抛出任何异常时抛出
+     * @return 校验结果 {@link GuardrailResult}
+     */
     protected R validate(P request, G guardrail) {
         ensureNotNull(request, "request");
         ensureNotNull(guardrail, "guardrail");
@@ -111,6 +152,12 @@ public abstract sealed class AbstractGuardrailExecutor<
      * @param accumulatedResult The accumulated result
      * @param result The fatal result
      * @return The fatal result, possibly wrapped/modified in some way
+     */
+    /**
+     * 处理致命性结果。
+     * @param accumulatedResult 累计得到的校验结果
+     * @param result 致命性结果
+     * @return 经过可能的包装/修改后的致命性结果
      */
     protected R handleFatalResult(R accumulatedResult, R result) {
         return result;
@@ -194,6 +241,23 @@ public abstract sealed class AbstractGuardrailExecutor<
      *
      * It provides methods to configure and manage the guardrails and their associated configurations,
      * eventually culminating in the construction of a specific {@link GuardrailExecutor}.
+     */
+    /**
+     * 用于创建 {@link GuardrailExecutor} 实例的通用抽象构建器类。
+     *
+     * @param <C> 用于配置的 {@link GuardrailsConfig} 类型
+     * @param <P> 待校验的 {@link GuardrailRequest} 类型
+     * @param <R> 要返回的 {@link GuardrailResult} 类型
+     * @param <G> 正在执行的 {@link Guardrail} 护栏类型
+     * @param <E> 要触发的 {@link GuardrailExecutedEvent} 事件类型
+     *
+     * 此类为密封类，仅允许特定子类继承，例如：
+     * {@link InputGuardrailExecutor.InputGuardrailExecutorBuilder}
+     * 和
+     * {@link OutputGuardrailExecutor.OutputGuardrailExecutorBuilder}。
+     *
+     * 提供配置和管理护栏及其关联配置的方法，
+     * 最终用于构建具体的 {@link GuardrailExecutor} 实例。
      */
     public abstract static sealed class GuardrailExecutorBuilder<
                     C extends GuardrailsConfig,

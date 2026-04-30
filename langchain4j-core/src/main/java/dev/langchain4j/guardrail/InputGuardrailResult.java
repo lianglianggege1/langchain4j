@@ -13,6 +13,7 @@ import java.util.Optional;
 
 /**
  * The result of the validation of an {@link InputGuardrail}
+ * 输入护栏（InputGuardrail）的校验结果。
  */
 public final class InputGuardrailResult implements GuardrailResult<InputGuardrailResult> {
     private static final InputGuardrailResult SUCCESS = new InputGuardrailResult();
@@ -45,6 +46,7 @@ public final class InputGuardrailResult implements GuardrailResult<InputGuardrai
 
     /**
      * Gets a successful input guardrail result
+     * 获取输入护栏校验成功的结果。
      */
     public static InputGuardrailResult success() {
         return SUCCESS;
@@ -57,6 +59,12 @@ public final class InputGuardrailResult implements GuardrailResult<InputGuardrai
      *
      * @param successfulText
      *            The text of the successful result.
+     */
+    /**
+     * 生成包含指定成功文本的校验成功结果
+     *
+     * @param successfulText 校验成功附带的文本内容
+     * @return 携带指定文本的输入护栏校验成功结果
      */
     public static InputGuardrailResult successWith(String successfulText) {
         return (successfulText == null) ? success() : new InputGuardrailResult(successfulText);
@@ -90,6 +98,13 @@ public final class InputGuardrailResult implements GuardrailResult<InputGuardrai
      * @param params The input guardrail params
      * @return A {@link UserMessage} computed from the combination of the original {@link UserMessage} in the {@link InputGuardrailRequest}
      *      * and this result
+     */
+    /**
+     * 获取最终用户消息，该消息由 InputGuardrailRequest 中的原始用户消息
+     * 与当前校验结果合并计算得到
+     *
+     * @param params 输入护栏参数
+     * @return 合并原始用户消息与当前结果后计算出的用户消息
      */
     public UserMessage userMessage(InputGuardrailRequest params) {
         return hasRewrittenResult() ? params.rewriteUserMessage(successfulText()) : params.userMessage();

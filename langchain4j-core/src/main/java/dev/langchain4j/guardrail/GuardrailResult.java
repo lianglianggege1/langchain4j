@@ -16,36 +16,53 @@ import java.util.stream.Collectors;
  * @see InputGuardrailResult
  * @see OutputGuardrailResult
  */
+/**
+ * 用户与大语言模型（LLM）之间交互的校验结果。
+ *
+ * @param <GR> 预期的护栏结果类型
+ *
+ * @see InputGuardrailResult
+ * @see OutputGuardrailResult
+ */
 public sealed interface GuardrailResult<GR extends GuardrailResult<GR>>
         permits InputGuardrailResult, OutputGuardrailResult {
     /**
      * The possible results of a guardrails validation.
      */
+    /**
+     * 护栏校验的所有可能结果。
+     */
     enum Result {
         /**
          * A successful validation.
+         * 校验通过。
          */
         SUCCESS,
         /**
          * A successful validation with a specific result.
+         * 附带特定结果的校验通过。
          */
         SUCCESS_WITH_RESULT,
         /**
          * A failed validation not preventing the subsequent validations eventually registered to be evaluated.
+         * 校验失败，但不会阻止后续已注册的其他校验继续执行。
          */
         FAILURE,
         /**
          * A fatal failed validation, blocking the evaluation of any other validations eventually registered.
+         * 致命性校验失败，将阻止执行其他所有已注册的校验。
          */
         FATAL
     }
 
     /**
      * The message and the cause of the failure of a single validation.
+     * 单次校验失败的提示信息与失败原因。
      */
     sealed interface Failure permits InputGuardrailResult.Failure, OutputGuardrailResult.Failure {
         /**
          * Build a failure from a specific {@link Guardrail} class
+         * 根据指定的护栏（Guardrail）类构建一个失败结果。
          */
         Failure withGuardrailClass(Class<? extends Guardrail> guardrailClass);
 

@@ -25,6 +25,20 @@ import org.slf4j.LoggerFactory;
  *  Instances of this class are immutable and are typically instantiated using
  *  the {@link StreamingToSynchronousBuilder}.
  */
+/**
+ * {@link ChatExecutor} 接口的具体实现类，用于执行聊天请求。
+ * <p>
+ * 该实现通过指定的 {@link StreamingChatModel}（流式聊天模型）处理聊天请求，
+ * 并将流式请求转换为同步请求执行，效果等同于同步调用。
+ * </p>
+ * <p>
+ * 本类使用 {@link ChatRequest} 封装输入消息与参数，
+ * 并将聊天执行逻辑委托给传入的 {@link StreamingChatModel} 完成。
+ * </p>
+ * <p>
+ * 该类的实例是不可变的，通常通过 {@link StreamingToSynchronousBuilder} 构建实例。
+ * </p>
+ */
 @Internal
 final class StreamingToSynchronousChatExecutor extends AbstractChatExecutor {
     private final StreamingChatModel streamingChatModel;

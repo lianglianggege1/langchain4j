@@ -17,15 +17,25 @@ import org.jspecify.annotations.NonNull;
  *
  * @since 1.6.0
  */
+/**
+ * 表示单次AI服务调用的上下文。
+ * 每次调用AI服务方法时都会创建一个新实例，
+ * 该实例会一直存在直到AI服务调用结束，
+ * 期间可能会多次调用{@link ChatModel}。
+ *
+ * @since 1.6.0
+ */
 public interface InvocationContext {
 
     /**
      * Unique identifier for an entire AI Service invocation
+     * 整个AI服务调用的唯一标识符
      */
     UUID invocationId();
 
     /**
      * The fully-qualified name of the AI Service interface where the invocation was initiated from
+     * 发起本次调用的AI服务接口的**全限定类名**
      *
      * @see #methodName()
      */
@@ -33,11 +43,13 @@ public interface InvocationContext {
 
     /**
      * The method name on {@link #interfaceName()} where the invocation was initiated from
+     * 发起本次调用的{@link #interfaceName()} 对应的方法名
      */
     String methodName();
 
     /**
      * The arguments passed into the AI Service method
+     * 传入AI服务方法的参数
      */
     List<Object> methodArguments();
 
@@ -48,22 +60,32 @@ public interface InvocationContext {
      *
      * @since 1.13.0
      */
+    /**
+     * 将要发送给大语言模型（LLM）的用户消息。
+     * 这是经过所有转换处理后的消息（包括RAG检索增强、
+     * 内容注入、输入护栏、输出格式指令等处理）。
+     *
+     * @since 1.13.0
+     */
     default UserMessage userMessage() {
         return null;
     }
 
     /**
      * The chat memory id parameter of the method
+     * 方法的**对话记忆ID参数**
      */
     Object chatMemoryId();
 
     /**
      * The invocation parameters
+     * 调用参数
      */
     InvocationParameters invocationParameters();
 
     /**
      * LangChain4j managed parameters
+     * LangChain4j托管参数
      * @since 1.8.0
      */
     default Map<Class<? extends LangChain4jManaged>, LangChain4jManaged> managedParameters() {
@@ -72,6 +94,7 @@ public interface InvocationContext {
 
     /**
      * Retrieves the point in time when the invocation occurred.
+     * 获取本次调用发生的时间点。
      */
     Instant timestamp();
 

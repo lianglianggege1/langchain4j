@@ -11,7 +11,9 @@ import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * Represents arbitrary parameters available during a single AI Service invocation.
+ * 表示单次AI服务调用过程中可用的任意参数。
  * {@code InvocationParameters} can be specified when invoking the AI Service:
+ * 调用AI服务时可以指定{@code InvocationParameters}
  *
  * <pre>
  * interface Assistant {
@@ -35,15 +37,21 @@ import java.util.concurrent.ConcurrentHashMap;
  * </pre>
  * <p>
  * In this case, the LLM is not aware of these parameters; they are only visible to LangChain4j and user code.
+ * 这这种情况下，LLM不会感知这些参数，它们仅对LangChain4j和用户代码可见。
  * <p>
  * {@code InvocationParameters} can also be accessed within other AI Service components, such as:
+ * 也可在其他AI服务组件中访问{@code InvocationParameters}，例如：
  * <pre>
  * - ToolProvider: inside the ToolProviderRequest
+ * - ToolProvider: 在工具提供者请求内部
  * - ToolArgumentsErrorHandler and ToolExecutionErrorHandler: inside the ToolErrorContext
+ * - ToolArgumentsErrorHandler and ToolExecutionErrorHandler: 在工具错误上下文内部
  * - RAG components: inside the {@link Query} -> {@link Metadata}
+ * - RAG components: 在{@link Query}至{@link Metadata}内部
  * </pre>
  * <p>
  * Parameters are stored in a mutable, thread safe {@link Map}.
+ * 参数存储在一个**可变且线程安全**的 {@link Map} 中。
  *
  * @since 1.6.0
  */

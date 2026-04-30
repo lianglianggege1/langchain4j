@@ -18,6 +18,19 @@ import dev.langchain4j.model.chat.response.ChatResponse;
  * Instances of this class are immutable and are typically instantiated using
  * the {@link SynchronousBuilder}.
  */
+/**
+ * {@link ChatExecutor} 接口的具体实现类，用于执行聊天请求。
+ * <p>
+ * 该实现通过指定的 {@link ChatModel}（同步聊天模型）处理聊天请求。
+ * </p>
+ * <p>
+ * 本类使用 {@link ChatRequest} 封装输入消息与参数，
+ * 并将聊天执行逻辑委托给传入的 {@link ChatModel} 完成。
+ * </p>
+ * <p>
+ * 该类的实例是不可变的，通常通过 {@link SynchronousBuilder} 构建实例。
+ * </p>
+ */
 @Internal
 final class SynchronousChatExecutor extends AbstractChatExecutor {
     private final ChatModel chatModel;
