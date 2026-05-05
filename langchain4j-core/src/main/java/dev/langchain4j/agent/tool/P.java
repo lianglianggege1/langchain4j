@@ -37,6 +37,37 @@ import static java.lang.annotation.RetentionPolicy.RUNTIME;
  *       (for example, to match a specific API contract or to provide a more descriptive name).</li>
  * </ol>
  */
+/**
+ * 用于标记被{@link Tool}注解的方法的参数的注解。
+ *
+ * <h2>描述</h2>
+ * {@link #value()} 和 {@link #description()} 是同一个属性的别名：表示大语言模型可见的参数描述。
+ * 使用其中一个即可，不可同时使用。
+ * <p>当仅需要描述时，可使用 {@code value} 作为简写：
+ * <pre>{@code
+ * @Tool
+ * void getWeather(@P("城市名称") String city) { ... }
+ * }</pre>
+ * <p>当同时需要名称和描述时，使用具名属性：
+ * <pre>{@code
+ * @Tool
+ * void getWeather(@P(name = "city", description = "城市名称") String city) { ... }
+ * }</pre>
+ *
+ * <h2>名称</h2>
+ * {@link #name()} 属性会覆盖大语言模型看到的参数名称。
+ * 该属性在两种场景下非常实用：
+ * <ol>
+ *   <li><b>未配置 {@code -parameters} 编译参数。</b>
+ *       若未启用该参数（在不使用Quarkus、Spring等默认开启该参数的框架时很常见），
+ *       Java反射会返回 {@code arg0}、{@code arg1} 等通用参数名。
+ *       这会丢失参数的语义含义，可能导致大语言模型混淆。
+ *       设置 {@code name} 可以恢复有意义的参数名。</li>
+ *   <li><b>为大语言模型自定义参数名。</b>
+ *       当你希望大语言模型看到的参数名与开发者在源代码中使用的名称不同时
+ *       （例如，匹配特定的API约定或提供更具描述性的名称）。</li>
+ * </ol>
+ */
 @Retention(RUNTIME)
 @Target({PARAMETER})
 public @interface P {
