@@ -14,6 +14,10 @@ import java.util.Objects;
  * The 'PromptMessage' object from the MCP protocol schema.
  * This can be directly translated to a ChatMessage object from the LangChain4j API.
  */
+/**
+ * 来自 MCP 协议 schema 的「PromptMessage」对象。
+ * 该对象可直接转换为 LangChain4j API 中的 ChatMessage 对象。
+ */
 public class McpPromptMessage {
 
     private final McpRole role;
@@ -36,6 +40,15 @@ public class McpPromptMessage {
      *
      * @throws UnsupportedOperationException if the role is 'assistant' and
      *                                       the content is something other than text.
+     */
+    /**
+     * 将此 MCP 专属的 PromptMessage 表示形式转换为
+     * 核心 LangChain4j API 中的 ChatMessage 对象（如可行）。
+     * 当前场景下，若角色为「助手(assistant)」且
+     * 消息内容非纯文本，则无法执行转换。
+     *
+     * @throws UnsupportedOperationException 若角色为「助手(assistant)」且
+     *                                       消息内容非纯文本，则抛出该异常
      */
     public ChatMessage toChatMessage() {
         if (role.equals(McpRole.USER)) {

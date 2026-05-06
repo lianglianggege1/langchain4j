@@ -89,6 +89,7 @@ public class DefaultMcpClient implements McpClient {
     private final McpLogMessageHandler logHandler;
     private final McpProgressHandler progressHandler;
     private final AtomicReference<List<McpResource>> resourceRefs = new AtomicReference<>();
+    // 资源模版指向
     private final AtomicReference<List<McpResourceTemplate>> resourceTemplateRefs = new AtomicReference<>();
     private final AtomicReference<List<McpPrompt>> promptRefs = new AtomicReference<>();
     private final AtomicReference<List<ToolSpecification>> toolListRefs = new AtomicReference<>();

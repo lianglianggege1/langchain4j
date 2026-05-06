@@ -11,6 +11,11 @@ import java.util.Objects;
  * It describes a declaration of a prompt, not its actual contents.
  * It contains a name, description and a list of arguments relevant for rendering an instance of the prompt.
  */
+/**
+ * 来自 MCP 协议 schema 的「Prompt」对象。
+ * 它描述的是一个提示词的**声明定义**，而非其实际内容。
+ * 该对象包含名称、描述，以及一组用于渲染提示词实例所需的参数列表。
+ */
 public class McpPrompt {
 
     private final String name;

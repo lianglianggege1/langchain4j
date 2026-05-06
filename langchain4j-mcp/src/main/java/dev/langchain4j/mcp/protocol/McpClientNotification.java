@@ -6,6 +6,9 @@ import dev.langchain4j.Internal;
 /**
  * Corresponds to the {@code JSONRPCNotification} type from the MCP schema.
  */
+/**
+ * 对应 MCP 协议中的 JSONRPCNotification 类型。
+ */
 @Internal
 public class McpClientNotification extends McpClientMessage {
 

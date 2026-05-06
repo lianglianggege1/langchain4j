@@ -6,6 +6,9 @@ import org.slf4j.LoggerFactory;
 /**
  * Central place for MCP-related loggers.
  */
+/**
+ * MCP 相关日志记录器的统一集中管理点。
+ */
 public final class McpLoggers {
 
     public static final String DEFAULT_TRAFFIC_LOGGER_NAME = "MCP";

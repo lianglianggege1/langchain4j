@@ -6,6 +6,9 @@ import java.util.Map;
 /**
  * Corresponds to the {@code GetPromptRequest} type from the MCP schema.
  */
+/**
+ * 对应 MCP 协议中的 GetPromptRequest 类型。
+ */
 @Internal
 public class McpGetPromptRequest extends McpClientRequest {
 

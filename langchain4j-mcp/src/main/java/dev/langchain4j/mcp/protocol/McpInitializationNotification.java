@@ -5,6 +5,9 @@ import dev.langchain4j.Internal;
 /**
  * Corresponds to the {@code InitializedNotification} type from the MCP schema.
  */
+/**
+ * 对应 MCP 协议中的 InitializedNotification 类型。
+ */
 @Internal
 public class McpInitializationNotification extends McpClientNotification {
 

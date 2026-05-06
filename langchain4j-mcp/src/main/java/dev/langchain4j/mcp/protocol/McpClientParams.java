@@ -8,6 +8,9 @@ import java.util.Map;
 /**
  * Corresponds to the {@code params} of the {@code JSONRPCRequest} type from the MCP schema.
  */
+/**
+ * 对应 MCP 协议中 JSONRPCRequest 类型的 params 参数。
+ */
 @Internal
 public class McpClientParams {
 

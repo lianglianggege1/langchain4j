@@ -22,6 +22,12 @@ import org.slf4j.LoggerFactory;
  * to call "startOperation" before starting an operation that requires a response
  * to register its ID in the map of pending operations.
  */
+/**
+ * 处理来自 MCP 服务器的入站消息。
+ * 传输层实现类需要在接收到每条消息时调用此处理器的 handle 方法。
+ * 传输层在启动需要响应的操作前，还必须调用 startOperation 方法，
+ * 以便将该操作的 ID 注册到待处理操作映射表中。
+ */
 public class McpOperationHandler {
 
     private final Map<Long, CompletableFuture<JsonNode>> pendingOperations;

@@ -10,6 +10,7 @@ import java.util.Objects;
 
 /**
  * The 'BlobResourceContents' object from the MCP protocol schema.
+ * MCP 协议架构中的 BlobResourceContents 对象
  */
 public final class McpBlobResourceContents implements McpResourceContents {
 

@@ -8,6 +8,9 @@ import java.util.Objects;
 /**
  * The 'TextResourceContents' object from the MCP protocol schema.
  */
+/**
+ * MCP协议架构中的TextResourceContents对象
+ */
 public final class McpTextResourceContents implements McpResourceContents {
 
     private final String uri;

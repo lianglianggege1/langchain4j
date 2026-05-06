@@ -6,7 +6,9 @@ import com.fasterxml.jackson.annotation.JsonCreator;
  * The 'Role' object from the MCP protocol schema.
  */
 public enum McpRole {
+    // 助手
     ASSISTANT,
+    // 用户
     USER;
 
     // to allow case-insensitive deserialization

@@ -282,6 +282,14 @@ public class StreamableHttpMcpTransport implements McpTransport {
      * @param firstAttempt if true, failures will not trigger reconnection
      * @return a future that completes when the channel setup attempt finishes
      */
+    /**
+     * 向 MCP 端点发送 HTTP GET 请求，打开附属 SSE 通道。
+     * 此机制允许服务器直接向客户端发送通知与请求，
+     * 无需客户端先通过 HTTP POST 发送数据。
+     *
+     * @param firstAttempt 若为 true，失败时不会触发重连
+     * @return 通道建立尝试完成时结束的 Future 对象
+     */
     private CompletableFuture<Void> startSubsidiaryChannel(boolean firstAttempt) {
         if (closed.get()) {
             return CompletableFuture.completedFuture(null);

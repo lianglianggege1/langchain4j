@@ -7,6 +7,9 @@ import org.jspecify.annotations.NonNull;
 /**
  * Corresponds to the {@code params} of the {@code CancelledNotification} type from the MCP schema.
  */
+/**
+ * 对应 MCP 协议中 CancelledNotification 类型的 params 参数。
+ */
 @Internal
 public class McpCancellationParams extends McpClientParams {
 

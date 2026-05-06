@@ -9,6 +9,9 @@ import java.util.Objects;
 /**
  * The 'ReadResourceResult' object from the MCP protocol schema.
  */
+/**
+ * 来自 MCP 协议 schema 的「ReadResourceResult」对象。
+ */
 public class McpReadResourceResult {
 
     private final List<McpResourceContents> contents;

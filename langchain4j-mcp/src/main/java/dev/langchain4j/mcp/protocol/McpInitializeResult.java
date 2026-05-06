@@ -6,6 +6,9 @@ import dev.langchain4j.Internal;
 /**
  * Corresponds to the {@code InitializeResult} type from the MCP schema.
  */
+/**
+ * 对应 MCP 协议中的 InitializeResult 类型。
+ */
 @Internal
 public class McpInitializeResult extends McpJsonRpcMessage {
 

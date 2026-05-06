@@ -8,6 +8,9 @@ import java.util.Objects;
 /**
  * The 'Resource' object from the MCP protocol schema.
  */
+/**
+ * 来自 MCP 协议 schema 的「Resource」对象。
+ */
 public class McpResource {
     private final String uri;
     private final String name;

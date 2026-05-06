@@ -5,6 +5,9 @@ import dev.langchain4j.Internal;
 /**
  * Corresponds to the {@code ListPromptsRequest} type from the MCP schema.
  */
+/**
+ *对应MCP架构中的ListPromptsRequest类型
+ */
 @Internal
 public class McpListPromptsRequest extends McpClientRequest {
 

@@ -7,6 +7,10 @@ import java.util.Objects;
  * Represents a progress notification received from an MCP server,
  * sent in response to a request that included a progress token.
  */
+/**
+ * 表示从 MCP 服务器接收到的进度通知，
+ * 该通知是针对包含进度令牌的请求所发送的响应。
+ */
 public class McpProgressNotification {
 
     private final String progressToken;
@@ -24,6 +28,9 @@ public class McpProgressNotification {
     /**
      * Parses a McpProgressNotification from the contents of the 'params' object
      * inside a 'notifications/progress' message.
+     */
+    /**
+     * 从 notifications/progress 消息内部的 params 对象内容中解析 McpProgressNotification。
      */
     public static McpProgressNotification fromJson(JsonNode params) {
         String progressToken = params.path("progressToken").asText(null);

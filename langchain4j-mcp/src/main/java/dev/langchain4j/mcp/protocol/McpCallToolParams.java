@@ -7,6 +7,9 @@ import dev.langchain4j.Internal;
 /**
  * Corresponds to the {@code params} of the {@code CallToolRequest} type from the MCP schema.
  */
+/**
+ * 对应 MCP 协议中 CallToolRequest 类型的 params 参数。
+ */
 @Internal
 public class McpCallToolParams extends McpClientParams {
 

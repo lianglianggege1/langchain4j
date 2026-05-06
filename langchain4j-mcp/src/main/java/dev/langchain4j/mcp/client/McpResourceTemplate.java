@@ -8,6 +8,9 @@ import java.util.Objects;
 /**
  * The 'ResourceTemplate' object from the MCP protocol schema.
  */
+/**
+ * MCP协议架构中的ResourceTemplate对象
+ */
 public class McpResourceTemplate {
 
     private final String uriTemplate;

@@ -9,6 +9,9 @@ import java.util.Objects;
 /**
  * The 'GetPromptResult' object from the MCP protocol schema.
  */
+/**
+ * MCP 协议架构中的 GetPromptResult 对象。
+ */
 public class McpGetPromptResult {
 
     private final String description;

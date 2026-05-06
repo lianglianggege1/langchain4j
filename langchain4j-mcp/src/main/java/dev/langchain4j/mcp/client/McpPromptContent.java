@@ -9,6 +9,10 @@ import java.util.Locale;
 /**
  * A holder for one of ['McpTextContent', 'McpImageContent', 'McpEmbeddedResource'] objects from the MCP protocol schema.
  */
+/**
+ * 一个容器对象，用于承载 MCP 协议结构中以下三种类型的**其中一种**：
+ * {@link McpTextContent}、{@link McpImageContent}、{@link McpEmbeddedResource}
+ */
 @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "type")
 @JsonSubTypes({
     @JsonSubTypes.Type(value = McpTextContent.class, name = "text"),

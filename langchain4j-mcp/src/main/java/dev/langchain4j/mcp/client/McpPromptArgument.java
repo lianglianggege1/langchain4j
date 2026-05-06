@@ -8,6 +8,9 @@ import java.util.Objects;
 /**
  * The 'PromptArgument' object from the MCP protocol schema.
  */
+/**
+ * 来自 MCP 协议 schema 的「PromptArgument」对象。
+ */
 public class McpPromptArgument {
 
     private final String name;

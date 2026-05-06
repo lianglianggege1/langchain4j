@@ -34,6 +34,9 @@ import static java.util.Arrays.asList;
 /**
  * A tool provider backed by one or more MCP clients.
  */
+/**
+ * 由一个或多个 MCP 客户端支撑的工具提供者。
+ */
 public class McpToolProvider implements ToolProvider {
 
     private static final Logger log = LoggerFactory.getLogger(McpToolProvider.class);
@@ -127,6 +130,10 @@ public class McpToolProvider implements ToolProvider {
      * Sets the tool name mapper overriding the current one.
      * The mapper can be null, in which case the tool names will be used as-is.
      */
+    /**
+     * 设置工具名称映射器，覆盖当前已有的映射器。
+     * 该映射器可以为 null；若为 null，工具名称将直接使用原始名称，不做任何修改。
+     */
     public void setToolNameMapper(BiFunction<McpClient, ToolSpecification, String> toolNameMapper) {
         this.toolNameMapper.set(toolNameMapper);
     }
@@ -134,6 +141,10 @@ public class McpToolProvider implements ToolProvider {
     /**
      * Sets the tool specification mapper overriding the current one.
      * The mapper can be null, in which case the tool specifications will be used as-is.
+     */
+    /**
+     * 设置工具规格映射器，覆盖当前已有的映射器。
+     * 该映射器可以为 null；若为 null，工具规格将直接使用原始内容，不做任何修改。
      */
     public void setToolSpecificationMapper(
             BiFunction<McpClient, ToolSpecification, ToolSpecification> toolSpecificationMapper) {

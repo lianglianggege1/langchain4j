@@ -7,6 +7,9 @@ import java.util.Map;
 /**
  * Corresponds to the {@code CallToolRequest} type from the MCP schema.
  */
+/**
+ * 对应 MCP 协议中的 CallToolRequest 类型。
+ */
 @Internal
 public class McpCallToolRequest extends McpClientRequest {
 

@@ -10,6 +10,9 @@ import java.util.Objects;
 /**
  * The 'ImageContent' object from the MCP protocol schema.
  */
+/**
+ * MCP 协议架构中的 ImageContent 对象。
+ */
 public final class McpImageContent implements McpPromptContent {
 
     private final String data;

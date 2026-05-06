@@ -13,6 +13,14 @@ import java.util.stream.StreamSupport;
  * newline characters, and stores the result in {@link ToolExecutionResult#resultText()}.
  * It does not apply to responses that contain {@code structuredContent}.
  */
+/**
+ * 基于 {@code content[]} 的 MCP 工具响应默认提取器。
+ * <p>
+ * 此实现保留现有客户端行为：仅支持
+ * {@code text} 类型的 {@code content} 项，使用换行符
+ * 拼接多个文本片段，并将结果存入 {@link ToolExecutionResult#resultText()}。
+ * 不适用于包含 {@code structuredContent} 的响应。
+ */
 public class DefaultMcpToolResultExtractor implements McpToolResultExtractor {
 
     @Override

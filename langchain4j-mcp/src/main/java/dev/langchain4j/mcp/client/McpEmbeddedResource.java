@@ -10,6 +10,9 @@ import java.util.Objects;
 /**
  * The 'EmbeddedResource' object from the MCP protocol schema.
  */
+/**
+ * MCP 协议架构中的 EmbeddedResource 对象。
+ */
 public final class McpEmbeddedResource implements McpPromptContent {
 
     private final McpResourceContents resource;

@@ -6,6 +6,9 @@ import dev.langchain4j.Internal;
 /**
  * Corresponds to the {@code Implementation} type from the MCP schema.
  */
+/**
+ * 对应 MCP 协议中的 Implementation 类型。
+ */
 @Internal
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public class McpImplementation {

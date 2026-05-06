@@ -7,6 +7,9 @@ import java.util.List;
 /**
  * Corresponds to the {@code CallToolResult} type from the MCP schema.
  */
+/**
+ * 对应 MCP 协议中的 CallToolResult 类型。
+ */
 @Internal
 public class McpCallToolResult extends McpJsonRpcMessage {
 
