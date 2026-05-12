@@ -48,6 +48,31 @@ import org.slf4j.LoggerFactory;
  * Including a document title or a short summary in each {@code TextSegment} is a common technique
  * to improve the quality of similarity searches.
  */
+/**
+ * {@code EmbeddingStoreIngestor} 表示一个数据导入管道，负责将 {@link Document}（文档）
+ * 导入并存储到 {@link EmbeddingStore}（嵌入存储）中。
+ * <br>
+ * <br>
+ * 在最简配置下，{@code EmbeddingStoreIngestor} 会使用提供的 {@link EmbeddingModel}（嵌入模型）
+ * 对传入的文档进行嵌入处理，并将文档及其对应的 {@link Embedding}（嵌入向量）一同存储到
+ * {@code EmbeddingStore} 中。
+ * <br>
+ * <br>
+ * 可选功能：{@code EmbeddingStoreIngestor} 可通过提供的 {@link DocumentTransformer}（文档转换器）
+ * 对文档进行转换处理。该功能适用于在嵌入前对文档进行清理、增强或格式化操作。
+ * <br>
+ * <br>
+ * 可选功能：{@code EmbeddingStoreIngestor} 可通过提供的 {@link DocumentSplitter}（文档分割器）
+ * 将文档分割为 {@link TextSegment}（文本片段）。
+ * 当文档体积较大时，分割为更小的片段可提升相似度搜索质量，并减少发送给大语言模型的提示词体积与成本。
+ * <br>
+ * <br>
+ * 可选功能：{@code EmbeddingStoreIngestor} 可通过 {@link TextSegmentTransformer}（文本片段转换器）
+ * 对 {@code TextSegment} 进行转换处理。
+ * 该功能适用于在嵌入前对文本片段进行清理、增强或格式化操作。
+ * <br>
+ * 在每个文本片段中加入文档标题或简短摘要，是提升相似度搜索质量的常用优化手段。
+ */
 public class EmbeddingStoreIngestor {
 
     private static final Logger log = LoggerFactory.getLogger(EmbeddingStoreIngestor.class);
@@ -68,6 +93,17 @@ public class EmbeddingStoreIngestor {
      * @param embeddingModel         The {@link EmbeddingModel} to use. Mandatory.
      *                               If none is specified, it tries to load one through SPI (see {@link EmbeddingModelFactory}).
      * @param embeddingStore         The {@link EmbeddingStore} to use. Mandatory.
+     */
+    /**
+     * 创建 {@code EmbeddingStoreIngestor}（嵌入存储导入器）的实例。
+     *
+     * @param documentTransformer    要使用的 {@link DocumentTransformer}（文档转换器）。可选。
+     * @param documentSplitter       要使用的 {@link DocumentSplitter}（文档分割器）。可选。
+     *                               如果未指定，会尝试通过 SPI 机制加载（详见 {@link DocumentSplitterFactory}）。
+     * @param textSegmentTransformer 要使用的 {@link TextSegmentTransformer}（文本片段转换器）。可选。
+     * @param embeddingModel         要使用的 {@link EmbeddingModel}（嵌入模型）。必填。
+     *                               如果未指定，会尝试通过 SPI 机制加载（详见 {@link EmbeddingModelFactory}）。
+     * @param embeddingStore         要使用的 {@link EmbeddingStore}（嵌入存储）。必填。
      */
     public EmbeddingStoreIngestor(
             DocumentTransformer documentTransformer,
@@ -126,6 +162,17 @@ public class EmbeddingStoreIngestor {
      *
      * @return result including information related to ingestion process.
      */
+    /**
+     * 将指定的 {@link Document}（文档）导入到指定的 {@link EmbeddingStore}（嵌入存储）中。
+     * <br>
+     * 通过 SPI 机制自动加载 {@link DocumentSplitter}（文档分割器）和 {@link EmbeddingModel}（嵌入模型）
+     * （详见 {@link DocumentSplitterFactory} 和 {@link EmbeddingModelFactory}）。
+     * <br>
+     * 若使用“简易 RAG”，请引入 {@code langchain4j-easy-rag} 模块，
+     * 该模块包含了 {@code DocumentSplitterFactory} 和 {@code EmbeddingModelFactory} 的实现。
+     *
+     * @return 包含导入过程相关信息的结果。
+     */
     public static IngestionResult ingest(Document document, EmbeddingStore<TextSegment> embeddingStore) {
         return builder().embeddingStore(embeddingStore).build().ingest(document);
     }
@@ -173,6 +220,12 @@ public class EmbeddingStoreIngestor {
      *
      * @param documents the documents to ingest.
      * @return result including information related to ingestion process.
+     */
+    /**
+     * 将指定的文档导入到创建此 {@code EmbeddingStoreIngestor} 时指定的 {@link EmbeddingStore}（嵌入存储）中。
+     *
+     * @param documents 待导入的文档。
+     * @return 包含导入过程相关信息的结果。
      */
     public IngestionResult ingest(List<Document> documents) {
 

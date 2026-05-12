@@ -37,6 +37,20 @@ public class EmbeddingSearchRequest {
      *                       Please note that not all {@link EmbeddingStore}s support this feature yet.
      *                       This is an optional parameter. Default: no filtering
      */
+    /**
+     * 创建 EmbeddingSearchRequest（嵌入搜索请求）的实例。
+     *
+     * @param queryEmbedding 用作参考的查询嵌入向量。搜索到的嵌入向量应与该向量相似。
+     *                       此为必填参数。
+     * @param maxResults     要返回的最大嵌入向量数量。此为可选参数，默认值：3
+     * @param minScore       最低分数阈值，取值范围为 0 到 1（包含边界）。
+     *                       仅返回分数大于等于该阈值的嵌入向量。
+     *                       此为可选参数，默认值：0
+     * @param filter         搜索时应用于 {@link Metadata}（元数据）的过滤器。
+     *                       仅返回其 {@link Metadata} 匹配 {@link Filter} 的 {@link TextSegment}。
+     *                       请注意，并非所有 {@link EmbeddingStore} 都支持该功能。
+     *                       此为可选参数，默认值：不进行过滤
+     */
     public EmbeddingSearchRequest(Embedding queryEmbedding, Integer maxResults, Double minScore, Filter filter) {
         this(builder().queryEmbedding(queryEmbedding).maxResults(maxResults).minScore(minScore).filter(filter));
     }
@@ -45,6 +59,11 @@ public class EmbeddingSearchRequest {
      * Creates an instance of an EmbeddingSearchRequest.
      *
      * @param builder The builder used to create the instance.
+     */
+    /**
+     * 创建嵌入搜索请求（EmbeddingSearchRequest）的实例。
+     *
+     * @param builder 用于创建该实例的构建器。
      */
     public EmbeddingSearchRequest(EmbeddingSearchRequestBuilder builder) {
         this.query = builder.query;

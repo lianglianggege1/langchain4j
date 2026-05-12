@@ -28,14 +28,14 @@ class AudioTest {
 
     @Test
     void should_create_audio_with_base64_data() {
-        // given
+        // given 准备mock数据
         String base64Data = Base64.getEncoder().encodeToString("test audio data".getBytes());
         String mimeType = "audio/mp3";
 
-        // when
+        // when 执行测试逻辑
         Audio audio = Audio.builder().base64Data(base64Data).mimeType(mimeType).build();
 
-        // then
+        // then 验证测试逻辑
         assertThat(audio.base64Data()).isEqualTo(base64Data);
         assertThat(audio.mimeType()).isEqualTo(mimeType);
         assertThat(audio.binaryData()).isNull();

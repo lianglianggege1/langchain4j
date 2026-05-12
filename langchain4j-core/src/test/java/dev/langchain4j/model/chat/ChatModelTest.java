@@ -18,6 +18,7 @@ class ChatModelTest implements WithAssertions {
 
         @Override
         public ChatResponse doChat(ChatRequest chatRequest) {
+            // runtime agent <<==>> LLM 都在这里面实现即可
             List<ChatMessage> messages = chatRequest.messages();
             UserMessage lastMessage = (UserMessage) messages.get(messages.size() - 1);
             return ChatResponse.builder()

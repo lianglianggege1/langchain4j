@@ -187,6 +187,7 @@ class AiServicesObservabilityTests {
                 "chat",
                 false,
                 List.of(
+                        // ai service events
                         AiServiceCompletedEvent.class,
                         InputGuardrailExecutedEvent.class,
                         OutputGuardrailExecutedEvent.class,

@@ -12,6 +12,10 @@ import java.util.Objects;
  * A filter that checks if the value of a metadata key contains a specific string.
  * The value of the metadata key must be a string.
  */
+/**
+ * 一种过滤器，用于检查元数据键的值是否包含指定字符串。
+ * 元数据键的值必须为字符串类型。
+ */
 public class ContainsString implements Filter {
 
     private final String key;

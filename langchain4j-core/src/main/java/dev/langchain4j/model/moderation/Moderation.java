@@ -73,6 +73,11 @@ public class Moderation implements Serializable {
      * @param flaggedText the text that was flagged.
      * @return a Moderation object.
      */
+    /**
+     * 构造一个已被标记的审核对象。
+     * @param flaggedText 被标记的文本内容。
+     * @return 一个审核对象。
+     */
     public static Moderation flagged(String flaggedText) {
         return new Moderation(flaggedText);
     }
@@ -80,6 +85,10 @@ public class Moderation implements Serializable {
     /**
      * Constructs a Moderation object that is not flagged.
      * @return a Moderation object.
+     */
+    /**
+     * 构造一个**未被标记**的审核对象。
+     * @return 一个审核对象。
      */
     public static Moderation notFlagged() {
         return new Moderation();

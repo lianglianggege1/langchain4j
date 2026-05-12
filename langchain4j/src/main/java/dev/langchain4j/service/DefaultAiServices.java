@@ -336,6 +336,7 @@ class DefaultAiServices<T> extends AiServices<T> {
                                 .eventListenerRegistrar(context.eventListenerRegistrar)
                                 .build();
 
+                        // 执行了
                         ChatResponse chatResponse = chatExecutor.execute();
 
                         context.eventListenerRegistrar.fireEvent(AiServiceResponseReceivedEvent.builder()
@@ -348,6 +349,7 @@ class DefaultAiServices<T> extends AiServices<T> {
 
                         boolean isReturnTypeResult = typeHasRawClass(returnType, Result.class);
 
+                        // 工具服务执行
                         ToolServiceResult toolServiceResult = context.toolService.executeInferenceAndToolsLoop(
                                 context,
                                 memoryId,

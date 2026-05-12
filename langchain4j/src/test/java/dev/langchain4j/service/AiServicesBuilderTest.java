@@ -17,6 +17,10 @@ import org.junit.jupiter.api.Test;
  * Verify that the AIServices builder doesn't allow setting more than one of
  * (retriever, contentRetriever, retrievalAugmentor).
  */
+/**
+ * 验证 AIServices 构建器不允许同时设置以下多个组件
+ *（检索器、内容检索器、检索增强器），仅能设置其中一个。
+ */
 class AiServicesBuilderTest {
 
     interface TestService {

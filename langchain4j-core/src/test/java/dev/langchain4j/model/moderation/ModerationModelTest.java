@@ -15,6 +15,7 @@ class ModerationModelTest implements WithAssertions {
         @Override
         public ModerationResponse doModerate(ModerationRequest moderationRequest) {
             String flaggedText = moderationRequest.texts().get(0);
+            System.out.println("flaggedText = " + flaggedText);
             return ModerationResponse.builder()
                     .moderation(Moderation.flagged(flaggedText))
                     .build();

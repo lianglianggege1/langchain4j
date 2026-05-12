@@ -2,6 +2,7 @@ package dev.langchain4j.service;
 
 import static dev.langchain4j.data.document.Metadata.metadata;
 import static dev.langchain4j.data.document.loader.FileSystemDocumentLoader.loadDocument;
+import static dev.langchain4j.model.chat.Capability.RESPONSE_FORMAT_JSON_SCHEMA;
 import static dev.langchain4j.model.openai.OpenAiChatModelName.GPT_3_5_TURBO;
 import static dev.langchain4j.model.openai.OpenAiChatModelName.GPT_4_O_MINI;
 import static dev.langchain4j.rag.query.router.LanguageModelQueryRouter.FallbackStrategy.FAIL;
@@ -652,10 +653,10 @@ class AiServicesWithRagIT {
     static Stream<Arguments> models() {
         return Stream.of(
                 Arguments.of(OpenAiChatModel.builder()
-                        .baseUrl(System.getenv("OPENAI_BASE_URL"))
-                        .apiKey(System.getenv("OPENAI_API_KEY"))
-                        .organizationId(System.getenv("OPENAI_ORGANIZATION_ID"))
-                        .modelName(GPT_4_O_MINI)
+                        .baseUrl("https://api.minimaxi.com/v1")
+                        .apiKey("sk-cp-k94NcRwMEUPF_ls-fqeyN9Gk9msntO6yv1WZxwhV3joGHW8rXfeP5Xqe27hsklfARyU0YnqQW1acyFsR6nWKE85mp8HJLFoz0YiZklBukg4_LXilJ5JXbyM")
+                        .organizationId("MiniMax")
+                        .modelName("MiniMax-M2.7")
                         .logRequests(true)
                         .logResponses(true)
                         .build())

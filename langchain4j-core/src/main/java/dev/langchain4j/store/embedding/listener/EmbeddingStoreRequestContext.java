@@ -19,6 +19,14 @@ import java.util.Map;
  *
  * @since 1.11.0
  */
+/**
+ * 向量存储请求上下文。
+ * 包含操作详情和属性。
+ * 这些属性可用于在 {@link EmbeddingStoreListener} 的多个方法之间
+ * 或多个 {@link EmbeddingStoreListener} 实例之间传递数据。
+ *
+ * @since 1.11.0
+ */
 @Experimental
 public abstract class EmbeddingStoreRequestContext<Embedded> {
 

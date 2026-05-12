@@ -8,11 +8,17 @@ import static dev.langchain4j.internal.ValidationUtils.ensureNotNull;
 /**
  * Utility class for calculating cosine similarity between two vectors.
  */
+/**
+ * 用于计算两个向量之间余弦相似度的工具类。
+ */
 public class CosineSimilarity {
     private CosineSimilarity() {}
 
     /**
      * A small value to avoid division by zero.
+     */
+    /**
+     * 用于避免除零错误的极小值。
      */
     public static final float EPSILON = 1e-8f;
 
@@ -36,6 +42,27 @@ public class CosineSimilarity {
      * @param embeddingA first embedding vector
      * @param embeddingB second embedding vector
      * @return cosine similarity in the range [-1..1]
+     */
+    /**
+     * 计算两个向量之间的余弦相似度。
+     * <p>
+     * 余弦相似度用于衡量两个向量之间夹角的余弦值，表示它们的方向相似性。
+     * 计算结果取值范围：
+     * <p>
+     * -1 表示向量方向完全相反。
+     * <p>
+     * 0 表示向量正交（无方向相似性）。
+     * <p>
+     * 1 表示向量方向完全一致（但长度不一定相同）。
+     * <p>
+     * 不要与余弦距离（[0..2]）混淆，余弦距离用于量化两个向量的差异程度。
+     * <p>
+     * 全零向量的嵌入被视为与所有其他向量正交；
+     * 包括其他全零向量。
+     *
+     * @param embeddingA 第一个嵌入向量
+     * @param embeddingB 第二个嵌入向量
+     * @return 余弦相似度，取值范围 [-1..1]
      */
     public static double between(Embedding embeddingA, Embedding embeddingB) {
         ensureNotNull(embeddingA, "embeddingA");
@@ -68,6 +95,12 @@ public class CosineSimilarity {
      *
      * @param relevanceScore Relevance score in the range [0..1] where 0 is not relevant and 1 is relevant.
      * @return Cosine similarity in the range [-1..1] where -1 is not relevant and 1 is relevant.
+     */
+    /**
+     * 将相关性分数转换为余弦相似度。
+     *
+     * @param relevanceScore 相关性分数，取值范围 [0..1]，0 表示不相关，1 表示相关。
+     * @return 余弦相似度，取值范围 [-1..1]，-1 表示不相关，1 表示相关。
      */
     public static double fromRelevanceScore(double relevanceScore) {
         return relevanceScore * 2 - 1;

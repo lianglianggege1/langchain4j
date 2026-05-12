@@ -17,6 +17,14 @@ import java.util.Map;
  *
  * @since 1.11.0
  */
+/**
+ * 向量存储响应上下文。
+ * 包含响应详情、对应的请求详情以及属性。
+ * 这些属性可用于在 {@link EmbeddingStoreListener} 的多个方法之间
+ * 或多个 {@link EmbeddingStoreListener} 实例之间传递数据。
+ *
+ * @since 1.11.0
+ */
 @Experimental
 public abstract class EmbeddingStoreResponseContext<Embedded> {
 
@@ -37,12 +45,19 @@ public abstract class EmbeddingStoreResponseContext<Embedded> {
      * @return The attributes map. It can be used to pass data between methods of an {@link EmbeddingStoreListener}
      * or between multiple {@link EmbeddingStoreListener}s.
      */
+    /**
+     * @return 属性集合。可用于在 {@link EmbeddingStoreListener} 的多个方法之间
+     *         或多个 {@link EmbeddingStoreListener} 之间传递数据。
+     */
     public Map<Object, Object> attributes() {
         return attributes;
     }
 
     /**
      * @return The corresponding request context.
+     */
+    /**
+     * @return 对应的请求上下文。
      */
     public EmbeddingStoreRequestContext<Embedded> requestContext() {
         return requestContext;

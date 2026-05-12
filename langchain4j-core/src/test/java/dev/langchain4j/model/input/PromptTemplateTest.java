@@ -150,6 +150,8 @@ class PromptTemplateTest {
         // when
         Prompt prompt = promptTemplate.apply(variables);
 
+        System.out.println(prompt.text());
+
         // then
         assertThat(prompt.text()).isEqualTo("Today is " + LocalDate.now());
     }
@@ -184,6 +186,8 @@ class PromptTemplateTest {
         // when
         Prompt prompt = promptTemplate.apply(variables);
 
+        System.out.println(prompt.text());
+
         // then
         assertThat(prompt.text()).isEqualTo("My name is Klaus and now is " + LocalDateTime.now(clock));
     }
@@ -214,6 +218,8 @@ class PromptTemplateTest {
 
         // when
         Prompt prompt = promptTemplate.apply(s);
+
+        System.out.println(prompt.text());
 
         // then
         assertThat(prompt.text()).isEqualTo("This is " + s + ".");

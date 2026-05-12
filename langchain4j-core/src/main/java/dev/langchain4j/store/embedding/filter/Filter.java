@@ -40,6 +40,29 @@ import dev.langchain4j.store.embedding.filter.logical.Or;
  * @see Not
  * @see Or
  */
+/**
+ * 该类表示一种可在{@link EmbeddingStore}搜索过程中应用的过滤器。
+ * <br>
+ * 多数{@link EmbeddingStore}均支持元数据过滤功能，{@code Filter}类可用于实现该功能。
+ * <br>
+ * {@code Filter}对象能够以与{@link EmbeddingStore}无关的通用方式，表示简单过滤表达式（如{@code 类型 = '文档'}）
+ * 以及组合过滤表达式（如{@code 类型 = '文档' 且 年份 > 2020}）。
+ * <br>
+ * 所有支持元数据过滤的{@link EmbeddingStore}实现类，都会将{@link Filter}转换为自身原生的过滤表达式。
+ *
+ * @see 等于条件
+ * @see 不等于条件
+ * @see 大于条件
+ * @see 大于等于条件
+ * @see 小于条件
+ * @see 小于等于条件
+ * @see 包含于条件
+ * @see 不包含于条件
+ * @see 包含字符串条件
+ * @see 逻辑与组合
+ * @see 逻辑非
+ * @see 逻辑或组合
+ */
 @JacocoIgnoreCoverageGenerated
 public interface Filter {
 
@@ -48,6 +71,12 @@ public interface Filter {
      *
      * @param object An object to test.
      * @return {@code true} if a given object satisfies this {@link Filter}, {@code false} otherwise.
+     */
+    /**
+     * 校验指定对象是否满足当前{@link Filter}过滤器的条件。
+     *
+     * @param object 待校验的对象。
+     * @return 若指定对象满足该{@link Filter}过滤器条件则返回{@code true}，否则返回{@code false}。
      */
     boolean test(Object object);
 

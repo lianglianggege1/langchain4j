@@ -21,6 +21,11 @@ import java.util.List;
  *
  * @param <Embedded> The class of the object that has been embedded. Typically, this is {@link dev.langchain4j.data.segment.TextSegment}.
  */
+/**
+ * 表示用于存储嵌入向量的仓库，也被称为向量数据库。
+ *
+ * @param <Embedded> 已嵌入的对象类型。通常为 {@link dev.langchain4j.data.segment.TextSegment}。
+ */
 public interface EmbeddingStore<Embedded> {
     /**
      * Adds a given embedding to the store.

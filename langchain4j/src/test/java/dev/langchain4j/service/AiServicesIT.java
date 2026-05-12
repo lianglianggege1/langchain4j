@@ -4,6 +4,7 @@ import static dev.langchain4j.MockitoUtils.ignoreInteractions;
 import static dev.langchain4j.data.message.SystemMessage.systemMessage;
 import static dev.langchain4j.data.message.UserMessage.userMessage;
 import static dev.langchain4j.model.openai.OpenAiChatModelName.GPT_4_O_MINI;
+import static dev.langchain4j.model.openai.OpenAiChatModelName.GPT_5;
 import static dev.langchain4j.model.openai.OpenAiChatModelName.O3_MINI;
 import static dev.langchain4j.model.output.FinishReason.STOP;
 import static dev.langchain4j.service.AiServicesIT.Ingredient.OIL;
@@ -67,10 +68,10 @@ public class AiServicesIT {
 
     @Spy
     ChatModel chatModel = OpenAiChatModel.builder()
-            .baseUrl(System.getenv("OPENAI_BASE_URL"))
-            .apiKey(System.getenv("OPENAI_API_KEY"))
-            .organizationId(System.getenv("OPENAI_ORGANIZATION_ID"))
-            .modelName(GPT_4_O_MINI)
+            .baseUrl(System.getenv("MINIMAX_BASE_URL"))
+            .apiKey(System.getenv("MINIMAX_AUTH_TOKEN"))
+            .organizationId(System.getenv("MINIMAX_ORGANIZATION_ID"))
+            .modelName(GPT_5)
             .temperature(0.0)
             .logRequests(true)
             .logResponses(true)
@@ -81,9 +82,9 @@ public class AiServicesIT {
 
     @Spy
     ModerationModel moderationModel = OpenAiModerationModel.builder()
-            .baseUrl(System.getenv("OPENAI_BASE_URL"))
-            .apiKey(System.getenv("OPENAI_API_KEY"))
-            .organizationId(System.getenv("OPENAI_ORGANIZATION_ID"))
+            .baseUrl(System.getenv("MINIMAX_BASE_URL"))
+            .apiKey(System.getenv("MINIMAX_AUTH_TOKEN"))
+            .organizationId(System.getenv("MINIMAX_ORGANIZATION_ID"))
             .build();
 
     @AfterEach
@@ -206,9 +207,13 @@ public class AiServicesIT {
                         + "You must answer strictly in the following format: yyyy-MM-ddTHH:mm:ss"));
     }
 
+//    情绪；情感；观点倾向
     enum Sentiment {
+//        积极的；正面的；肯定的
         POSITIVE,
+//        中性的；中立的
         NEUTRAL,
+//        消极的；负面的；否定的
         NEGATIVE
     }
 

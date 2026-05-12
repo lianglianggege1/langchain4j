@@ -9,6 +9,7 @@ import java.util.List;
 import static java.util.Collections.singletonList;
 import static org.assertj.core.api.Assertions.assertThat;
 
+// 评分模型测试
 class ScoringModelTest {
 
     private static final double SCORE = 0.7;
@@ -46,6 +47,8 @@ class ScoringModelTest {
 
         // when
         Response<Double> response = model.score(segment, "query");
+
+        System.out.println(response.content());
 
         // then
         assertThat(response.content()).isEqualTo(SCORE);

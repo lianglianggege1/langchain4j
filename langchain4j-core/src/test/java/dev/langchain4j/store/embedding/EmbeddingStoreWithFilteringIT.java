@@ -28,6 +28,10 @@ import org.junit.jupiter.params.provider.MethodSource;
 /**
  * A minimum set of tests that each implementation of {@link EmbeddingStore} that supports {@link Filter} must pass.
  */
+/**
+ * 每个支持 {@link Filter}（过滤器）功能的 {@link EmbeddingStore}（嵌入存储）实现类
+ * 都必须通过的最小测试集。
+ */
 public abstract class EmbeddingStoreWithFilteringIT extends EmbeddingStoreIT {
 
     @ParameterizedTest

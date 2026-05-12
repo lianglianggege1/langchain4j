@@ -7,7 +7,9 @@ import org.junit.jupiter.api.Test;
 class StreamingResponseHandlerTest implements WithAssertions {
     public static class MinimalStreamingResponseHandler<T> implements StreamingResponseHandler<T> {
         @Override
-        public void onNext(String token) {}
+        public void onNext(String token) {
+            System.out.print(token);
+        }
 
         @Override
         public void onError(Throwable error) {}

@@ -253,10 +253,10 @@ class DefaultRetrievalAugmentorTest {
         Executor executor = mock(Executor.class);
 
         RetrievalAugmentor retrievalAugmentor = DefaultRetrievalAugmentor.builder()
-                .queryTransformer(queryTransformer)
-                .queryRouter(queryRouter)
-                .contentAggregator(contentAggregator)
-                .contentInjector(contentInjector)
+                .queryTransformer(queryTransformer) // 查询反转
+                .queryRouter(queryRouter) // 路由
+                .contentAggregator(contentAggregator) // 聚合
+                .contentInjector(contentInjector) // 插入
                 .executor(executor)
                 .build();
 

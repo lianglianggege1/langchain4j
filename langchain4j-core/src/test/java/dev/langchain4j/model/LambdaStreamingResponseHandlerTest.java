@@ -32,6 +32,7 @@ class LambdaStreamingResponseHandlerTest implements WithAssertions {
         // when
         List<Object> receivedTokens = new ArrayList<>();
         model.chat("Why is the sky blue?", onPartialResponse(receivedTokens::add));
+        System.out.println(receivedTokens);
 
         // then
         assertThat(receivedTokens).containsSequence(tokens);
@@ -53,6 +54,8 @@ class LambdaStreamingResponseHandlerTest implements WithAssertions {
         final Throwable[] thrown = {null};
 
         model.chat("Create a countdown", onPartialResponseAndError(receivedTokens::add, t -> thrown[0] = t));
+
+        System.out.println(receivedTokens);
 
         // then
         assertThat(tokens).containsSubsequence(receivedTokens);
