@@ -38,10 +38,12 @@ public class ChatRequest {
             validate(builder, "topK");
             parametersBuilder.topK(builder.topK);
         }
+        // 惩频率惩惩 惩 惩罚
         if (builder.frequencyPenalty != null) {
             validate(builder, "frequencyPenalty");
             parametersBuilder.frequencyPenalty(builder.frequencyPenalty);
         }
+        // 存在惩惩惩  惩罚 大模型生成参数
         if (builder.presencePenalty != null) {
             validate(builder, "presencePenalty");
             parametersBuilder.presencePenalty(builder.presencePenalty);

@@ -16,12 +16,13 @@ import java.time.Duration;
 public class Models {
 
     public enum MODEL_PROVIDER {
+        MINIMAX,
         OPENAI,
         GEMINI,
         OLLAMA
     }
 
-    public static final MODEL_PROVIDER modelProvider = MODEL_PROVIDER.OPENAI;
+    public static final MODEL_PROVIDER modelProvider = MODEL_PROVIDER.MINIMAX;
 
     private static final String OLLAMA_DEFAULT_URL = "http://127.0.0.1:11434";
     private static final String OLLAMA_ENV_URL = System.getenv("OLLAMA_BASE_URL");
@@ -37,13 +38,34 @@ public class Models {
                         .logResponses(true)
                         .build();
 
+    private static final ChatModel MINIMAX_BASE_MODEL = OpenAiChatModel.builder()
+            .baseUrl("https://api.minimaxi.com/v1")
+            .apiKey("sk-cp-k94NcRwMEUPF_ls-fqeyN9Gk9msntO6yv1WZxwhV3joGHW8rXfeP5Xqe27hsklfARyU0YnqQW1acyFsR6nWKE85mp8HJLFoz0YiZklBukg4_LXilJ5JXbyM")
+            .organizationId("MiniMax")
+            .modelName("MiniMax-M2.7")
+            .temperature(0.0)
+            .logRequests(true)
+            .logResponses(true)
+            .build();
+
     private static final ChatModel OPENAI_PLANNER_MODEL = OPENAI_BASE_MODEL;
+
+    private static final ChatModel MINIMAX_PLANNER_MODEL = MINIMAX_BASE_MODEL;
 
     private static final StreamingChatModel OPENAI_STREAMING_BASE_MODEL = OpenAiStreamingChatModel.builder()
             .baseUrl(System.getenv("OPENAI_BASE_URL"))
             .apiKey(System.getenv("OPENAI_API_KEY"))
             .organizationId(System.getenv("OPENAI_ORGANIZATION_ID"))
             .modelName(OpenAiChatModelName.GPT_4_O_MINI)
+            .temperature(0.0)
+            .logRequests(true)
+            .build();
+
+    private static final StreamingChatModel MINIMAX_STREAMING_BASE_MODEL = OpenAiStreamingChatModel.builder()
+            .baseUrl("https://api.minimaxi.com/v1")
+            .apiKey("sk-cp-k94NcRwMEUPF_ls-fqeyN9Gk9msntO6yv1WZxwhV3joGHW8rXfeP5Xqe27hsklfARyU0YnqQW1acyFsR6nWKE85mp8HJLFoz0YiZklBukg4_LXilJ5JXbyM")
+            .organizationId("MiniMax")
+            .modelName("MiniMax-M2.7")
             .temperature(0.0)
             .logRequests(true)
             .build();
@@ -118,6 +140,7 @@ public class Models {
             case OPENAI -> OPENAI_BASE_MODEL;
             case OLLAMA -> OLLAMA_BASE_MODEL;
             case GEMINI -> GEMINI_BASE_MODEL;
+            case MINIMAX -> MINIMAX_BASE_MODEL;
         };
     }
 
@@ -130,6 +153,7 @@ public class Models {
             case OPENAI -> OPENAI_PLANNER_MODEL;
             case OLLAMA -> OLLAMA_PLANNER_MODEL;
             case GEMINI -> GEMINI_PLANNER_MODEL;
+            case MINIMAX -> MINIMAX_PLANNER_MODEL;
         };
     }
 
@@ -142,6 +166,7 @@ public class Models {
             case OPENAI -> OPENAI_STREAMING_BASE_MODEL;
             case OLLAMA -> OLLAMA_STREAMING_BASE_MODEL;
             case GEMINI -> GEMINI_STREAMING_BASE_MODEL;
+            case MINIMAX -> MINIMAX_STREAMING_BASE_MODEL;
         };
     }
 
@@ -154,6 +179,7 @@ public class Models {
             case OPENAI -> OPENAI_BASE_MODEL;
             case OLLAMA -> OLLAMA_VISION_MODEL;
             case GEMINI -> GEMINI_VISION_MODEL;
+            case MINIMAX -> MINIMAX_BASE_MODEL;
         };
     }
 

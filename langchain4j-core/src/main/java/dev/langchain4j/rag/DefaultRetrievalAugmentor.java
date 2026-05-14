@@ -127,10 +127,15 @@ import static java.util.stream.Collectors.toMap;
  */
 public class DefaultRetrievalAugmentor implements RetrievalAugmentor {
 
+    // 搜索转换
     private final QueryTransformer queryTransformer;
+    // 搜索路由
     private final QueryRouter queryRouter;
+    // 内容聚合
     private final ContentAggregator contentAggregator;
+    // 内容注入
     private final ContentInjector contentInjector;
+    // 执行器
     private final Executor executor;
 
     public DefaultRetrievalAugmentor(QueryTransformer queryTransformer,
@@ -146,6 +151,7 @@ public class DefaultRetrievalAugmentor implements RetrievalAugmentor {
     }
 
     private static ExecutorService createDefaultExecutor() {
+        // 线程池执行
         return new ThreadPoolExecutor(
             0, Integer.MAX_VALUE,
             1, SECONDS,

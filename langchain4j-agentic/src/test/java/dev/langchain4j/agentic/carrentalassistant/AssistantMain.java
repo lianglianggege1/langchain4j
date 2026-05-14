@@ -19,15 +19,19 @@ import dev.langchain4j.agentic.scope.AgenticScope;
 import dev.langchain4j.agentic.scope.ResultWithAgenticScope;
 import dev.langchain4j.memory.chat.MessageWindowChatMemory;
 
+import java.util.Scanner;
+
 public class AssistantMain {
 
     public static void main(String[] args) {
         CarRentalAssistant assistant = createAssistant();
         String memoryId = "1";
         AgenticScope agenticScope = null;
+        Scanner scanner = new Scanner(System.in);
 
         while (true) {
-            String userMessage = System.console().readLine("You: ");
+            System.out.print("You: ");
+            String userMessage = scanner.nextLine();
             if (userMessage == null || userMessage.equalsIgnoreCase("exit")) {
                 break;
             }

@@ -6,6 +6,7 @@ import dev.langchain4j.model.chat.response.ChatResponse;
 
 /**
  * A {@link ChatModel} listener that listens for requests, responses and errors.
+ * 一个监听请求、响应与错误的 {@link ChatModel} 监听器。
  */
 public interface ChatModelListener {
 

@@ -46,6 +46,7 @@ public class Agents {
     }
 
     public enum RequestCategory {
+        //  法律类、医疗类、技术类、未知类
         LEGAL, MEDICAL, TECHNICAL, UNKNOWN
     }
 

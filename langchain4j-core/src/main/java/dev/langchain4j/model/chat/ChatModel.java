@@ -57,16 +57,19 @@ public interface ChatModel {
                 .messages(chatRequest.messages())
                 .parameters(defaultRequestParameters().overrideWith(chatRequest.parameters()))
                 .build();
-
+        // 监听
         List<ChatModelListener> listeners = listeners();
         Map<Object, Object> attributes = new ConcurrentHashMap<>(effectiveOptions.listenerAttributes());
 
+        // 监听输入参数
         onRequest(finalChatRequest, provider(), attributes, listeners);
         try {
             ChatResponse chatResponse = doChat(finalChatRequest);
+            // 监听输出参数
             onResponse(chatResponse, finalChatRequest, provider(), attributes, listeners);
             return chatResponse;
         } catch (Exception error) {
+            // 监听发生错误
             onError(error, finalChatRequest, provider(), attributes, listeners);
             throw error;
         }

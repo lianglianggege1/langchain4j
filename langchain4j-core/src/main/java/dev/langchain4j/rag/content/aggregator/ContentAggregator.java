@@ -10,7 +10,7 @@ import java.util.Map;
 
 /**
  * Aggregates all {@link Content}s retrieved from all {@link ContentRetriever}s using all {@link Query}s.
- * 使用所有{@link Query}聚合从所有{@link ContentRetriever}检索到的所有{@link Content}。
+ * 使用所有{@link Query}聚从所有{@link ContentRetriever}检索到的所有{@link Content}。
  * <br>
  * The goal is to ensure that only the most relevant and non-redundant {@link Content}s are presented to the LLM.
  * 目标是确保只向LLM呈现最相关和非冗余的{@link Content}。

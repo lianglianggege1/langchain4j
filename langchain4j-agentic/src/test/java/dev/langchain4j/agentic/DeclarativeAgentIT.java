@@ -112,6 +112,7 @@ public class DeclarativeAgentIT {
         StoryCreator storyCreator = AgenticServices.createAgenticSystem(StoryCreator.class, baseModel());
 
         String story = storyCreator.write("dragons and wizards", "fantasy", "young adults");
+        System.out.println(story);
         assertThat(story).isNotBlank();
     }
 
@@ -362,7 +363,7 @@ public class DeclarativeAgentIT {
     public interface StyleReviewLoopAgentWithListener extends StyleReviewLoopAgent {
         @AgentListenerSupplier
         static AgentListener listener() {
-            return new AgentListener() {
+            return   new AgentListener() {
                 @Override
                 public void afterAgentInvocation(AgentResponse response) {
                     finalScore = response.agenticScope().readState("score", 0.0);

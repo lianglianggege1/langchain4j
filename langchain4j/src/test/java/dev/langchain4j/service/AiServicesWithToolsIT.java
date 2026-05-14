@@ -87,18 +87,18 @@ class AiServicesWithToolsIT {
     static Stream<ChatModel> models() {
         return Stream.of(
                 OpenAiChatModel.builder()
-                        .baseUrl(System.getenv("OPENAI_BASE_URL"))
-                        .apiKey(System.getenv("OPENAI_API_KEY"))
-                        .organizationId(System.getenv("OPENAI_ORGANIZATION_ID"))
-                        .modelName(GPT_4_O_MINI)
+                        .baseUrl("https://api.minimaxi.com/v1")
+                        .apiKey("sk-cp-k94NcRwMEUPF_ls-fqeyN9Gk9msntO6yv1WZxwhV3joGHW8rXfeP5Xqe27hsklfARyU0YnqQW1acyFsR6nWKE85mp8HJLFoz0YiZklBukg4_LXilJ5JXbyM")
+                        .organizationId("MiniMax")
+                        .modelName("MiniMax-M2.7")
                         .temperature(0.0)
                         .listeners(new LoggingChatModelListener())
                         .build(),
                 OpenAiChatModel.builder()
-                        .baseUrl(System.getenv("OPENAI_BASE_URL"))
-                        .apiKey(System.getenv("OPENAI_API_KEY"))
-                        .organizationId(System.getenv("OPENAI_ORGANIZATION_ID"))
-                        .modelName(GPT_4_O_MINI)
+                        .baseUrl("https://api.minimaxi.com/v1")
+                        .apiKey("sk-cp-k94NcRwMEUPF_ls-fqeyN9Gk9msntO6yv1WZxwhV3joGHW8rXfeP5Xqe27hsklfARyU0YnqQW1acyFsR6nWKE85mp8HJLFoz0YiZklBukg4_LXilJ5JXbyM")
+                        .organizationId("MiniMax")
+                        .modelName("MiniMax-M2.7")
                         .strictTools(true)
                         .temperature(0.0)
                         .listeners(new LoggingChatModelListener())
@@ -107,10 +107,10 @@ class AiServicesWithToolsIT {
 
     static Stream<ChatModel> modelsWithoutParallelToolCalling() {
         return Stream.of(OpenAiChatModel.builder()
-                .baseUrl(System.getenv("OPENAI_BASE_URL"))
-                .apiKey(System.getenv("OPENAI_API_KEY"))
-                .organizationId(System.getenv("OPENAI_ORGANIZATION_ID"))
-                .modelName(GPT_4_O_MINI)
+                .baseUrl("https://api.minimaxi.com/v1")
+                .apiKey("sk-cp-k94NcRwMEUPF_ls-fqeyN9Gk9msntO6yv1WZxwhV3joGHW8rXfeP5Xqe27hsklfARyU0YnqQW1acyFsR6nWKE85mp8HJLFoz0YiZklBukg4_LXilJ5JXbyM")
+                .organizationId("MiniMax")
+                .modelName("MiniMax-M2.7")
                 .parallelToolCalls(false) // to force the model to call tools sequentially
                 .temperature(0.0)
                 .logRequests(true)

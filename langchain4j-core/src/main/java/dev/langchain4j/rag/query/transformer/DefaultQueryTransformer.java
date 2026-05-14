@@ -28,6 +28,6 @@ public class DefaultQueryTransformer implements QueryTransformer {
 
     @Override
     public Collection<Query> transform(Query query) {
-        return singletonList(query);
+        return singletonList(query); // 就是不进行query的拆分整理直接进行搜索
     }
 }

@@ -10,6 +10,9 @@ import dev.langchain4j.service.V;
 /**
  * AI service interface for extracting customer information from messages.
  */
+/**
+ * 用于从消息中提取客户信息的AI服务接口。
+ */
 public interface CustomerInfoExtractionService {
     
     @SystemMessage("""
