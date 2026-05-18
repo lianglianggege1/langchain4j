@@ -13,6 +13,11 @@ import java.util.List;
  * <p>
  * This storage mechanism is transient and does not persist data across application restarts.
  */
+/**
+ * {@link ChatMemoryStore} 的实现类，将 {@link ChatMemory} 的状态（聊天消息）存储在内存中。
+ * <p>
+ * 该存储机制为临时存储，不会在应用重启后保留数据。
+ */
 @Internal
 class SingleSlotChatMemoryStore implements ChatMemoryStore {
 

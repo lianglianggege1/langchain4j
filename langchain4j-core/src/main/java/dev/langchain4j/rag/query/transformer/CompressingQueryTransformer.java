@@ -98,6 +98,8 @@ public class CompressingQueryTransformer implements QueryTransformer {
 
         Prompt prompt = createPrompt(query, format(chatMemory));
         String compressedQueryText = chatModel.chat(prompt.text());
+        // 去掉<think></think>里面的内容，定制改造
+        compressedQueryText = compressedQueryText.replaceAll("(?s)<think>.*?</think>", "");
         Query compressedQuery = query.metadata() == null
                 ? Query.from(compressedQueryText)
                 : Query.from(compressedQueryText, query.metadata());

@@ -155,7 +155,7 @@ class MessageWindowChatMemoryTest implements WithAssertions {
 
         assertThat(chatMemory.messages()).containsExactly(systemMessage, userMessage, aiMessage);
 
-        chatMemory.add(systemMessage);
+        chatMemory.add(systemMessage);// 一样的systemMessage 就不再添加了
 
         assertThat(chatMemory.messages()).containsExactly(systemMessage, userMessage, aiMessage);
     }
@@ -465,7 +465,7 @@ class MessageWindowChatMemoryTest implements WithAssertions {
         // Test default case (ID not matched, window size 3)
         MessageWindowChatMemory defaultMemory = MessageWindowChatMemory.builder()
                 .id("other")
-                .dynamicMaxMessages(dynamicMaxMessages)
+                .dynamicMaxMessages(dynamicMaxMessages) // 提供了最大窗口可以变更的入口
                 .build();
 
         defaultMemory.add(msgX);

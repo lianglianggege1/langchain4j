@@ -45,6 +45,30 @@ import java.util.function.Function;
  * <p>
  * The state of chat memory is stored in {@link ChatMemoryStore} ({@link SingleSlotChatMemoryStore} is used by default).
  */
+/**
+ * 该聊天存储器以滑动窗口形式运行，窗口大小由 {@link #maxMessagesProvider} 控制。
+ * 它会保留窗口容量内尽可能多的最新消息。
+ * 若容量不足无法容纳新消息，则会驱逐最旧的消息。
+ * <p>
+ * 消息最大数量可通过 {@code maxMessagesProvider} 静态或动态提供。
+ * 当采用动态提供方式时，实际生效的窗口大小可在运行时变更，
+ * 滑动窗口行为始终遵循提供者返回的最新数值。
+ * <p>
+ * 关于 {@link SystemMessage} 的规则：
+ * <ul>
+ * <li>系统消息一经添加，将永久保留，无法被移除。</li>
+ * <li>同一时间仅可持有一条系统消息。</li>
+ * <li>若添加内容相同的新系统消息，将被直接忽略。</li>
+ * <li>若添加内容不同的新系统消息，旧的系统消息会被移除。
+ * 除非将 {@link Builder#alwaysKeepSystemMessageFirst(Boolean)} 设置为 {@code true}，
+ * 否则新系统消息将被添加至消息列表末尾。</li>
+ * </ul>
+ * 当包含 {@link ToolExecutionRequest} 的 {@link AiMessage} 被驱逐时，
+ * 其对应的孤立 {@link ToolExecutionResultMessage} 也会被自动驱逐，
+ * 以此避免部分大模型提供商（如 OpenAI）因禁止在请求中携带孤立工具执行结果消息而引发异常。
+ * <p>
+ * 聊天存储器的状态存储在 {@link ChatMemoryStore} 中（默认使用 {@link SingleSlotChatMemoryStore}）。
+ */
 public class MessageWindowChatMemory implements ChatMemory {
 
     private final Object id;
@@ -182,6 +206,13 @@ public class MessageWindowChatMemory implements ChatMemory {
          *                                   If there isn't enough space for a new message under the current limit,
          *                                   the oldest one is evicted.
          * @return builder
+         */
+        /**
+         * @param maxMessagesProvider 消息最大保留数量的提供者。
+         *                                   该方法返回的数值可在运行时动态变更。
+         *                                   若在当前限制下无法容纳新消息，
+         *                                   则会驱逐最旧的消息。
+         * @return 构建器
          */
         public Builder dynamicMaxMessages(Function<Object, Integer> maxMessagesProvider) {
             this.maxMessagesProvider = maxMessagesProvider;

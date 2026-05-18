@@ -12,6 +12,11 @@ import java.util.concurrent.ConcurrentHashMap;
  * <p>
  * This storage mechanism is transient and does not persist data across application restarts.
  */
+/**
+ * {@link ChatMemoryStore} 的实现类，将 {@link dev.langchain4j.memory.ChatMemory} 的状态（聊天消息）存储在内存中。
+ * <p>
+ * 该存储机制属于临时存储，应用重启后数据不会持久化保留。
+ */
 public class InMemoryChatMemoryStore implements ChatMemoryStore {
 
     private final Map<Object, List<ChatMessage>> messagesByMemoryId = new ConcurrentHashMap<>();

@@ -23,6 +23,7 @@ import java.util.function.Function;
 import org.assertj.core.api.WithAssertions;
 import org.junit.jupiter.api.Test;
 
+//会话窗口内的token相关的设计我暂时还未了解，先不进行细看，因为也看不懂
 class TokenWindowChatMemoryTest implements WithAssertions {
 
     private static final TokenCountEstimator TOKEN_COUNT_ESTIMATOR = new OpenAiTokenCountEstimator(GPT_4_O_MINI);

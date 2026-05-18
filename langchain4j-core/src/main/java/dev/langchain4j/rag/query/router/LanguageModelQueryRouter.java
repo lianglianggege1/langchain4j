@@ -140,6 +140,8 @@ public class LanguageModelQueryRouter implements QueryRouter {
     }
 
     protected Collection<ContentRetriever> parse(String choices) {
+        // 去掉<think></think>里面的内容，定制改造
+        choices = choices.replaceAll("(?s)<think>.*?</think>", "");
         return stream(choices.split(","))
                 .map(String::trim)
                 .map(Integer::parseInt)

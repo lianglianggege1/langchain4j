@@ -47,6 +47,34 @@ import java.util.Map;
  *
  * @param <L> The type of the label (e.g., String, Enum, etc.)
  */
+/**
+ * 一种使用 {@link EmbeddingModel}（嵌入模型）和预定义示例来执行分类的 {@link TextClassifier}（文本分类器）。
+ * 分类逻辑：通过计算输入文本的嵌入向量与带标签示例文本的嵌入向量之间的相似度完成分类。
+ * 每个标签对应的示例数量越多，分类效果越好。
+ * 可借助大语言模型（LLM）轻松生成示例数据。
+ * <p>
+ * 示例：
+ * <pre>{@code
+ * enum Sentiment {
+ *     POSITIVE, NEUTRAL, NEGATIVE  // 积极、中性、消极
+ * }
+ *
+ *  Map<Sentiment, List<String>> examples = Map.of(
+ *     POSITIVE, List.of("太棒了！", "哇，太赞了！"),
+ *     NEUTRAL,  List.of("嗯，还可以", "还行吧"),
+ *     NEGATIVE, List.of("这太差劲了", "最糟糕的体验！")
+ * );
+ *
+ * EmbeddingModel embeddingModel = new AllMiniLmL6V2QuantizedEmbeddingModel();
+ *
+ * TextClassifier<Sentiment> classifier = new EmbeddingModelTextClassifier<>(embeddingModel, examples);
+ *
+ * List<Sentiment> sentiments = classifier.classify("太棒了！");
+ * System.out.println(sentiments); // [POSITIVE]
+ * }</pre>
+ *
+ * @param <L> 标签的类型（例如：字符串、枚举等）
+ */
 public class EmbeddingModelTextClassifier<L> implements TextClassifier<L> {
 
     private final EmbeddingModel embeddingModel;
@@ -89,6 +117,25 @@ public class EmbeddingModelTextClassifier<L> implements TextClassifier<L> {
      *                            A value of 0 means that only the mean score will be used for ranking labels.
      *                            A value of 0.5 means that both scores will contribute equally to the final score.
      *                            A value of 1 means that only the max score will be used for ranking labels.
+     */
+    /**
+     * 创建一个分类器。
+     *
+     * @param embeddingModel      用于对示例文本和待分类文本进行嵌入处理的嵌入模型。
+     * @param examplesByLabel     包含每个标签对应文本示例的映射表。
+     *                            通常为每个标签提供更多示例能提高分类准确率。
+     *                            示例文本可通过大语言模型（LLM）轻松生成。
+     * @param maxResults          每次分类最多返回的标签数量。
+     * @param minScore            分类所需的最低相似度分数，取值范围 [0..1]。
+     *                            低于该分数的标签会被过滤掉。
+     * @param meanToMaxScoreRatio 均值分数与最大值分数的权重比例，取值范围 [0..1]，用于计算最终得分。
+     *                            分类过程中，会将每个标签下所有示例的嵌入向量与待分类文本的嵌入向量进行相似度对比，
+     *                            得到两个指标：均值分数和最大值分数。
+     *                            均值分数：与当前标签关联的所有示例的相似度平均值。
+     *                            最大值分数：相似度最高的分数，对应与待分类文本最相似的示例。
+     *                            取值为 0 时：仅使用均值分数对标签排序。
+     *                            取值为 0.5 时：均值分数与最大值分数对最终得分的贡献相同。
+     *                            取值为 1 时：仅使用最大值分数对标签排序。
      */
     public EmbeddingModelTextClassifier(
             EmbeddingModel embeddingModel,

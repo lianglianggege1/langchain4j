@@ -600,6 +600,16 @@ public class DefaultAnthropicClient extends AnthropicClient {
      * @return the response containing the token count
      * @throws RuntimeException if the HTTP request fails or the response cannot be parsed
      */
+    /**
+     * 统计消息请求中的令牌数量。
+     *
+     * <p>在发送真实的消息创建请求之前，
+     * 先向 {@code /messages/count_tokens} 端点发送请求以估算令牌使用量。</p>
+     *
+     * @param request 包含消息和模型的令牌统计请求
+     * @return 包含令牌数量的响应结果
+     * @throws RuntimeException 当 HTTP 请求失败或无法解析响应时抛出
+     */
     @Override
     public MessageTokenCountResponse countTokens(AnthropicCountTokensRequest request) {
         HttpRequest httpRequest = toHttpRequest(toJson(request), "messages/count_tokens");

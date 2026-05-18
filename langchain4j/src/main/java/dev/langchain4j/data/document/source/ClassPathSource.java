@@ -18,6 +18,13 @@ import java.net.URL;
  *   {@link dev.langchain4j.data.document.Document Document}s using this.
  * </p>
  */
+/**
+ * {@link DocumentSource} 的专用实现，用于从类路径（classpath）中读取资源。
+ * <p>
+ *   请使用 {@link dev.langchain4j.data.document.loader.ClassPathDocumentLoader}
+ *   并通过此来源加载 {@link dev.langchain4j.data.document.Document 文档}。
+ * </p>
+ */
 public class ClassPathSource implements DocumentSource {
     private final URL url;
     private final ClassLoader classLoader;
@@ -39,6 +46,15 @@ public class ClassPathSource implements DocumentSource {
      * @param classPathResource The path of the classpath resource to be loaded.
      * @return A {@link ClassPathSource} instance representing the classpath resource.
      * @throws IllegalArgumentException if the classpath resource is blank or cannot be found.
+     * @see #from(String, ClassLoader)
+     */
+    /**
+     * 根据指定的类路径资源字符串创建一个新的 {@link ClassPathSource} 实例，
+     * 使用 {@code Thread.currentThread().getContextClassLoader()} 作为类加载器。
+     *
+     * @param classPathResource 待加载的类路径资源路径
+     * @return 代表该类路径资源的 {@link ClassPathSource} 实例
+     * @throws IllegalArgumentException 当类路径资源为空或无法找到时抛出
      * @see #from(String, ClassLoader)
      */
     public static ClassPathSource from(String classPathResource) {

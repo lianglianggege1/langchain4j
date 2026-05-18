@@ -30,6 +30,11 @@ import static dev.langchain4j.internal.ValidationUtils.ensureNotBlank;
  * Magic numbers present in this class were found empirically while testing.
  * There are integration tests in place that are making sure that the calculations here are very close to that of OpenAI.
  */
+/**
+ * 来自 Anthropic 令牌统计 API 的响应对象。
+ * <p>
+ * 包含给定消息的预估输入令牌数量。
+ */
 public class OpenAiTokenCountEstimator implements TokenCountEstimator {
 
     private static final EncodingRegistry ENCODING_REGISTRY = Encodings.newDefaultEncodingRegistry();

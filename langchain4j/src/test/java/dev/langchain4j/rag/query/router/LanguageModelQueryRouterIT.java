@@ -34,7 +34,7 @@ class LanguageModelQueryRouterIT {
     @MethodSource("models")
     void should_route_to_single_retriever(ChatModel model) {
 
-        // given
+        // given 拉不拉多会掉毛吗？
         Query query = Query.from("Do Labradors shed?");
 
         Map<ContentRetriever, String> retrieverToDescription = new LinkedHashMap<>();
@@ -54,7 +54,7 @@ class LanguageModelQueryRouterIT {
     @MethodSource("models")
     void should_route_to_multiple_retrievers(ChatModel model) {
 
-        // given
+        // given 告诉我关于动物
         Query query = Query.from("Tell me about animals");
 
         Map<ContentRetriever, String> retrieverToDescription = new LinkedHashMap<>();
@@ -94,10 +94,14 @@ class LanguageModelQueryRouterIT {
         return Stream.of(
                 Arguments.of(
                         OpenAiChatModel.builder()
-                                .baseUrl(System.getenv("OPENAI_BASE_URL"))
-                                .apiKey(System.getenv("OPENAI_API_KEY"))
-                                .organizationId(System.getenv("OPENAI_ORGANIZATION_ID"))
-                                .modelName(GPT_4_O_MINI)
+//                                .baseUrl(System.getenv("OPENAI_BASE_URL"))
+//                                .apiKey(System.getenv("OPENAI_API_KEY"))
+//                                .organizationId(System.getenv("OPENAI_ORGANIZATION_ID"))
+//                                .modelName(GPT_4_O_MINI)
+                                .baseUrl("https://api.minimaxi.com/v1")
+                                .apiKey("sk-cp-k94NcRwMEUPF_ls-fqeyN9Gk9msntO6yv1WZxwhV3joGHW8rXfeP5Xqe27hsklfARyU0YnqQW1acyFsR6nWKE85mp8HJLFoz0YiZklBukg4_LXilJ5JXbyM")
+                                .organizationId("MiniMax")
+                                .modelName("MiniMax-M2.7")
                                 .logRequests(true)
                                 .logResponses(true)
                                 .build()

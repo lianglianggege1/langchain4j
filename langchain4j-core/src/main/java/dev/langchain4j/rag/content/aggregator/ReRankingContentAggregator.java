@@ -48,6 +48,32 @@ import static java.util.Collections.emptyList;
  *
  * @see DefaultContentAggregator
  */
+/**
+ * 一种{@link ContentAggregator}内容聚合器，通过{@link ScoringModel}评分模型（例如Cohere）执行内容重排序。
+ * <br>
+ * 该{@link ScoringModel}评分模型会依据**单个**{@link Query}查询对{@link Content}内容进行打分。
+ * 若向此聚合器输入多个{@link Query}查询
+ * （例如使用{@link ExpandingQueryTransformer}扩展查询转换器时），
+ * 则必须配置{@link #querySelector}查询选择器，用于选定一个{@link Query}查询对所有{@link Content}内容进行排序。
+ * <br>
+ * 作为替代方案，可自定义实现逻辑：基于**检索对应内容的原始查询**（而非单一查询）
+ * 为{@link Content}内容打分，再依据分数完成重排序。
+ * 尽管该方案计算成本更高，但在{@link Query}查询差异显著时，
+ * 往往能获得更优的排序效果。
+ * <br>
+ * <br>
+ * 在启用{@link ScoringModel}评分模型之前，所有{@link Content}内容
+ * 会按照{@link DefaultContentAggregator}默认内容聚合器的规则完成内容融合。
+ * 详细说明请参考其Javadoc文档。
+ * <br>
+ * <br>
+ * 可配置参数（可选）：
+ * <br>
+ * - {@link #minScore}最低分数阈值：仅返回分数达到该值的{@link Content}内容。
+ * 经{@link ScoringModel}评分后，低于该阈值的内容将被过滤，不纳入最终结果。
+ *
+ * @see DefaultContentAggregator
+ */
 public class ReRankingContentAggregator implements ContentAggregator {
 
     public static final Function<Map<Query, Collection<List<Content>>>, Query> DEFAULT_QUERY_SELECTOR =

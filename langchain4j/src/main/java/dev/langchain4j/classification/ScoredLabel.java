@@ -7,6 +7,7 @@ import java.util.Objects;
 
 /**
  * Represents a classification label with score.
+ * 表示有分数的分类标签
  *
  * @param <L> The type of the label (e.g., String, Enum, etc.)
  */

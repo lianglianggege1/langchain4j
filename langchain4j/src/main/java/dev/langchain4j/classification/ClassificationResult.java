@@ -7,6 +7,7 @@ import java.util.Objects;
 
 /**
  * Represent the result of classification.
+ * 表示分类结果
  *
  * @param <L> The type of the label (e.g., String, Enum, etc.)
  */

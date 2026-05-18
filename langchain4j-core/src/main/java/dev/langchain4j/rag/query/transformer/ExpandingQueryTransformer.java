@@ -106,6 +106,8 @@ public class ExpandingQueryTransformer implements QueryTransformer {
     }
 
     protected List<String> parse(String queries) {
+        // 去掉<think></think>里面的内容，定制改造
+        queries = queries.replaceAll("(?s)<think>.*?</think>", "");
         return stream(queries.split("\n"))
                 .filter(Utils::isNotNullOrBlank)
                 .collect(toList());

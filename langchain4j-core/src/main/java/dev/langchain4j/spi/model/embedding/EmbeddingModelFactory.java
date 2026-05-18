@@ -9,6 +9,12 @@ import dev.langchain4j.model.embedding.EmbeddingModel;
  * For the "Easy RAG", import {@code langchain4j-easy-rag} module,
  * which contains a {@code EmbeddingModelFactory} implementation.
  */
+/**
+ * 通过服务提供者接口（SPI）创建 {@link EmbeddingModel} 实例的工厂类。
+ * <br>
+ * 若使用“简易RAG”，请导入 {@code langchain4j-easy-rag} 模块，
+ * 该模块包含了 {@code EmbeddingModelFactory} 的具体实现。
+ */
 @Internal
 public interface EmbeddingModelFactory {
 

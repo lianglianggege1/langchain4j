@@ -5,6 +5,8 @@ import dev.langchain4j.store.memory.chat.InMemoryChatMemoryStore;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 
+// 会话存储模块算是复刻理解了
+// 要结合实现一个融合claude code会话管理和hermess的回话管理和openclaw的回话管理和deepclaw的融合方法
 public class HitCountChatMemoryStore extends InMemoryChatMemoryStore {
 
     public record HitCounts(int getMessages, int updateMessages, int deleteMessages) {

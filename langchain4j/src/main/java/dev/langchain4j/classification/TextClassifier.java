@@ -13,6 +13,12 @@ import static java.util.stream.Collectors.toList;
  *
  * @param <L> The type of the label  (e.g., String, Enum, etc.)
  */
+/**
+ * 基于一组标签对指定文本进行分类。
+ * 每次分类可返回零个、一个或多个标签。
+ *
+ * @param <L> 标签类型（例如：字符串、枚举等）
+ */
 public interface TextClassifier<L> {
 
     /**

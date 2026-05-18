@@ -23,6 +23,18 @@ public interface StreamingChatResponseHandler {
      * @param partialResponse A partial textual response, usually a single token.
      * @see #onPartialResponse(PartialResponse, PartialResponseContext)
      */
+    /**
+     * 每次模型生成一段文本式的部分响应时都会调用，通常是单个令牌。
+     * <p>
+     * 请注意，部分大语言模型服务商不会逐个流式传输令牌，而是批量发送响应。
+     * 在这种情况下，此回调可能会一次性接收多个令牌。
+     * <p>
+     * 如果你希望令牌一产生就立即消费，
+     * 要么实现此方法，要么实现 {@link #onPartialResponse(PartialResponse, PartialResponseContext)} 方法。
+     *
+     * @param partialResponse 部分文本响应，通常是单个令牌
+     * @see #onPartialResponse(PartialResponse, PartialResponseContext)
+     */
     default void onPartialResponse(String partialResponse) {}
 
     /**
@@ -37,6 +49,21 @@ public interface StreamingChatResponseHandler {
      * @param partialResponse A partial textual response, usually a single token.
      * @param context         A partial response context.
      *                        Contains a {@link StreamingHandle} that can be used to cancel streaming.
+     * @see #onPartialResponse(String)
+     * @since 1.8.0
+     */
+    /**
+     * 每次模型生成一段文本式的部分响应时都会调用，通常是单个令牌。
+     * <p>
+     * 请注意，部分大语言模型服务商不会逐个流式传输令牌，而是批量发送响应。
+     * 在这种情况下，此回调可能会一次性接收多个令牌。
+     * <p>
+     * 如果你希望令牌一产生就立即消费，
+     * 要么实现此方法，要么实现 {@link #onPartialResponse(String)} 方法。
+     *
+     * @param partialResponse 部分文本响应，通常是单个令牌
+     * @param context 部分响应上下文
+     *                包含可用于取消流式传输的 {@link StreamingHandle}
      * @see #onPartialResponse(String)
      * @since 1.8.0
      */
@@ -58,6 +85,19 @@ public interface StreamingChatResponseHandler {
      * @see #onPartialThinking(PartialThinking, PartialThinkingContext)
      * @since 1.2.0
      */
+    /**
+     * 每次模型生成一段思考/推理文本片段时都会调用，通常是单个令牌。
+     * <p>
+     * 请注意，部分大语言模型服务商不会逐个流式传输令牌，而是批量发送思考令牌。
+     * 在这种情况下，此回调可能会一次性接收多个令牌。
+     * <p>
+     * 如果你希望思考令牌一产生就立即消费，
+     * 要么实现此方法，要么实现 {@link #onPartialThinking(PartialThinking, PartialThinkingContext)} 方法。
+     *
+     * @param partialThinking 思考文本片段，通常是单个令牌
+     * @see #onPartialThinking(PartialThinking, PartialThinkingContext)
+     * @since 1.2.0
+     */
     @Experimental
     default void onPartialThinking(PartialThinking partialThinking) {}
 
@@ -73,6 +113,21 @@ public interface StreamingChatResponseHandler {
      * @param partialThinking A partial thinking text, usually a single token.
      * @param context         A partial thinking context.
      *                        Contains a {@link StreamingHandle} that can be used to cancel streaming.
+     * @see #onPartialThinking(PartialThinking)
+     * @since 1.8.0
+     */
+    /**
+     * 每次模型生成一段思考/推理文本片段时都会调用，通常是单个令牌。
+     * <p>
+     * 请注意，部分大语言模型服务商不会逐个流式传输令牌，而是批量发送思考令牌。
+     * 在这种情况下，此回调可能会一次性接收多个令牌。
+     * <p>
+     * 如果你希望思考令牌一产生就立即消费，
+     * 要么实现此方法，要么实现 {@link #onPartialThinking(PartialThinking)} 方法。
+     *
+     * @param partialThinking 思考文本片段，通常是单个令牌
+     * @param context 思考响应上下文
+     *                包含可用于取消流式传输的 {@link StreamingHandle}
      * @see #onPartialThinking(PartialThinking)
      * @since 1.8.0
      */
@@ -114,6 +169,37 @@ public interface StreamingChatResponseHandler {
      * @see #onPartialToolCall(PartialToolCall, PartialToolCallContext)
      * @since 1.2.0
      */
+    /**
+     * 每次模型生成一段工具调用片段时都会触发此回调，
+     * 每次仅包含工具参数的单个令牌。
+     * 对于单次工具调用，该方法通常会被多次调用，
+     * 直到最终触发 {@link #onCompleteToolCall(CompleteToolCall)}，
+     * 表示该工具调用的流式传输完成。
+     * <p>
+     * 以下是单次工具调用流式传输的示例：
+     * <pre>
+     * 1. onPartialToolCall(index = 0, id = "call_abc", name = "get_weather", partialArguments = "{\"")
+     * 2. onPartialToolCall(index = 0, id = "call_abc", name = "get_weather", partialArguments = "city")
+     * 3. onPartialToolCall(index = 0, id = "call_abc", name = "get_weather", partialArguments = ""\":\"")
+     * 4. onPartialToolCall(index = 0, id = "call_abc", name = "get_weather", partialArguments = "Mun")
+     * 5. onPartialToolCall(index = 0, id = "call_abc", name = "get_weather", partialArguments = "ich")
+     * 6. onPartialToolCall(index = 0, id = "call_abc", name = "get_weather", partialArguments = "\"}")
+     * 7. onCompleteToolCall(index = 0, id = "call_abc", name = "get_weather", arguments = "{\"city\":\"Munich\"}")
+     * </pre>
+     * <p>
+     * 如果模型需要调用多个工具，索引值会递增，便于你进行关联匹配。
+     * <p>
+     * 请注意：并非所有大模型服务商都支持逐令牌流式传输工具调用。
+     * 部分服务商（如 Bedrock、Google、Mistral、Ollama）仅返回完整的工具调用。
+     * 在这种情况下，此回调不会被触发 —— 仅 {@link #onCompleteToolCall(CompleteToolCall)} 会被调用。
+     * <p>
+     * 如果你希望工具调用片段一产生就立即消费，
+     * 要么实现此方法，要么实现 {@link #onPartialToolCall(PartialToolCall, PartialToolCallContext)} 方法。
+     *
+     * @param partialToolCall 工具调用片段，包含索引、工具ID、工具名称和片段参数
+     * @see #onPartialToolCall(PartialToolCall, PartialToolCallContext)
+     * @since 1.2.0
+     */
     @Experimental
     default void onPartialToolCall(PartialToolCall partialToolCall) {}
 
@@ -152,6 +238,39 @@ public interface StreamingChatResponseHandler {
      * @see #onPartialToolCall(PartialToolCall)
      * @since 1.8.0
      */
+    /**
+     * 每次模型生成一段工具调用片段时都会触发此回调，
+     * 每次仅包含工具参数的单个令牌。
+     * 对于单次工具调用，该方法通常会被多次调用，
+     * 直到最终触发 {@link #onCompleteToolCall(CompleteToolCall)}，
+     * 表示该工具调用的流式传输完成。
+     * <p>
+     * 以下是单次工具调用流式传输的示例：
+     * <pre>
+     * 1. onPartialToolCall(index = 0, id = "call_abc", name = "get_weather", partialArguments = "{\"")
+     * 2. onPartialToolCall(index = 0, id = "call_abc", name = "get_weather", partialArguments = "city")
+     * 3. onPartialToolCall(index = 0, id = "call_abc", name = "get_weather", partialArguments = ""\":\"")
+     * 4. onPartialToolCall(index = 0, id = "call_abc", name = "get_weather", partialArguments = "Mun")
+     * 5. onPartialToolCall(index = 0, id = "call_abc", name = "get_weather", partialArguments = "ich")
+     * 6. onPartialToolCall(index = 0, id = "call_abc", name = "get_weather", partialArguments = "\"}")
+     * 7. onCompleteToolCall(index = 0, id = "call_abc", name = "get_weather", arguments = "{\"city\":\"Munich\"}")
+     * </pre>
+     * <p>
+     * 如果模型需要调用多个工具，索引值会递增，便于你进行关联匹配。
+     * <p>
+     * 请注意：并非所有大模型服务商都支持逐令牌流式传输工具调用。
+     * 部分服务商（如 Bedrock、Google、Mistral、Ollama）仅返回完整的工具调用。
+     * 在这种情况下，此回调不会被触发 —— 仅 {@link #onCompleteToolCall(CompleteToolCall)} 会被调用。
+     * <p>
+     * 如果你希望工具调用片段一产生就立即消费，
+     * 要么实现此方法，要么实现 {@link #onPartialToolCall(PartialToolCall)} 方法。
+     *
+     * @param partialToolCall 工具调用片段，包含索引、工具ID、工具名称和片段参数
+     * @param context 工具调用上下文
+     *                包含可用于取消流式传输的 {@link StreamingHandle}
+     * @see #onPartialToolCall(PartialToolCall)
+     * @since 1.8.0
+     */
     @Experimental
     default void onPartialToolCall(PartialToolCall partialToolCall, PartialToolCallContext context) {
         onPartialToolCall(partialToolCall);
@@ -164,6 +283,12 @@ public interface StreamingChatResponseHandler {
      *                         the index, tool ID, tool name, and fully assembled arguments.
      * @since 1.2.0
      */
+    /**
+     * 当模型完成单次工具调用的流式传输后触发。
+     *
+     * @param completeToolCall 完整的工具调用，包含索引、工具ID、工具名称以及已组装完成的完整参数
+     * @since 1.2.0
+     */
     @Experimental
     default void onCompleteToolCall(CompleteToolCall completeToolCall) {}
 
@@ -173,12 +298,23 @@ public interface StreamingChatResponseHandler {
      * @param completeResponse The complete response generated by the model,
      *                         containing all assembled partial text and tool calls.
      */
+    /**
+     * 当模型完成响应的流式传输后触发。
+     *
+     * @param completeResponse 模型生成的完整响应，
+     *                         包含所有已拼接完成的文本片段和工具调用信息
+     */
     void onCompleteResponse(ChatResponse completeResponse);
 
     /**
      * This method is invoked when an error occurs during streaming.
      *
      * @param error The error that occurred
+     */
+    /**
+     * 当流式传输过程中发生错误时调用此方法。
+     *
+     * @param error 发生的错误
      */
     void onError(Throwable error);
 }

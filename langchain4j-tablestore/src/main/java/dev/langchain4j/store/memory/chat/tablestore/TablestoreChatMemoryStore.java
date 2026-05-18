@@ -36,6 +36,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.function.Consumer;
 
+// 表存储会话
 public class TablestoreChatMemoryStore implements ChatMemoryStore {
 
     private final Logger log = LoggerFactory.getLogger(getClass());

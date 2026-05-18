@@ -15,6 +15,12 @@ import java.util.Objects;
  * This class is used to estimate token usage before sending a request,
  * allowing for cost estimation and message size validation.
  */
+/**
+ * 用于通过 Anthropic API 统计消息中令牌数量的请求对象。
+ * <p>
+ * 该类用于在发送请求前估算令牌使用量，
+ * 从而支持成本估算和消息大小校验。
+ */
 @JsonInclude(NON_NULL)
 @JsonIgnoreProperties(ignoreUnknown = true)
 @JsonNaming(PropertyNamingStrategies.SnakeCaseStrategy.class)

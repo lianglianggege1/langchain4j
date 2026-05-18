@@ -12,6 +12,10 @@ import java.util.stream.Stream;
  * This class provides methods to retrieve annotations and method metadata from classes
  * via reflection-based mechanisms.
  */
+/**
+ * 基于 Java 反射机制实现的 {@link ClassMetadataProviderFactory} 接口实现类。
+ * 该类通过反射机制提供用于获取类上的注解及方法元数据的方法。
+ */
 public final class ReflectionBasedClassMetadataProviderFactory implements ClassMetadataProviderFactory<Method> {
     @Override
     public <T extends Annotation> Optional<T> getAnnotation(Method method, Class<T> annotationClass) {

@@ -13,6 +13,11 @@ import java.util.Objects;
  * <p>
  * Contains the estimated input token count for a given message.
  */
+/**
+ * 来自 Anthropic 令牌统计 API 的响应对象。
+ * <p>
+ * 包含给定消息的预估输入令牌数量。
+ */
 @JsonInclude(NON_NULL)
 @JsonIgnoreProperties(ignoreUnknown = true)
 @JsonNaming(SnakeCaseStrategy.class)

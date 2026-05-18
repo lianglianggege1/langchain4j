@@ -7,6 +7,9 @@ import java.util.Optional;
 /**
  * A dimension aware embedding model
  */
+/**
+ * 支持维度感知的嵌入模型
+ */
 public abstract class DimensionAwareEmbeddingModel implements EmbeddingModel {
 
     /**
