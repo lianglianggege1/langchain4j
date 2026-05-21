@@ -81,6 +81,7 @@ public non-sealed class OutputGuardrailExecutor
             maxAttempts = OutputGuardrailsConfig.MAX_RETRIES_DEFAULT;
         }
 
+        // 审核不通过可以重新发起输出审核流程
         while (attempt < maxAttempts) {
             result = rewriteResult(request, accumulatedRequest, executeGuardrails(accumulatedRequest));
 

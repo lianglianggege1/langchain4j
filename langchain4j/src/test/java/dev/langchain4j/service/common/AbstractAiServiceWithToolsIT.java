@@ -80,6 +80,9 @@ public abstract class AbstractAiServiceWithToolsIT {
     // TODO test token usage is summed for tools
     // TODO single argument: array of primitives, array of enums, array of POJOs, map?
     // TODO up-wrap single POJO and Map? (remove one level of object nesting) Make sure descriptions still work.
+    // TODO 测试工具调用的令牌用量是否正确累加
+    // TODO 单个参数：原始类型数组、枚举数组、普通对象数组、映射（Map）？
+    // TODO 对单个普通对象和 Map 进行上层封装？（移除一层对象嵌套）确保描述信息仍能正常生效。
 
     interface Assistant {
 
@@ -94,23 +97,6 @@ public abstract class AbstractAiServiceWithToolsIT {
 
     interface AdderTool {
         int add(int a, int b);
-    }
-
-    static class ToolWithPrimitiveParameters implements AdderTool {
-
-        @Tool
-        @Override
-        public int add(int a, int b) {
-            return a + b;
-        }
-    }
-
-    static class ImmediateToolWithPrimitiveParameters implements AdderTool {
-
-        @Tool(returnBehavior = ReturnBehavior.IMMEDIATE)
-        public int add(int a, int b) {
-            return a + b;
-        }
     }
 
     @ParameterizedTest
@@ -163,6 +149,7 @@ public abstract class AbstractAiServiceWithToolsIT {
 
         @Tool
         void process(Person person) {
+            System.out.println(person);
         }
 
         static JsonSchemaElement EXPECTED_SCHEMA = JsonObjectSchema.builder()
@@ -224,6 +211,7 @@ public abstract class AbstractAiServiceWithToolsIT {
 
         @Tool
         void process(Person person) {
+            System.out.println(person);
         }
 
         static JsonSchemaElement EXPECTED_SCHEMA = JsonObjectSchema.builder()
@@ -822,6 +810,25 @@ public abstract class AbstractAiServiceWithToolsIT {
         }
     }
 
+
+    static class ToolWithPrimitiveParameters implements AdderTool {
+
+        @Tool
+        @Override
+        public int add(int a, int b) {
+            return a + b;
+        }
+    }
+
+    static class ImmediateToolWithPrimitiveParameters implements AdderTool {
+
+        @Tool(returnBehavior = ReturnBehavior.IMMEDIATE)
+        public int add(int a, int b) {
+            return a + b;
+        }
+    }
+
+    // todo 继续此项，上面了解了tool支持的各个入参类型！
     @ParameterizedTest
     @MethodSource("models")
     protected void should_execute_normal_tool_with_primitive_parameters(ChatModel chatModel) {

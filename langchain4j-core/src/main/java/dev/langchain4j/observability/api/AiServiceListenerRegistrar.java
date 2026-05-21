@@ -82,6 +82,12 @@ public interface AiServiceListenerRegistrar {
      * @param <T>   The type of the event, which must be a subtype of {@link AiServiceEvent}.
      * @param event The event to be fired to the listeners. Must not be null.
      */
+    /**
+     * 将给定事件触发到所有已注册的 {@link AiServiceListener} 监听器。
+     *
+     * @param <T>   事件类型，必须是 {@link AiServiceEvent} 的子类型。
+     * @param event 要触发给监听器的事件。禁止为 null。
+     */
     <T extends AiServiceEvent> void fireEvent(T event);
 
     /**

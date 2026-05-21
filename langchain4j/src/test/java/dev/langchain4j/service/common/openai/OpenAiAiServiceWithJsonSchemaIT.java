@@ -14,10 +14,10 @@ import org.junit.jupiter.api.condition.EnabledIfEnvironmentVariable;
 class OpenAiAiServiceWithJsonSchemaIT extends AbstractAiServiceWithJsonSchemaIT {
 
     OpenAiChatModel modelWithStrictJsonSchema = OpenAiChatModel.builder()
-            .baseUrl(System.getenv("OPENAI_BASE_URL"))
-            .apiKey(System.getenv("OPENAI_API_KEY"))
-            .organizationId(System.getenv("OPENAI_ORGANIZATION_ID"))
-            .modelName(GPT_4_O_MINI)
+            .baseUrl("https://api.minimaxi.com/v1")
+            .apiKey("sk-cp-k94NcRwMEUPF_ls-fqeyN9Gk9msntO6yv1WZxwhV3joGHW8rXfeP5Xqe27hsklfARyU0YnqQW1acyFsR6nWKE85mp8HJLFoz0YiZklBukg4_LXilJ5JXbyM")
+            .organizationId("MiniMax")
+            .modelName("MiniMax-M2.7")
             .supportedCapabilities(RESPONSE_FORMAT_JSON_SCHEMA)
             .strictJsonSchema(true)
             .temperature(0.0)
@@ -26,10 +26,10 @@ class OpenAiAiServiceWithJsonSchemaIT extends AbstractAiServiceWithJsonSchemaIT 
             .build();
 
     OpenAiChatModel modelWithStrictJsonSchemaLegacy = OpenAiChatModel.builder()
-            .baseUrl(System.getenv("OPENAI_BASE_URL"))
-            .apiKey(System.getenv("OPENAI_API_KEY"))
-            .organizationId(System.getenv("OPENAI_ORGANIZATION_ID"))
-            .modelName(GPT_4_O_MINI)
+            .baseUrl("https://api.minimaxi.com/v1")
+            .apiKey("sk-cp-k94NcRwMEUPF_ls-fqeyN9Gk9msntO6yv1WZxwhV3joGHW8rXfeP5Xqe27hsklfARyU0YnqQW1acyFsR6nWKE85mp8HJLFoz0YiZklBukg4_LXilJ5JXbyM")
+            .organizationId("MiniMax")
+            .modelName("MiniMax-M2.7")
             .responseFormat("json_schema") // testing backward compatibility
             .strictJsonSchema(true)
             .temperature(0.0)
@@ -43,10 +43,10 @@ class OpenAiAiServiceWithJsonSchemaIT extends AbstractAiServiceWithJsonSchemaIT 
                 modelWithStrictJsonSchema,
                 modelWithStrictJsonSchemaLegacy,
                 OpenAiChatModel.builder()
-                        .baseUrl(System.getenv("OPENAI_BASE_URL"))
-                        .apiKey(System.getenv("OPENAI_API_KEY"))
-                        .organizationId(System.getenv("OPENAI_ORGANIZATION_ID"))
-                        .modelName(GPT_4_O_MINI)
+                        .baseUrl("https://api.minimaxi.com/v1")
+                        .apiKey("sk-cp-k94NcRwMEUPF_ls-fqeyN9Gk9msntO6yv1WZxwhV3joGHW8rXfeP5Xqe27hsklfARyU0YnqQW1acyFsR6nWKE85mp8HJLFoz0YiZklBukg4_LXilJ5JXbyM")
+                        .organizationId("MiniMax")
+                        .modelName("MiniMax-M2.7")
                         .supportedCapabilities(RESPONSE_FORMAT_JSON_SCHEMA)
                         .strictJsonSchema(false)
                         .temperature(0.0)
@@ -54,10 +54,10 @@ class OpenAiAiServiceWithJsonSchemaIT extends AbstractAiServiceWithJsonSchemaIT 
                         .logResponses(true)
                         .build(),
                 OpenAiChatModel.builder()
-                        .baseUrl(System.getenv("OPENAI_BASE_URL"))
-                        .apiKey(System.getenv("OPENAI_API_KEY"))
-                        .organizationId(System.getenv("OPENAI_ORGANIZATION_ID"))
-                        .modelName(GPT_4_O_MINI)
+                        .baseUrl("https://api.minimaxi.com/v1")
+                        .apiKey("sk-cp-k94NcRwMEUPF_ls-fqeyN9Gk9msntO6yv1WZxwhV3joGHW8rXfeP5Xqe27hsklfARyU0YnqQW1acyFsR6nWKE85mp8HJLFoz0YiZklBukg4_LXilJ5JXbyM")
+                        .organizationId("MiniMax")
+                        .modelName("MiniMax-M2.7")
                         .responseFormat("json_schema") // testing backward compatibility
                         .strictJsonSchema(false)
                         .temperature(0.0)

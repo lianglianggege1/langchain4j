@@ -469,6 +469,16 @@ public class ToolService {
      *
      * @since 1.13.0
      */
+    /**
+     * 重新评估 {@linkplain ToolProvider#isDynamic() 动态} 工具提供程序，并返回
+     * 一个更新后的 {@link ToolServiceContext}，包含所有新增的工具规范与执行器。
+     * <p>
+     * 非动态提供程序不会被重新调用——其工具保持不变。
+     * 动态提供程序返回的工具仅会被添加，不会被移除：一旦某个工具
+     * 存在于上下文环境中，它将在本次 AI 服务调用的剩余生命周期内持续保留。
+     *
+     * @since 1.13.0
+     */
     public static ToolServiceContext refreshDynamicProviders(ToolServiceContext toolServiceContext,
                                                              List<ChatMessage> messages,
                                                              InvocationContext invocationContext) {

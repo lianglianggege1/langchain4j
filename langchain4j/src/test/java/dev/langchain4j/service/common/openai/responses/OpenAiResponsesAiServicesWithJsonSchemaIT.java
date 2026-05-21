@@ -27,9 +27,10 @@ class OpenAiResponsesAiServicesWithJsonSchemaIT extends AbstractAiServiceWithJso
 
     private static ChatModel syncModel(boolean strictTools) {
         return OpenAiResponsesChatModel.builder()
-                .baseUrl(System.getenv("OPENAI_BASE_URL"))
-                .apiKey(System.getenv("OPENAI_API_KEY"))
-                .modelName("gpt-5.4-mini")
+                .baseUrl("https://api.minimaxi.com/v1")
+                .apiKey("sk-cp-k94NcRwMEUPF_ls-fqeyN9Gk9msntO6yv1WZxwhV3joGHW8rXfeP5Xqe27hsklfARyU0YnqQW1acyFsR6nWKE85mp8HJLFoz0YiZklBukg4_LXilJ5JXbyM")
+                .organizationId("MiniMax")
+                .modelName("MiniMax-M2.7")
                 .temperature(0.0)
                 .strictTools(strictTools)
                 .logRequests(true)
@@ -39,9 +40,10 @@ class OpenAiResponsesAiServicesWithJsonSchemaIT extends AbstractAiServiceWithJso
 
     private static ChatModel streamingModel(boolean strictJsonSchema) {
         StreamingChatModel streamingModel = OpenAiResponsesStreamingChatModel.builder()
-                .baseUrl(System.getenv("OPENAI_BASE_URL"))
-                .apiKey(System.getenv("OPENAI_API_KEY"))
-                .modelName("gpt-5.4-mini")
+                .baseUrl("https://api.minimaxi.com/v1")
+                .apiKey("sk-cp-k94NcRwMEUPF_ls-fqeyN9Gk9msntO6yv1WZxwhV3joGHW8rXfeP5Xqe27hsklfARyU0YnqQW1acyFsR6nWKE85mp8HJLFoz0YiZklBukg4_LXilJ5JXbyM")
+                .organizationId("MiniMax")
+                .modelName("MiniMax-M2.7")
                 .temperature(0.0)
                 .strictJsonSchema(strictJsonSchema)
                 .logRequests(true)

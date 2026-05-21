@@ -497,6 +497,14 @@ public abstract class AiServices<T> {
      * @param chatRequestTransformer A {@link UnaryOperator} that transforms the {@link ChatRequest}.
      * @return builder
      */
+    /**
+     * 配置一个转换器，该转换器会在{@link ChatRequest} 发送给大语言模型（LLM）之前对其进行处理。
+     * <p>
+     * 可用于修改请求，例如：添加额外的对话消息或修改已有的消息。
+     *
+     * @param chatRequestTransformer 用于转换{@link ChatRequest}的{@link UnaryOperator}（一元操作符）
+     * @return 构建器（builder）
+     */
     public AiServices<T> chatRequestTransformer(UnaryOperator<ChatRequest> chatRequestTransformer) {
         context.chatRequestTransformer = (req, memId) -> chatRequestTransformer.apply(req);
         return this;
@@ -512,6 +520,17 @@ public abstract class AiServices<T> {
      *
      * @param chatRequestTransformer A {@link BiFunction} that transforms the {@link ChatRequest} and memory ID.
      * @return builder
+     */
+    /**
+     * 配置一个转换器，该转换器会在{@link ChatRequest} 发送给大语言模型（LLM）之前对其应用。
+     * <p>
+     * 可用于修改请求，例如：添加额外的对话消息或修改已有的消息。
+     * <p>
+     * 该转换器会接收{@link ChatRequest} 和记忆ID（由带有@{@link MemoryId}注解的方法参数传入的值），
+     * 可用于从对话记忆中获取额外信息。
+     *
+     * @param chatRequestTransformer 用于转换{@link ChatRequest} 和记忆ID的{@link BiFunction}（二元函数）
+     * @return 构建器
      */
     public AiServices<T> chatRequestTransformer(BiFunction<ChatRequest, Object, ChatRequest> chatRequestTransformer) {
         context.chatRequestTransformer = chatRequestTransformer;
@@ -543,6 +562,15 @@ public abstract class AiServices<T> {
      * @return builder
      * @see Tool
      */
+    /**
+     * 配置大语言模型（LLM）可以调用的工具。
+     *
+     * @param objectsWithTools 一个或多个对象，其方法上标注了 {@link Tool} 注解。
+     *                         大语言模型可访问所有这些工具（即带有 {@link Tool} 注解的方法）。
+     *                         注意：继承而来的方法会被忽略。
+     * @return 构建器
+     * @see Tool
+     */
     public AiServices<T> tools(Object... objectsWithTools) {
         return tools(asList(objectsWithTools));
     }
@@ -554,6 +582,15 @@ public abstract class AiServices<T> {
      *                         All these tools (methods annotated with {@link Tool}) are accessible to the LLM.
      *                         Note that inherited methods are ignored.
      * @return builder
+     * @see Tool
+     */
+    /**
+     * 配置大语言模型（LLM）可使用的工具。
+     *
+     * @param objectsWithTools 一组对象，其方法上标注了 {@link Tool} 注解。
+     *                         大语言模型可调用所有这些工具（即带有 {@link Tool} 注解的方法）。
+     *                         注意：继承而来的方法会被忽略。
+     * @return 构建器
      * @see Tool
      */
     public AiServices<T> tools(Collection<Object> objectsWithTools) {
@@ -571,6 +608,19 @@ public abstract class AiServices<T> {
      *
      * @param toolProvider the tool provider to use
      * @return this builder
+     * @see #toolProviders(Collection)
+     * @see #toolProviders(ToolProvider...)
+     * @see ToolProvider
+     */
+    /**
+     * 配置一个工具提供器，用于为**每次大语言模型请求**动态提供可用工具。
+     * <p>
+     * 与 {@link #tools(Object...)} 预先注册固定工具集不同，
+     * {@link ToolProvider} 会在每次AI服务调用时被触发，并可根据当前请求上下文
+     * （如用户消息、记忆ID或调用参数）返回**不同的工具集合**。
+     *
+     * @param toolProvider 要使用的工具提供器
+     * @return 当前构建器
      * @see #toolProviders(Collection)
      * @see #toolProviders(ToolProvider...)
      * @see ToolProvider
@@ -593,6 +643,19 @@ public abstract class AiServices<T> {
      * @see #toolProviders(ToolProvider...)
      * @see ToolProvider
      */
+    /**
+     * 配置多个工具提供器，为**每次大语言模型请求**动态提供可用工具。
+     * <p>
+     * 每次调用AI服务时，所有已注册的工具提供器都会被执行。
+     * 各个提供器返回的工具会被合并，并加入到发送给大语言模型的请求中。
+     * 若出现冲突（例如工具名称重复），系统将抛出异常，AI服务调用失败。
+     *
+     * @param toolProviders 要使用的工具提供器集合
+     * @return 当前构建器
+     * @see #toolProvider(ToolProvider)
+     * @see #toolProviders(ToolProvider...)
+     * @see ToolProvider
+     */
     public AiServices<T> toolProviders(Collection<ToolProvider> toolProviders) {
         context.toolService.toolProviders(toolProviders);
         return this;
@@ -607,6 +670,19 @@ public abstract class AiServices<T> {
      *
      * @param toolProviders the tool providers to use
      * @return this builder
+     * @see #toolProvider(ToolProvider)
+     * @see #toolProviders(Collection)
+     * @see ToolProvider
+     */
+    /**
+     * 配置多个工具提供器，为每次大语言模型（LLM）请求动态提供工具。
+     * <p>
+     * 每次调用AI服务时，所有已注册的工具提供器都会被触发执行。
+     * 每个提供器返回的工具会被合并，并纳入发送给大语言模型的请求中。
+     * 若发生冲突（例如工具名称重复），将抛出异常，AI服务调用会失败。
+     *
+     * @param toolProviders 要使用的工具提供器
+     * @return 当前构建器
      * @see #toolProvider(ToolProvider)
      * @see #toolProviders(Collection)
      * @see ToolProvider
@@ -628,6 +704,16 @@ public abstract class AiServices<T> {
      * @return builder
      * @since 1.14.0
      */
+    /**
+     * 配置大语言模型（LLM）可使用的工具。
+     * <p>
+     * 每个 {@link AiServiceTool} 都自带工具规范 {@link ToolSpecification}、
+     * 工具执行器 {@link ToolExecutor} 以及返回行为 {@link ReturnBehavior}。
+     *
+     * @param tools 向大语言模型开放的 {@link AiServiceTool} 列表
+     * @return 构建器
+     * @since 1.14.0
+     */
     public AiServices<T> tools(List<AiServiceTool> tools) {
         context.toolService.tools(tools);
         return this;
@@ -641,6 +727,15 @@ public abstract class AiServices<T> {
      *              Otherwise, it is recommended to use the {@link Tool}-annotated java methods
      *              and configure tools with the {@link #tools(Object...)} and {@link #tools(Collection)} methods.
      * @return builder
+     */
+    /**
+     * 配置大语言模型（LLM）可使用的工具。
+     *
+     * @param tools 由 {@link ToolSpecification} 工具规范映射到 {@link ToolExecutor} 工具执行器的集合。
+     *              当需要**程序化配置**工具时，推荐使用该方式。
+     *              其他场景下，建议使用带有 {@link Tool} 注解的 Java 方法，
+     *              并通过 {@link #tools(Object...)} 和 {@link #tools(Collection)} 方法配置工具。
+     * @return 构建器
      */
     public AiServices<T> tools(Map<ToolSpecification, ToolExecutor> tools) {
         context.toolService.tools(tools);
@@ -660,6 +755,20 @@ public abstract class AiServices<T> {
      *               This is similar to using the {@link ReturnBehavior#IMMEDIATE} when using the {@link Tool}-annotated java methods
      * @return builder
      * @deprecated use {@link #tools(List)} instead in order to specify {@link ReturnBehavior}
+     */
+    /**
+     * 配置大语言模型（LLM）可使用的工具。
+     *
+     * @param tools 由 {@link ToolSpecification} 工具规范映射到 {@link ToolExecutor} 工具执行器的集合。
+     * @param immediateReturnToolNames 工具名称集合（对应 {@link ToolSpecification#name()}）
+     *                该工具配置方式适用于需要**程序化配置**工具的场景。
+     *                其他场景下，建议使用带有 {@link Tool} 注解的 Java 方法，
+     *                并通过 {@link #tools(Object...)} 和 {@link #tools(Collection)} 方法配置工具。
+     *                特别说明：该方法允许指定一组工具，使其**不会**自动使用 {@link ToolExecutor} 提供的工具结果
+     *                再次调用大语言模型。
+     *                这与使用 {@link Tool} 注解的 Java 方法时配置 {@link ReturnBehavior#IMMEDIATE} 效果一致。
+     * @return 构建器
+     * @deprecated 已废弃，请使用 {@link #tools(List)} 方法来指定 {@link ReturnBehavior}
      */
     @Deprecated(since = "1.14.0")
     public AiServices<T> tools(Map<ToolSpecification, ToolExecutor> tools, Set<String> immediateReturnToolNames) {
@@ -698,6 +807,34 @@ public abstract class AiServices<T> {
      * @see #executeToolsConcurrently(Executor)
      * @since 1.4.0
      */
+    /**
+     * 默认情况下，当大语言模型（LLM）调用多个工具时，AI 服务会**按顺序执行**这些工具。
+     * 若启用此选项，工具将**并发执行**（唯一例外情况见下文说明），
+     * 执行时使用默认的 {@link Executor} 线程执行器。
+     * 你也可以指定自定义的 {@link Executor}，详见 {@link #executeToolsConcurrently(Executor)}。
+     * <ul>
+     *     <li>使用 {@link ChatModel} 时：
+     *         <ul>
+     *             <li>当大语言模型调用多个工具时，工具会通过 {@link Executor} 在独立线程中并发执行。</li>
+     *             <li>当大语言模型仅调用单个工具时，工具将在当前调用线程中执行，
+     *                 不会使用 {@link Executor}，避免资源浪费。</li>
+     *         </ul>
+     *     </li>
+     *     <li>使用 {@link StreamingChatModel} 流式对话模型时：
+     *         <ul>
+     *             <li>当大语言模型调用多个工具时，工具会通过 {@link Executor} 在独立线程中并发执行。
+     *                 一旦触发 {@link StreamingChatResponseHandler#onCompleteToolCall(CompleteToolCall)} 回调，
+     *                 对应工具会立即执行，无需等待其他工具或响应流完成。</li>
+     *             <li>当大语言模型仅调用单个工具时，工具会通过 {@link Executor} 在独立线程中执行。
+     *                 无法在当前线程执行的原因是：此时无法预知大语言模型将要调用的工具数量。</li>
+     *         </ul>
+     *     </li>
+     * </ul>
+     *
+     * @return 构建器
+     * @see #executeToolsConcurrently(Executor)
+     * @since 1.4.0
+     */
     public AiServices<T> executeToolsConcurrently() {
         context.toolService.executeToolsConcurrently();
         return this;
@@ -710,6 +847,16 @@ public abstract class AiServices<T> {
      *
      * @param executor The {@link Executor} to be used to execute tools.
      * @return builder
+     * @see #executeToolsConcurrently()
+     * @since 1.4.0
+     */
+    /**
+     * 详细说明请参考 {@link #executeToolsConcurrently()} 的文档注释。
+     * <p>
+     * 若传入 {@code null}，则使用默认的 {@link Executor} 线程执行器。
+     *
+     * @param executor 用于执行工具的 {@link Executor}
+     * @return 构建器
      * @see #executeToolsConcurrently()
      * @since 1.4.0
      */
@@ -839,6 +986,29 @@ public abstract class AiServices<T> {
      * @see #hallucinatedToolNameStrategy(Function)
      * @see #toolArgumentsErrorHandler(ToolArgumentsErrorHandler)
      */
+    /**
+     * 配置工具执行过程中发生错误时要调用的处理器。
+     * <p>
+     * 在该处理器内，你可以选择以下两种方式之一处理：
+     * <p>
+     * 1. 抛出异常：这将终止整个AI服务流程。
+     * <p>
+     * 2. 返回一条文本消息（例如错误描述），该消息会被发送回大语言模型（LLM），
+     * 让模型能够做出合适的响应（例如修正错误并重试）。
+     * 如果未配置任何处理器，这就是默认行为。
+     * 默认情况下，会将 {@link Throwable#getMessage()} 发送给大语言模型。
+     * <p>
+     * 注意：如果你手动创建 {@link DefaultToolExecutor} 或使用自定义的 {@link ToolExecutor}，
+     * 请确保在出错场景下由 {@link ToolExecutor} 抛出 {@link ToolExecutionException} 异常。
+     * 对于 {@link DefaultToolExecutor}，你可以通过将
+     * {@link DefaultToolExecutor.Builder#propagateToolExecutionExceptions(Boolean)}
+     * 设置为 {@code true} 来启用该行为。
+     *
+     * @param handler 负责处理工具执行错误的处理器
+     * @return 构建器
+     * @see #hallucinatedToolNameStrategy(Function)
+     * @see #toolArgumentsErrorHandler(ToolArgumentsErrorHandler)
+     */
     public AiServices<T> toolExecutionErrorHandler(ToolExecutionErrorHandler handler) {
         context.toolService.executionErrorHandler(handler);
         return this;
@@ -901,6 +1071,12 @@ public abstract class AiServices<T> {
      * @param retrievalAugmentor The retrieval augmentor to be used by the AI Service.
      * @return builder
      */
+    /**
+     * 配置一个检索增强器，该增强器会在**每次方法调用**时执行。
+     *
+     * @param retrievalAugmentor AI 服务将要使用的检索增强器
+     * @return 构建器
+     */
     public AiServices<T> retrievalAugmentor(RetrievalAugmentor retrievalAugmentor) {
         if (contentRetrieverSet) {
             throw illegalConfiguration("Only one out of [retriever, contentRetriever, retrievalAugmentor] can be set");
@@ -916,6 +1092,12 @@ public abstract class AiServices<T> {
      * @param listener the listener to be registered, must not be {@code null}
      * @return builder
      */
+    /**
+     * 为当前AI服务注册一个 {@link AiServiceListener} 监听器，用于监听AI服务相关事件。
+     *
+     * @param listener 待注册的监听器，不可为 {@code null}
+     * @return 构建器
+     */
     public <I extends AiServiceEvent> AiServices<T> registerListener(AiServiceListener<I> listener) {
         context.eventListenerRegistrar.register(ensureNotNull(listener, "listener"));
         return this;
@@ -927,6 +1109,13 @@ public abstract class AiServices<T> {
      *
      * @param listeners the invocation event listeners to be registered; can be null or empty
      * @return builder
+     */
+    /**
+     * 向AI服务注册一个或多个调用事件监听器。
+     * 通过这些监听器可实现对调用事件的追踪与处理。
+     *
+     * @param listeners 待注册的调用事件监听器；可为 null 或空集合
+     * @return 构建器
      */
     public AiServices<T> registerListeners(AiServiceListener<?>... listeners) {
         context.eventListenerRegistrar.register(listeners);
@@ -940,6 +1129,13 @@ public abstract class AiServices<T> {
      * @param listeners the invocation event listeners to be registered; can be null or empty
      * @return builder
      */
+    /**
+     * 向AI服务注册一个或多个调用事件监听器。
+     * 通过提供的监听器可实现对调用事件的跟踪与处理。
+     *
+     * @param listeners 待注册的调用事件监听器；可为 null 或空
+     * @return 构建器
+     */
     public AiServices<T> registerListeners(Collection<? extends AiServiceListener<?>> listeners) {
         context.eventListenerRegistrar.register(listeners);
         return this;
@@ -950,6 +1146,12 @@ public abstract class AiServices<T> {
      *
      * @param listener the listener to be registered, must not be {@code null}
      * @return builder
+     */
+    /**
+     * 注销当前AI服务中已注册的 {@link AiServiceListener} 事件监听器。
+     *
+     * @param listener 要注销的监听器，不可为 {@code null}
+     * @return 构建器
      */
     public <I extends AiServiceEvent> AiServices<T> unregisterListener(AiServiceListener<I> listener) {
         context.eventListenerRegistrar.unregister(ensureNotNull(listener, "listener"));
@@ -963,6 +1165,13 @@ public abstract class AiServices<T> {
      *                  Can be null, in which case no action will be performed.
      * @return builder
      */
+    /**
+     * 从AI服务中注销一个或多个调用事件监听器。
+     *
+     * @param listeners 待注销的调用事件监听器。
+     *                  可为 null，此时将不执行任何操作。
+     * @return 构建器
+     */
     public AiServices<T> unregisterListeners(AiServiceListener<?>... listeners) {
         context.eventListenerRegistrar.unregister(listeners);
         return this;
@@ -975,6 +1184,13 @@ public abstract class AiServices<T> {
      * @param listeners the invocation event listeners to be unregistered; can be null or empty
      * @return builder
      */
+    /**
+     * 从AI服务中注销一个或多个调用事件监听器。
+     * （注销后，将不再通过这些监听器追踪和处理调用事件。）
+     *
+     * @param listeners 待注销的调用事件监听器；可为 null 或空
+     * @return 构建器
+     */
     public AiServices<T> unregisterListeners(Collection<? extends AiServiceListener<?>> listeners) {
         context.eventListenerRegistrar.unregister(listeners);
         return this;
@@ -986,6 +1202,12 @@ public abstract class AiServices<T> {
      *
      * @param inputGuardrailsConfig the configuration object that defines input guardrails for the AI service
      * @return the current instance of {@link AiServices} to allow method chaining
+     */
+    /**
+     * 通过传入的 InputGuardrailsConfig 对象，配置 AI 服务上下文的**输入防护护栏**。
+     *
+     * @param inputGuardrailsConfig 定义 AI 服务输入防护规则的配置对象
+     * @return 当前 {@link AiServices} 实例，支持链式调用
      */
     public AiServices<T> inputGuardrailsConfig(InputGuardrailsConfig inputGuardrailsConfig) {
         context.guardrailServiceBuilder.inputGuardrailsConfig(inputGuardrailsConfig);
@@ -1065,6 +1287,29 @@ public abstract class AiServices<T> {
      * @param <I> The type of {@link InputGuardrail}
      * @return the current instance of {@link AiServices} for chaining further configurations.
      */
+    /**
+     * 为AI服务配置输入防护护栏类。
+     * <p>
+     *     通过此方式配置，与在类上使用 {@link dev.langchain4j.service.guardrail.InputGuardrails} 注解效果完全一致。
+     *     注解的优先级更高。
+     * </p>
+     * <p>
+     *     输入防护护栏是作用于模型输入（本质是用户消息）的规则，用于确保输入安全、符合模型预期。
+     *     它不会替代内容审核模型，但可用于增加额外校验（例如提示词注入检测等）。
+     * </p>
+     * <p>
+     *     与输出防护护栏不同，输入防护护栏**不支持重试或重新提示**。
+     *     失败会直接封装为 {@link dev.langchain4j.guardrail.GuardrailException} 异常返回给调用方。
+     * </p>
+     * <p>
+     *     当应用多个护栏时，执行顺序至关重要，会按照声明的顺序依次执行。
+     * </p>
+     *
+     * @param guardrailClasses {@link InputGuardrail} 类型的护栏类列表，
+     *                         可包含 {@code null} 表示无护栏或可选配置
+     * @param <I> {@link InputGuardrail} 的具体类型
+     * @return 当前 {@link AiServices} 实例，支持链式配置
+     */
     public <I extends InputGuardrail> AiServices<T> inputGuardrailClasses(Class<? extends I>... guardrailClasses) {
         context.guardrailServiceBuilder.inputGuardrailClasses(guardrailClasses);
         return this;
@@ -1093,6 +1338,27 @@ public abstract class AiServices<T> {
      * @param guardrails a list of input guardrails, or null if no guardrails are to be set
      * @return the current instance of {@link AiServices} for method chaining
      */
+    /**
+     * 为当前上下文的防护服务构建器设置要使用的输入防护护栏。
+     * <p>
+     *     通过此方式配置，与在类上使用 {@link dev.langchain4j.service.guardrail.InputGuardrails} 注解效果完全一致。
+     *     注解的优先级更高。
+     * </p>
+     * <p>
+     *     输入防护护栏是作用于模型输入（本质是用户消息）的规则，用于确保输入安全、符合模型预期。
+     *     它不会替代内容审核模型，但可用于增加额外校验（例如提示词注入检测等）。
+     * </p>
+     * <p>
+     *     与输出防护护栏不同，输入防护护栏**不支持重试或重新提示**。
+     *     失败会直接封装为 {@link dev.langchain4j.guardrail.GuardrailException} 异常返回给调用方。
+     * </p>
+     * <p>
+     *     当应用多个护栏时，执行顺序至关重要，会按照声明的顺序依次执行。
+     * </p>
+     *
+     * @param guardrails 输入防护护栏列表；若为 null 表示不设置任何护栏
+     * @return 当前 {@link AiServices} 实例，支持方法链式调用
+     */
     public <I extends InputGuardrail> AiServices<T> inputGuardrails(List<I> guardrails) {
         context.guardrailServiceBuilder.inputGuardrails(guardrails);
         return this;
@@ -1120,6 +1386,27 @@ public abstract class AiServices<T> {
      *
      * @param guardrails an array of input guardrails to set, may be null
      * @return the current instance of {@link AiServices} for chaining
+     */
+    /**
+     * 向当前上下文的防护服务构建器**添加**指定的输入防护护栏。
+     * <p>
+     *     通过此方式配置，与在类上使用 {@link dev.langchain4j.service.guardrail.InputGuardrails} 注解效果完全一致。
+     *     注解的优先级更高。
+     * </p>
+     * <p>
+     *     输入防护护栏是作用于模型输入（本质是用户消息）的规则，用于确保输入安全、符合模型预期。
+     *     它不会替代内容审核模型，但可用于增加额外校验（例如提示词注入检测等）。
+     * </p>
+     * <p>
+     *     与输出防护护栏不同，输入防护护栏**不支持重试或重新提示**。
+     *     失败会直接封装为 {@link dev.langchain4j.guardrail.GuardrailException} 异常返回给调用方。
+     * </p>
+     * <p>
+     *     当应用多个护栏时，执行顺序至关重要，会按照声明的顺序依次执行。
+     * </p>
+     *
+     * @param guardrails 要添加的输入防护护栏数组，可为 null
+     * @return 当前 {@link AiServices} 实例，支持链式调用
      */
     public <I extends InputGuardrail> AiServices<T> inputGuardrails(I... guardrails) {
         context.guardrailServiceBuilder.inputGuardrails(guardrails);
@@ -1202,6 +1489,34 @@ public abstract class AiServices<T> {
      * @param <O> The type of {@link OutputGuardrail}
      * @return The current instance of {@link AiServices}, enabling method chaining.
      */
+    /**
+     * 设置防护服务中要使用的输出防护护栏类。
+     * <p>
+     *     通过此方式配置，与在类上使用 {@link dev.langchain4j.service.guardrail.OutputGuardrails} 注解效果完全一致。
+     *     注解的优先级更高。
+     * </p>
+     * <p>
+     *     输出防护护栏是作用于模型输出结果的规则，用于确保输出内容安全、符合预设要求。
+     * </p>
+     * <p>
+     *     当校验失败时，结果可指定是直接原样重试请求，还是提供一条 {@code reprompt} 重新提示消息追加到提示词中。
+     * </p>
+     * <p>
+     *     若触发重新提示，重新提示消息会被添加到大语言模型上下文，然后重新发起请求。
+     * </p>
+     * <p>
+     *     当应用多个护栏时，执行顺序至关重要，会按照声明的顺序依次执行。
+     * </p>
+     * <p>
+     *     当应用多个 {@link OutputGuardrail} 输出护栏时，若任意一个护栏触发重试或重新提示，
+     *     所有护栏都会对新的响应结果重新执行校验。
+     * </p>
+     *
+     * @param guardrailClasses {@link OutputGuardrail} 护栏类列表，
+     *                         用于定义输出行为的防护规则；可为 null，表示不使用护栏
+     * @param <O> {@link OutputGuardrail} 的具体类型
+     * @return 当前 {@link AiServices} 实例，支持方法链式调用
+     */
     public <O extends OutputGuardrail> AiServices<T> outputGuardrailClasses(Class<? extends O>... guardrailClasses) {
         context.guardrailServiceBuilder.outputGuardrailClasses(guardrailClasses);
         return this;
@@ -1235,6 +1550,32 @@ public abstract class AiServices<T> {
      *
      * @param guardrails a list of output guardrails to be applied; can be {@code null}
      * @return the current instance of {@link AiServices} for method chaining
+     */
+    /**
+     * 为AI服务配置输出防护护栏。
+     * <p>
+     *     通过此方式配置，与在类上使用 {@link dev.langchain4j.service.guardrail.OutputGuardrails} 注解效果完全一致。
+     *     注解的优先级更高。
+     * </p>
+     * <p>
+     *     输出防护护栏是作用于模型输出结果的规则，用于确保输出内容安全、符合预设要求。
+     * </p>
+     * <p>
+     *     当校验失败时，结果可指定是直接原样重试请求，还是提供一条 {@code reprompt} 重新提示消息追加到提示词中。
+     * </p>
+     * <p>
+     *     若触发重新提示，重新提示消息会被添加到大语言模型上下文，然后重新发起请求。
+     * </p>
+     * <p>
+     *     当应用多个护栏时，执行顺序至关重要，会按照声明的顺序依次执行。
+     * </p>
+     * <p>
+     *     当应用多个 {@link OutputGuardrail} 输出护栏时，若任意一个护栏触发重试或重新提示，
+     *     所有护栏都会对新的响应结果重新执行校验。
+     * </p>
+     *
+     * @param guardrails 待应用的输出防护护栏列表；可为 {@code null}
+     * @return 当前 {@link AiServices} 实例，支持方法链式调用
      */
     public <O extends OutputGuardrail> AiServices<T> outputGuardrails(List<O> guardrails) {
         context.guardrailServiceBuilder.outputGuardrails(guardrails);
@@ -1270,6 +1611,33 @@ public abstract class AiServices<T> {
      * @param guardrails an array of output guardrails to be applied; can be {@code null}
      *                   or contain multiple instances of OutputGuardrail
      * @return the current instance of {@link AiServices} with the specified guardrails applied
+     */
+    /**
+     * 为AI服务配置输出防护护栏。
+     * <p>
+     *     通过此方式配置，与在类上使用 {@link dev.langchain4j.service.guardrail.OutputGuardrails} 注解效果完全一致。
+     *     注解的优先级更高。
+     * </p>
+     * <p>
+     *     输出防护护栏是作用于模型输出结果的规则，用于确保输出内容安全、符合预设要求。
+     * </p>
+     * <p>
+     *     当校验失败时，结果可指定是直接原样重试请求，还是提供一条 {@code reprompt} 重新提示消息追加到提示词中。
+     * </p>
+     * <p>
+     *     若触发重新提示，重新提示消息会被添加到大语言模型上下文，然后重新发起请求。
+     * </p>
+     * <p>
+     *     当应用多个护栏时，执行顺序至关重要，会按照声明的顺序依次执行。
+     * </p>
+     * <p>
+     *     当应用多个 {@link OutputGuardrail} 输出护栏时，若任意一个护栏触发重试或重新提示，
+     *     所有护栏都会对新的响应结果重新执行校验。
+     * </p>
+     *
+     * @param guardrails 待应用的输出防护护栏数组；可为 {@code null}，
+     *                   也可包含多个 OutputGuardrail 实例
+     * @return 已应用指定护栏的当前 {@link AiServices} 实例
      */
     public <O extends OutputGuardrail> AiServices<T> outputGuardrails(O... guardrails) {
         context.guardrailServiceBuilder.outputGuardrails(guardrails);

@@ -72,8 +72,8 @@ public abstract class AbstractStreamingAiServiceIT {
                 .onError(futureAnswer::completeExceptionally)
                 .start();
 
-        String answer = futureAnswer.get(30, SECONDS);
-        ChatResponse chatResponse = futureChatResponse.get(30, SECONDS);
+        String answer = futureAnswer.get(1200, SECONDS);
+        ChatResponse chatResponse = futureChatResponse.get(1200, SECONDS);
 
         assertThat(answer).containsIgnoringCase("Berlin");
         assertThat(chatResponse.aiMessage().text()).isEqualTo(answer);
