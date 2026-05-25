@@ -119,6 +119,7 @@ public class SimpleToolSearchStrategy implements ToolSearchStrategy {
         return new ToolSearchResult(toolNames, toolResultMessageText);
     }
 
+    // 针对问题给对应的工具评分
     protected int score(ToolSpecification tool, List<String> terms) {
 
         List<String> cleanedTerms = clean(terms);
@@ -146,7 +147,7 @@ public class SimpleToolSearchStrategy implements ToolSearchStrategy {
                 .map(String::trim)
                 .filter(s -> !s.isEmpty())
                 .map(String::toLowerCase)
-                .distinct()
+                .distinct() // 去重
                 .toList();
     }
 

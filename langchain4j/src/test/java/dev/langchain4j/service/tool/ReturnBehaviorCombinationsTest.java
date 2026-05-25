@@ -39,6 +39,16 @@ import static org.junit.jupiter.params.provider.Arguments.arguments;
  * The test is the source of truth for the intended semantics — when a row fails, either the
  * implementation needs to change or the row needs to change.
  */
+/*
+### 翻译结果
+/**
+ * 针对单次大语言模型响应中所有有意义的**返回行为**组合，对「立即返回/重新处理」决策进行参数化验证。
+ * 每个执行步骤分为**成功执行**或**抛出异常**两种情况。
+ * 只要任意一个工具执行出现异常，无论其他步骤的行为如何，都预期强制触发**重新处理**。
+ * <p>
+ * 该测试是预期语义的权威依据——当测试用例执行失败时，要么需要修改实现逻辑，要么需要调整测试用例。
+ */
+// 返回行为组合测试
 class ReturnBehaviorCombinationsTest {
 
     interface Assistant {

@@ -29,6 +29,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.verify;
 
+// 幻觉工具名称和策略测试
 public class HallucinatedToolNameStrategyTest {
 
     interface AssistantHallucinatedTool {

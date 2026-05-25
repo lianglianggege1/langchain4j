@@ -272,6 +272,7 @@ public class DefaultToolExecutor implements ToolExecutor {
         return Optional.of(coercedValue);
     }
 
+    // 参数转换
     static Object coerceArgument(Object argument, String parameterName, Class<?> parameterClass, Type parameterType) {
         if (parameterClass == String.class) {
             return argument.toString();

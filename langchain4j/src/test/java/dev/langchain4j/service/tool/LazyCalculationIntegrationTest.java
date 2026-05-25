@@ -5,6 +5,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import dev.langchain4j.agent.tool.ReturnBehavior;
 import dev.langchain4j.agent.tool.Tool;
 import dev.langchain4j.agent.tool.ToolExecutionRequest;
+import dev.langchain4j.data.message.TextContent;
 import dev.langchain4j.invocation.InvocationContext;
 import java.util.ArrayList;
 import java.util.List;

@@ -46,10 +46,15 @@ public class ToolSearchService {
     public ToolServiceContext adjust(ToolServiceContext toolServiceContext,
                                      List<ChatMessage> messages,
                                      InvocationContext invocationContext) {
+        // 获取工具搜索工具
         List<ToolSpecification> toolSearchTools = strategy.getToolSearchTools(invocationContext);
+        // 获取可用工具
         List<ToolSpecification> availableTools = toolServiceContext.availableTools();
+        // 获取有效工具
         List<ToolSpecification> effectiveTools = calculateEffectiveTools(toolSearchTools, availableTools, messages);
+        // 获取可搜索工具
         List<ToolSpecification> searchableTools = calculateSearchableTools(availableTools, effectiveTools);
+        // 创建执行器
         Map<String, ToolExecutor> toolSearchToolExecutors = createExecutors(toolSearchTools, searchableTools);
         return toolServiceContext.toBuilder()
                 .effectiveTools(effectiveTools)
