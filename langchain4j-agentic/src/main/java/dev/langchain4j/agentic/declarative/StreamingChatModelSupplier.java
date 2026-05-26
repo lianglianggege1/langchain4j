@@ -13,6 +13,11 @@ import dev.langchain4j.model.chat.StreamingChatModel;
  * The method must be static and return an instance of {@link StreamingChatModel}.
  * 该方法必须是静态的，并返回{@link StreamingChatModel}的实例。
  * <p>
+ * When the method has no parameters, it is invoked once at build time to provide a fixed model.
+ * When the method has parameters annotated with {@link dev.langchain4j.service.V @V},
+ * they are resolved from the current {@link dev.langchain4j.agentic.scope.AgenticScope AgenticScope}
+ * at each invocation, enabling dynamic model selection based on runtime state.
+ * <p>
  * Example:
  * <pre>
  * {@code

@@ -83,9 +83,6 @@ public class DefaultToolExecutor implements ToolExecutor {
      * When methods annotated with @Tool are wrapped into proxies (AOP),
      * the parameters of the proxied method do not retain their original names.
      * Therefore, access to the original method is required to retrieve those names.
-     * <p>
-     *  当用@Tool注释的方法被包装到代理（AOP）中时，被代理方法的参数不会保留其原始名称。因此，需要访问原始方法来检索这些名称。
-     * </p>
      *
      * @param object         the object on which the method should be invoked
      * @param originalMethod the original method, used to retrieve parameter names and prepare arguments
@@ -99,7 +96,6 @@ public class DefaultToolExecutor implements ToolExecutor {
         this.propagateToolExecutionExceptions = false;
     }
 
-    // 执行过程中会对异常进行一些兼容，使其尽量不要执行失败!
     @Override
     public ToolExecutionResult executeWithContext(ToolExecutionRequest request, InvocationContext context) {
         Object[] arguments = prepareArguments(request, context);
@@ -118,7 +114,7 @@ public class DefaultToolExecutor implements ToolExecutor {
                 } else {
                     return ToolExecutionResult.builder()
                             .isError(true)
-                            .resultText(e2.getCause().getMessage())
+                            .resultText(errorMessage(e2.getCause()))
                             .build();
                 }
             }
@@ -128,7 +124,7 @@ public class DefaultToolExecutor implements ToolExecutor {
             } else {
                 return ToolExecutionResult.builder()
                         .isError(true)
-                        .resultText(e.getCause().getMessage())
+                        .resultText(errorMessage(e.getCause()))
                         .build();
             }
         }
@@ -146,9 +142,8 @@ public class DefaultToolExecutor implements ToolExecutor {
 
     private Object[] prepareArguments(ToolExecutionRequest toolExecutionRequest, InvocationContext context) {
         try {
-            // 参数转换成Map
             Map<String, Object> argumentsMap = argumentsAsMap(toolExecutionRequest.arguments());
-            return prepareArguments(originalMethod, argumentsMap, context);
+            return prepareArguments(originalMethod, toolExecutionRequest.name(), argumentsMap, context);
         } catch (Exception e) {
             if (wrapToolArgumentsExceptions) {
                 throw new ToolArgumentsException(unwrapRuntimeException(e));
@@ -180,7 +175,8 @@ public class DefaultToolExecutor implements ToolExecutor {
             return List.of(ImageContent.from(image));
         } else if (result instanceof Content content) {
             return List.of(content);
-        } else if (result instanceof Collection<?> collection && !collection.isEmpty()
+        } else if (result instanceof Collection<?> collection
+                && !collection.isEmpty()
                 && collection.iterator().next() instanceof Content) {
             return collection.stream().map(Content.class::cast).toList();
         } else if (result instanceof Content[] array) {
@@ -200,7 +196,8 @@ public class DefaultToolExecutor implements ToolExecutor {
         }
     }
 
-    static Object[] prepareArguments(Method method, Map<String, Object> argumentsMap, InvocationContext context) {
+    static Object[] prepareArguments(
+            Method method, String toolName, Map<String, Object> argumentsMap, InvocationContext context) {
         Parameter[] parameters = method.getParameters();
         Object[] arguments = new Object[parameters.length];
 
@@ -237,10 +234,24 @@ public class DefaultToolExecutor implements ToolExecutor {
                 arguments[i] = createOptional(argument, parameterName, parameterType);
             } else if (argument != null) {
                 arguments[i] = coerceArgument(argument, parameterName, parameterClass, parameterType);
+            } else {
+                P pAnnotation = parameter.getAnnotation(P.class);
+                if (pAnnotation != null && !P.NO_DEFAULT.equals(pAnnotation.defaultValue())) {
+                    arguments[i] = parseDefaultValue(
+                            pAnnotation.defaultValue(), parameterName, parameterClass, parameterType);
+                } else if (parameterClass.isPrimitive()) {
+                    throw new IllegalArgumentException(String.format(
+                            "Required parameter \"%s\" of tool \"%s\" is missing", parameterName, toolName));
+                }
             }
         }
 
         return arguments;
+    }
+
+    private static String errorMessage(Throwable cause) {
+        String message = cause.getMessage();
+        return message != null ? message : cause.getClass().getName();
     }
 
     private static String getName(Parameter parameter) {
@@ -272,7 +283,29 @@ public class DefaultToolExecutor implements ToolExecutor {
         return Optional.of(coercedValue);
     }
 
-    // 参数转换
+    static Object parseDefaultValue(
+            String defaultValue, String parameterName, Class<?> parameterClass, Type parameterType) {
+        if (parameterClass == String.class || parameterClass.isEnum() || parameterClass == UUID.class) {
+            return coerceArgument(defaultValue, parameterName, parameterClass, parameterType);
+        }
+        Object jsonParsed;
+        try {
+            jsonParsed = Json.fromJson(defaultValue, Object.class);
+        } catch (Exception e) {
+            throw new IllegalArgumentException(
+                    String.format(
+                            "Cannot parse @P(defaultValue = \"%s\") for parameter \"%s\" of type %s: %s",
+                            defaultValue, parameterName, parameterClass.getName(), e.getMessage()),
+                    e);
+        }
+        if (jsonParsed == null) {
+            throw new IllegalArgumentException(String.format(
+                    "@P(defaultValue = \"%s\") parses to null for parameter \"%s\" of type %s",
+                    defaultValue, parameterName, parameterClass.getName()));
+        }
+        return coerceArgument(jsonParsed, parameterName, parameterClass, parameterType);
+    }
+
     static Object coerceArgument(Object argument, String parameterName, Class<?> parameterClass, Type parameterType) {
         if (parameterClass == String.class) {
             return argument.toString();

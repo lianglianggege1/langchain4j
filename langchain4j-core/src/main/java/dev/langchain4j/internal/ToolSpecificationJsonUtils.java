@@ -4,6 +4,7 @@ import static dev.langchain4j.internal.ValidationUtils.ensureNotNull;
 import static dev.langchain4j.spi.ServiceHelper.loadFactories;
 
 import dev.langchain4j.Internal;
+import dev.langchain4j.agent.tool.ReturnBehavior;
 import dev.langchain4j.agent.tool.ToolSpecification;
 import dev.langchain4j.agent.tool.ToolSpecificationJsonCodec;
 import dev.langchain4j.model.chat.request.json.JsonObjectSchema;
@@ -49,6 +50,12 @@ public class ToolSpecificationJsonUtils {
                 && !toolSpecification.metadata().isEmpty()) {
             map.put("metadata", toolSpecification.metadata());
         }
+        if (toolSpecification.strict() != null) {
+            map.put("strict", toolSpecification.strict());
+        }
+        if (toolSpecification.returnBehavior() != null) {
+            map.put("returnBehavior", toolSpecification.returnBehavior().name());
+        }
         return CODEC.toJson(map);
     }
 
@@ -86,6 +93,22 @@ public class ToolSpecificationJsonUtils {
         } else if (metadataObj != null) {
             throw new IllegalArgumentException("\"metadata\" must be a JSON object, but was: "
                     + metadataObj.getClass().getSimpleName());
+        }
+
+        Object strictObj = map.get("strict");
+        if (strictObj instanceof Boolean) {
+            builder.strict((Boolean) strictObj);
+        } else if (strictObj != null) {
+            throw new IllegalArgumentException("\"strict\" must be a boolean, but was: "
+                    + strictObj.getClass().getSimpleName());
+        }
+
+        Object returnBehaviorObj = map.get("returnBehavior");
+        if (returnBehaviorObj instanceof String) {
+            builder.returnBehavior(ReturnBehavior.valueOf((String) returnBehaviorObj));
+        } else if (returnBehaviorObj != null) {
+            throw new IllegalArgumentException("\"returnBehavior\" must be a string, but was: "
+                    + returnBehaviorObj.getClass().getSimpleName());
         }
 
         return builder.build();

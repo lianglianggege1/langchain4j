@@ -9,10 +9,14 @@ import static java.lang.annotation.RetentionPolicy.RUNTIME;
 
 /**
  * Marks a method as a supplier of the chat model to be used by an agent.
- * The method must be static and return an instance of {@link ChatModel}.
- * 将方法标记为agent要使用的聊天模型的供应商。该方法必须是静态的，并返回｛@link ChatModel｝的实例。
+ * The method must be static and return a {@link ChatModel}.
  * <p>
- * Example:
+ * When the method has no parameters, it is invoked once at build time to provide a fixed model.
+ * When the method has parameters annotated with {@link dev.langchain4j.service.V @V},
+ * they are resolved from the current {@link dev.langchain4j.agentic.scope.AgenticScope AgenticScope}
+ * at each invocation, enabling dynamic model selection based on runtime state.
+ * <p>
+ * Example (fixed model):
  * <pre>
  * {@code
  *      public interface SupervisorBanker {
@@ -30,9 +34,24 @@ import static java.lang.annotation.RetentionPolicy.RUNTIME;
  *     }
  * }
  * </pre>
+ * <p>
+ * Example (dynamic model selection):
+ * <pre>
+ * {@code
+ *      public interface MyEditor {
+ *
+ *         @Agent("Edit the story based on critique")
+ *         String edit(@V("story") String story, @V("critique") CritiqueResult critique);
+ *
+ *         @ChatModelSupplier
+ *         static ChatModel chatModel(@V("critique") CritiqueResult critique) {
+ *             return critique != null && critique.score() > 8.0 ? enhancedModel() : baseModel();
+ *         }
+ *     }
+ * }
+ * </pre>
  */
 @Retention(RUNTIME)
 @Target({METHOD})
-// 聊天模型供应商
 public @interface ChatModelSupplier {
 }
