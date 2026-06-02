@@ -67,6 +67,8 @@ public class ServiceOutputParser {
 
         Class<?> typeArgumentClass = resolveFirstGenericParameterClass(returnType);
         OutputParser<?> outputParser = outputParserFactory.get(rawClass, typeArgumentClass);
+        // 去掉<think></think>\n\n里面的内容，定制改造
+        text = text.replaceAll("(?s)<think>.*?</think>", "").replace("\n\n", "");
         return outputParser.parse(text);
     }
 

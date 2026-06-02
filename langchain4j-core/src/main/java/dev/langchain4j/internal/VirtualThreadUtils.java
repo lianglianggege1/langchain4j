@@ -46,6 +46,14 @@ public class VirtualThreadUtils {
      * @param fallback a {@link Supplier} that provides a fallback {@link ExecutorService} when virtual threads are not available.
      * @return an {@link ExecutorService} using virtual threads if supported, otherwise a fallback implementation.
      */
+    /**
+     * 通过反射创建一个为每个任务分配虚拟线程的执行器。
+     * 该方式可让代码同时兼容运行在 Java 21 及以上版本（支持虚拟线程）
+     * 和更早的 Java 版本。
+     *
+     * @param fallback 当虚拟线程不可用时，用于提供备用 {@link ExecutorService} 的 {@link Supplier}。
+     * @return 如果环境支持虚拟线程，则返回基于虚拟线程的 {@link ExecutorService}；否则返回备用实现。
+     */
     @Nullable
     public static ExecutorService createVirtualThreadExecutor(Supplier<@Nullable ExecutorService> fallback) {
         try {

@@ -160,8 +160,8 @@ public class InMemoryEmbeddingStore<Embedded> implements EmbeddingStore<Embedded
     @Override
     public EmbeddingSearchResult<Embedded> search(EmbeddingSearchRequest embeddingSearchRequest) {
 
-        Comparator<EmbeddingMatch<Embedded>> comparator = comparingDouble(EmbeddingMatch::score);
-        PriorityQueue<EmbeddingMatch<Embedded>> matches = new PriorityQueue<>(comparator);
+        Comparator<EmbeddingMatch<Embedded>> comparator = comparingDouble(EmbeddingMatch::score); // 比较分数
+        PriorityQueue<EmbeddingMatch<Embedded>> matches = new PriorityQueue<>(comparator);// 使用优先级队列，小顶堆实现
 
         Filter filter = embeddingSearchRequest.filter();
 

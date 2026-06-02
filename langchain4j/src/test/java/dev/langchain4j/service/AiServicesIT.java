@@ -68,10 +68,14 @@ public class AiServicesIT {
 
     @Spy
     ChatModel chatModel = OpenAiChatModel.builder()
-            .baseUrl(System.getenv("MINIMAX_BASE_URL"))
-            .apiKey(System.getenv("MINIMAX_AUTH_TOKEN"))
-            .organizationId(System.getenv("MINIMAX_ORGANIZATION_ID"))
-            .modelName(GPT_5)
+//            .baseUrl(System.getenv("MINIMAX_BASE_URL"))
+//            .apiKey(System.getenv("MINIMAX_AUTH_TOKEN"))
+//            .organizationId(System.getenv("MINIMAX_ORGANIZATION_ID"))
+//            .modelName(GPT_5)
+            .baseUrl("https://api.minimaxi.com/v1")
+            .apiKey("sk-cp-k94NcRwMEUPF_ls-fqeyN9Gk9msntO6yv1WZxwhV3joGHW8rXfeP5Xqe27hsklfARyU0YnqQW1acyFsR6nWKE85mp8HJLFoz0YiZklBukg4_LXilJ5JXbyM")
+            .organizationId("MiniMax")
+            .modelName("MiniMax-M2.7")
             .temperature(0.0)
             .logRequests(true)
             .logResponses(true)
@@ -82,9 +86,13 @@ public class AiServicesIT {
 
     @Spy
     ModerationModel moderationModel = OpenAiModerationModel.builder()
-            .baseUrl(System.getenv("MINIMAX_BASE_URL"))
-            .apiKey(System.getenv("MINIMAX_AUTH_TOKEN"))
-            .organizationId(System.getenv("MINIMAX_ORGANIZATION_ID"))
+//            .baseUrl(System.getenv("MINIMAX_BASE_URL"))
+//            .apiKey(System.getenv("MINIMAX_AUTH_TOKEN"))
+//            .organizationId(System.getenv("MINIMAX_ORGANIZATION_ID"))
+            .baseUrl("https://api.minimaxi.com/v1")
+            .apiKey("sk-cp-k94NcRwMEUPF_ls-fqeyN9Gk9msntO6yv1WZxwhV3joGHW8rXfeP5Xqe27hsklfARyU0YnqQW1acyFsR6nWKE85mp8HJLFoz0YiZklBukg4_LXilJ5JXbyM")
+            .organizationId("MiniMax")
+            .modelName("MiniMax-M2.7")
             .build();
 
     @AfterEach
@@ -207,6 +215,7 @@ public class AiServicesIT {
                         + "You must answer strictly in the following format: yyyy-MM-ddTHH:mm:ss"));
     }
 
+    // 枚举 - 明天继续整
 //    情绪；情感；观点倾向
     enum Sentiment {
 //        积极的；正面的；肯定的
@@ -444,10 +453,14 @@ public class AiServicesIT {
     void should_extract_custom_POJO_with_explicit_json_response_format() {
 
         ChatModel chatModel = spy(OpenAiChatModel.builder()
-                .baseUrl(System.getenv("OPENAI_BASE_URL"))
-                .apiKey(System.getenv("OPENAI_API_KEY"))
-                .organizationId(System.getenv("OPENAI_ORGANIZATION_ID"))
-                .modelName(GPT_4_O_MINI)
+//                .baseUrl(System.getenv("OPENAI_BASE_URL"))
+//                .apiKey(System.getenv("OPENAI_API_KEY"))
+//                .organizationId(System.getenv("OPENAI_ORGANIZATION_ID"))
+//                .modelName(GPT_4_O_MINI)
+                .baseUrl("https://api.minimaxi.com/v1")
+                .apiKey("sk-cp-k94NcRwMEUPF_ls-fqeyN9Gk9msntO6yv1WZxwhV3joGHW8rXfeP5Xqe27hsklfARyU0YnqQW1acyFsR6nWKE85mp8HJLFoz0YiZklBukg4_LXilJ5JXbyM")
+                .organizationId("MiniMax")
+                .modelName("MiniMax-M2.7")
                 .responseFormat("json_object")
                 .temperature(0.0)
                 .logRequests(true)
@@ -1042,10 +1055,14 @@ public class AiServicesIT {
     @Test
     void should_use_custom_chat_request_for_provider_specific_params() {
         OpenAiChatModel modelWithReasoningEffort = spy(OpenAiChatModel.builder()
-                .baseUrl(System.getenv("OPENAI_BASE_URL"))
-                .apiKey(System.getenv("OPENAI_API_KEY"))
-                .organizationId(System.getenv("OPENAI_ORGANIZATION_ID"))
-                .modelName(O3_MINI)
+//                .baseUrl(System.getenv("OPENAI_BASE_URL"))
+//                .apiKey(System.getenv("OPENAI_API_KEY"))
+//                .organizationId(System.getenv("OPENAI_ORGANIZATION_ID"))
+//                .modelName(O3_MINI)
+                .baseUrl("https://api.minimaxi.com/v1")
+                .apiKey("sk-cp-k94NcRwMEUPF_ls-fqeyN9Gk9msntO6yv1WZxwhV3joGHW8rXfeP5Xqe27hsklfARyU0YnqQW1acyFsR6nWKE85mp8HJLFoz0YiZklBukg4_LXilJ5JXbyM")
+                .organizationId("MiniMax")
+                .modelName("MiniMax-M2.7")
                 .logRequests(true)
                 .logResponses(true)
                 .build());

@@ -66,6 +66,7 @@ import java.util.Map;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Function;
 import java.util.stream.Stream;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
@@ -74,11 +75,20 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 
+// 这一块需要明天仔细理解，这个地方是理解rag的核心测试类，能理解rag的整个流程，在agent中是如何生效的
 @EnabledIfEnvironmentVariable(named = "OPENAI_API_KEY", matches = ".+")
 class AiServicesWithRagIT {
 
     private static final String ALLOWED_CANCELLATION_PERIOD_DAYS = "61";
     private static final String MIN_BOOKING_PERIOD_DAYS = "17";
+
+    @BeforeAll
+    static void beforeAll() {
+        System.setProperty(
+                "javax.net.ssl.trustStore",
+                Path.of(System.getProperty("java.home"), "lib", "security", "cacerts").toString());
+        System.setProperty("javax.net.ssl.trustStorePassword", "changeit");
+    }
 
     EmbeddingStore<TextSegment> embeddingStore = new InMemoryEmbeddingStore<>();
     EmbeddingModel embeddingModel = new AllMiniLmL6V2QuantizedEmbeddingModel();

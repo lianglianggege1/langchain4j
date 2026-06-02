@@ -112,7 +112,9 @@ public class AiServicesWithCustomContentInjectorTest {
             return dev.langchain4j.data.message.UserMessage.from(imageContent, imageContent);
         };
 
-        ContentRetriever customContentRetriever = query -> Collections.emptyList();
+        ContentRetriever customContentRetriever = query -> {
+            return Collections.emptyList();
+        };
 
         RetrievalAugmentor retrievalAugmentor = DefaultRetrievalAugmentor.builder()
                 .contentRetriever(customContentRetriever)

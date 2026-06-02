@@ -272,7 +272,7 @@ class DefaultAiServices<T> extends AiServices<T> {
                         invocationContext = invocationContext.toBuilder()
                                 .userMessage(userMessage)
                                 .build();
-
+                        // 调用审核模型进行审核
                         Future<Moderation> moderationFuture = triggerModerationIfNeeded(method, messages);
 
                         ToolServiceContext toolServiceContext =

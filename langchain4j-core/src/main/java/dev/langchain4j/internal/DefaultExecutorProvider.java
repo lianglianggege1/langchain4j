@@ -19,8 +19,9 @@ public class DefaultExecutorProvider {
 
     private static class Holder {
         private static final ExecutorService EXECUTOR_SERVICE =
-                createVirtualThreadExecutor(Holder::createPlatformThreadExecutorService);
+                createVirtualThreadExecutor(Holder::createPlatformThreadExecutorService); // 虚拟线程池
 
+        // 备用线程池
         private static ExecutorService createPlatformThreadExecutorService() {
             return new ThreadPoolExecutor(0, Integer.MAX_VALUE, 1, TimeUnit.SECONDS, new SynchronousQueue<>());
         }

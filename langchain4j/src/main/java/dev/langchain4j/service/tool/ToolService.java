@@ -213,6 +213,14 @@ public class ToolService {
      * @throws IllegalConfigurationException if the object has no {@link Tool @Tool}-annotated methods
      * @since 1.13.0
      */
+    /**
+     * 扫描指定对象中所有被{@link Tool @Tool}注解标记的方法，并返回{@link AiServiceTool}对象列表。
+     *
+     * @param objectWithTools 包含{@link Tool @Tool}注解方法的对象
+     * @return 解析后的工具列表
+     * @throws IllegalConfigurationException 若该对象中不存在任何{@link Tool @Tool}注解方法，则抛出此异常
+     * @since 1.13.0
+     */
     public static List<AiServiceTool> findTools(Object objectWithTools) {
         if (objectWithTools instanceof Class) {
             throw illegalConfiguration("Tool '%s' must be an object, not a class", objectWithTools);

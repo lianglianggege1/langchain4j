@@ -417,6 +417,14 @@ public abstract class AiServices<T> {
      * @param chatRequestTransformer A {@link UnaryOperator} that transforms the {@link ChatRequest}.
      * @return builder
      */
+    /**
+     * 配置聊天请求转换器，该转换器会在请求发送至大语言模型前对 {@link ChatRequest} 进行处理。
+     * <p>
+     * 可用于修改请求内容，例如新增消息或调整已有消息。
+     *
+     * @param chatRequestTransformer 用于转换 {@link ChatRequest} 的一元操作器
+     * @return 构造器实例
+     */
     public AiServices<T> chatRequestTransformer(UnaryOperator<ChatRequest> chatRequestTransformer) {
         context.chatRequestTransformer = (req, memId) -> chatRequestTransformer.apply(req);
         return this;
@@ -432,6 +440,17 @@ public abstract class AiServices<T> {
      *
      * @param chatRequestTransformer A {@link BiFunction} that transforms the {@link ChatRequest} and memory ID.
      * @return builder
+     */
+    /**
+     * 配置聊天请求转换器，该转换器会在请求发送至大语言模型前对 {@link ChatRequest} 进行处理。
+     * <p>
+     * 可用于修改请求内容，例如新增消息或调整已有消息。
+     * <p>
+     * 转换器会接收 {@link ChatRequest} 和内存ID（被 @{@link MemoryId} 注解标记的方法参数值），
+     * 可通过内存ID从聊天内存中获取额外信息。
+     *
+     * @param chatRequestTransformer 用于转换 {@link ChatRequest} 和内存ID的双函数处理器
+     * @return 构造器实例
      */
     public AiServices<T> chatRequestTransformer(BiFunction<ChatRequest, Object, ChatRequest> chatRequestTransformer) {
         context.chatRequestTransformer = chatRequestTransformer;
@@ -616,6 +635,34 @@ public abstract class AiServices<T> {
      * @see #executeToolsConcurrently(Executor)
      * @since 1.4.0
      */
+    /**
+     * 默认情况下，当大语言模型（LLM）调用多个工具时，AI 服务会按顺序执行这些工具。
+     * 若启用该选项，工具将以并发方式执行（唯一例外情况见下文说明），
+     * 执行时将使用默认的 {@link Executor} 线程执行器。
+     * 你也可以指定自定义的 {@link Executor}，详情参考 {@link #executeToolsConcurrently(Executor)}。
+     * <ul>
+     *     <li>使用 {@link ChatModel} 时：
+     *         <ul>
+     *             <li>当大语言模型调用多个工具时，工具会通过 {@link Executor} 在独立线程中并发执行。</li>
+     *             <li>当大语言模型仅调用单个工具时，工具将在当前（调用方）线程中执行，
+     *                 不会使用 {@link Executor}，避免资源浪费。</li>
+     *         </ul>
+     *     </li>
+     *     <li>使用 {@link StreamingChatModel} 流式对话模型时：
+     *         <ul>
+     *             <li>当大语言模型调用多个工具时，工具会通过 {@link Executor} 在独立线程中并发执行。
+     *                 每当触发 {@link StreamingChatResponseHandler#onCompleteToolCall(CompleteToolCall)} 回调时，
+     *                 对应工具会立即执行，无需等待其他工具执行完毕，也无需等待响应流传输完成。</li>
+     *             <li>当大语言模型仅调用单个工具时，工具会通过 {@link Executor} 在独立线程中执行。
+     *                 无法在当前线程中执行的原因是：此时无法预知大语言模型最终会调用多少个工具。</li>
+     *         </ul>
+     *     </li>
+     * </ul>
+     *
+     * @return 构建器
+     * @see #executeToolsConcurrently(Executor)
+     * @since 1.4.0
+     */
     public AiServices<T> executeToolsConcurrently() {
         context.toolService.executeToolsConcurrently();
         return this;
@@ -699,6 +746,15 @@ public abstract class AiServices<T> {
      * @see #toolArgumentsErrorHandler(ToolArgumentsErrorHandler)
      * @see #toolExecutionErrorHandler(ToolExecutionErrorHandler)
      */
+    /**
+     * 配置大语言模型出现工具名称幻觉（即尝试调用不存在的工具）时使用的处理策略。
+     *
+     * @param hallucinatedToolNameStrategy 一个将 {@link ToolExecutionRequest} 转换为 {@link ToolExecutionResultMessage} 的函数，
+     *                                     用于定义模型出现工具名称幻觉时返回给它的响应内容。
+     * @return 构造器实例
+     * @see #toolArgumentsErrorHandler(ToolArgumentsErrorHandler)
+     * @see #toolExecutionErrorHandler(ToolExecutionErrorHandler)
+     */
     public AiServices<T> hallucinatedToolNameStrategy(
             Function<ToolExecutionRequest, ToolExecutionResultMessage> hallucinatedToolNameStrategy) {
         context.toolService.hallucinatedToolNameStrategy(hallucinatedToolNameStrategy);
@@ -735,6 +791,39 @@ public abstract class AiServices<T> {
      *
      * @param handler The handler responsible for processing tool argument errors
      * @return builder
+     * @see #hallucinatedToolNameStrategy(Function)
+     * @see #toolExecutionErrorHandler(ToolExecutionErrorHandler)
+     */
+    /**
+     * 配置工具参数相关错误发生时触发的处理器，
+     * 错误类型包括JSON解析失败、缺少必填参数、参数类型不匹配等。
+     * <p>
+     * 在该处理器中可选择以下两种处理方式：
+     * <p>
+     * 1. 抛出异常：终止AI服务流程。未配置处理器时将默认采用此方式。
+     * <p>
+     * 2. 返回文本信息（如错误描述）并回传给大语言模型，
+     * 使其做出相应处理（例如修正错误后重试）。
+     * <p>
+     * <b>建议：</b>当前默认的“抛出异常”行为通常不符合实际需求。
+     * 参数错误通常由大语言模型导致（JSON格式错误、字段缺失、类型错误），
+     * 当收到清晰的错误信息时，模型通常可以自行修正。
+     * 配置处理器通过 {@link ToolErrorHandlerResult#text(String)} 返回错误文本，可让模型重试执行，
+     * 这更符合智能代理系统的预期行为。
+     * LangChain4j 2.0 版本会将默认行为改为“返回文本信息”。
+     * <p>
+     * 示例：
+     * <pre>{@code
+     * .toolArgumentsErrorHandler((error, ctx) -> ToolErrorHandlerResult.text(error.getMessage()))
+     * }</pre>
+     * <p>
+     * 注意：若手动创建 {@link DefaultToolExecutor} 或使用自定义 {@link ToolExecutor}，
+     * 需确保工具参数出错时 {@link ToolExecutor} 会抛出 {@link ToolArgumentsException}。
+     * 对于 {@link DefaultToolExecutor}，可将
+     * {@link DefaultToolExecutor.Builder#wrapToolArgumentsExceptions(Boolean)} 设置为 {@code true} 来开启该能力。
+     *
+     * @param handler 用于处理工具参数错误的处理器
+     * @return 构造器实例
      * @see #hallucinatedToolNameStrategy(Function)
      * @see #toolExecutionErrorHandler(ToolExecutionErrorHandler)
      */
@@ -779,6 +868,40 @@ public abstract class AiServices<T> {
      * @see #hallucinatedToolNameStrategy(Function)
      * @see #toolArgumentsErrorHandler(ToolArgumentsErrorHandler)
      */
+    /**
+     * 配置工具执行出错时触发的处理器。
+     * <p>
+     * 在该处理器中可选择以下两种处理方式：
+     * <p>
+     * 1. 抛出异常：终止AI服务流程。
+     * <p>
+     * 2. 返回文本信息（如错误描述）并回传给大语言模型，
+     * 使其做出相应处理（例如修正错误后重试）。
+     * 未配置处理器时将默认采用此方式，默认会将 {@link Throwable#getMessage()} 的内容发送给大语言模型。
+     * <p>
+     * <b>建议：</b>当前默认会将原始异常信息发送给大语言模型，
+     * 可能导致应用内部数据泄露，包括堆栈轨迹、文件路径、下游接口响应、
+     * 凭证信息以及错误文本中包含的个人身份信息等。
+     * 这些内容一旦传入大语言模型，可能会出现在模型回复、聊天记录、可观测链路以及模型服务商日志中。
+     * 生产环境请配置自定义处理器，返回通用提示或经过脱敏、整理的错误描述，
+     * 原始详细信息请通过日志或事件进行记录。
+     * LangChain4j 2.0 版本会将默认行为改为“抛出异常”。
+     * <p>
+     * 示例：
+     * <pre>{@code
+     * .toolExecutionErrorHandler((error, ctx) -> ToolErrorHandlerResult.text("Tool execution failed."))
+     * }</pre>
+     * <p>
+     * 注意：若手动创建 {@link DefaultToolExecutor} 或使用自定义 {@link ToolExecutor}，
+     * 需确保工具执行出错时 {@link ToolExecutor} 会抛出 {@link ToolExecutionException}。
+     * 对于 {@link DefaultToolExecutor}，可将
+     * {@link DefaultToolExecutor.Builder#propagateToolExecutionExceptions(Boolean)} 设置为 {@code true} 来开启该能力。
+     *
+     * @param handler 用于处理工具执行错误的处理器
+     * @return 构造器实例
+     * @see #hallucinatedToolNameStrategy(Function)
+     * @see #toolArgumentsErrorHandler(ToolArgumentsErrorHandler)
+     */
     public AiServices<T> toolExecutionErrorHandler(ToolExecutionErrorHandler handler) {
         context.toolService.executionErrorHandler(handler);
         return this;
@@ -802,6 +925,22 @@ public abstract class AiServices<T> {
      * @return builder
      * @since 1.12.0
      */
+    /**
+     * 配置工具检索策略，用于减少令牌消耗。
+     * <p>
+     * 配置后，大语言模型初始仅能看到一个专用工具，可调用该工具来查找其他工具。
+     * 检索到的工具会在后续请求中提供给大语言模型。
+     * <p>
+     * 已检索到的工具会持续保留，直至包含工具检索结果的 {@link ToolExecutionResultMessage} 从 {@link ChatMemory} 中移除。
+     * <p>
+     * 可使用内置实现，例如
+     * {@link dev.langchain4j.service.tool.search.simple.SimpleToolSearchStrategy}
+     * 或 {@link dev.langchain4j.service.tool.search.vector.VectorToolSearchStrategy}，也可自行实现。
+     *
+     * @param toolSearchStrategy 要使用的工具检索策略
+     * @return 构造器实例
+     * @since 1.12.0
+     */
     public AiServices<T> toolSearchStrategy(ToolSearchStrategy toolSearchStrategy) {
         context.toolService.toolSearchStrategy(toolSearchStrategy);
         return this;
@@ -820,6 +959,18 @@ public abstract class AiServices<T> {
      * @param contentRetriever The content retriever to be used by the AI Service.
      * @return builder
      */
+    /**
+     * 配置一个内容检索器，该检索器会在**每次方法调用时**执行，
+     * 从底层数据源中检索与用户消息相关的内容
+     * （例如，对于 {@link EmbeddingStoreContentRetriever} 来说，底层数据源就是向量存储库）。
+     * 检索到的相关内容会**自动添加**到发送给大语言模型（LLM）的消息中。
+     * <br>
+     * 该方法为**不需要自定义检索增强器（RetrievalAugmentor）** 的用户提供了一种简单直接的方式。
+     * 它会使用你传入的 {@link ContentRetriever}，自动配置一个 {@link DefaultRetrievalAugmentor}。
+     *
+     * @param contentRetriever AI服务将要使用的内容检索器
+     * @return 返回构建器自身（支持链式调用）
+     */
     public AiServices<T> contentRetriever(ContentRetriever contentRetriever) {
         if (retrievalAugmentorSet) {
             throw illegalConfiguration("Only one out of [retriever, contentRetriever, retrievalAugmentor] can be set");
@@ -836,6 +987,12 @@ public abstract class AiServices<T> {
      *
      * @param retrievalAugmentor The retrieval augmentor to be used by the AI Service.
      * @return builder
+     */
+    /**
+     * 配置一个检索增强器，使其在**每次方法调用时**都被执行
+     *
+     * @param retrievalAugmentor AI服务将要使用的检索增强器
+     * @return 返回构建器自身（支持链式调用）
      */
     public AiServices<T> retrievalAugmentor(RetrievalAugmentor retrievalAugmentor) {
         if (contentRetrieverSet) {
