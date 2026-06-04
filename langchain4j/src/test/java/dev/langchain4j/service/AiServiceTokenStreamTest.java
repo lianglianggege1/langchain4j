@@ -31,6 +31,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+// 从此开始
 @ExtendWith(MockitoExtension.class)
 class AiServiceTokenStreamTest {
 
@@ -42,7 +43,9 @@ class AiServiceTokenStreamTest {
             .chatMemoryId("one")
             .build();
 
-    static Consumer<String> DUMMY_PARTIAL_RESPONSE_HANDLER = (partialResponse) -> {};
+    static Consumer<String> DUMMY_PARTIAL_RESPONSE_HANDLER = (partialResponse) -> {
+        System.out.println(partialResponse);
+    };
     static BiConsumer<PartialResponse, PartialResponseContext> DUMMY_PARTIAL_RESPONSE_WITH_CONTEXT_HANDLER =
             (partialResponse, partialResponseContext) -> {};
     static Consumer<PartialThinking> DUMMY_PARTIAL_THINKING_HANDLER = (partialThinking) -> {};
