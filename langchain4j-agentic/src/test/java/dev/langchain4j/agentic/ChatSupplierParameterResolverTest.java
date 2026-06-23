@@ -239,6 +239,7 @@ class ChatSupplierParameterResolverTest {
         assertThat(capturedService).isSameAs(fromFirst);
     }
 
+    // 解析器与作用域参数共存
     @Test
     void resolver_and_scope_params_coexist() {
         TestService testService = new TestService("injected");

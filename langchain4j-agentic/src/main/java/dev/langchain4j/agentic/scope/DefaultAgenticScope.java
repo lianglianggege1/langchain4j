@@ -342,6 +342,12 @@ public class DefaultAgenticScope implements AgenticScope {
      *
      * @param registry the registry managing this scope's persistence
      */
+    /**
+     * 将当前作用域状态持久化至存储层以完成状态快照。
+     * 非持久化作用域执行此方法无任何操作；持久化作用域会获取写锁，并将当前状态刷新至存储层。
+     *
+     * @param registry 管理当前作用域持久化功能的注册器
+     */
     public void checkpoint(AgenticScopeRegistry registry) {
         if (kind == Kind.PERSISTENT) {
             flush(registry);

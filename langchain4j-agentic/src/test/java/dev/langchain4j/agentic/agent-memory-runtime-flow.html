@@ -1,0 +1,804 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>agent_with_default_chat_memory_test 运行时全流程</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif;
+            background: #0f0f23;
+            color: #e0e0e0;
+            line-height: 1.7;
+        }
+        .container { max-width: 1180px; margin: 0 auto; padding: 20px; }
+        h1 { text-align: center; color: #00d4ff; margin-bottom: 6px; font-size: 26px; }
+        .subtitle { text-align: center; color: #888; margin-bottom: 28px; font-size: 13px; }
+
+        /* Tab 导航 */
+        .tabs { display: flex; gap: 0; border-bottom: 2px solid #2a2a5e; margin-bottom: 0; }
+        .tab {
+            padding: 10px 26px; cursor: pointer; font-size: 14px; font-weight: 600;
+            color: #888; background: #12122a; border: 1px solid #2a2a5e; border-bottom: none;
+            border-radius: 8px 8px 0 0; transition: all 0.2s;
+        }
+        .tab:hover { color: #ccc; background: #1a1a3e; }
+        .tab.active { color: #00d4ff; background: #1a1a3e; border-color: #00d4ff; }
+        .tab-content { display: none; padding-top: 20px; }
+        .tab-content.active { display: block; }
+
+        /* 架构图 */
+        .arch-diagram {
+            background: #1a1a3e; border-radius: 12px; padding: 28px; margin-bottom: 28px;
+            border: 1px solid #2a2a5e;
+        }
+        .arch-diagram h3 { color: #00d4ff; margin-bottom: 18px; text-align: center; font-size: 16px; }
+        .arch-row { display: flex; justify-content: center; gap: 14px; margin: 10px 0; flex-wrap: wrap; }
+        .arch-box {
+            border-radius: 10px; padding: 11px 18px; text-align: center; font-size: 13px;
+            font-weight: 600; min-width: 130px; position: relative;
+        }
+        .arch-box .arch-label { font-size: 10px; font-weight: 400; opacity: 0.7; display: block; margin-top: 2px; }
+        .arch-user { background: #003545; border: 2px solid #00d4ff; color: #00d4ff; }
+        .arch-workflow { background: #2a0d3e; border: 2px solid #e0aaff; color: #e0aaff; }
+        .arch-ai { background: #0d2a1a; border: 2px solid #52b788; color: #52b788; }
+        .arch-llm { background: #2a1f0d; border: 2px solid #ffd166; color: #ffd166; }
+        .arch-scope { background: #0d1a2a; border: 2px solid #6db3f2; color: #6db3f2; }
+        .arch-arrow { text-align: center; font-size: 20px; color: #555; margin: 4px 0; }
+        .arch-arrow-label { font-size: 11px; color: #777; text-align: center; margin-bottom: 4px; }
+
+        /* 流程线 */
+        .flow-container { position: relative; padding-left: 38px; }
+        .flow-line {
+            position: absolute; left: 18px; top: 0; bottom: 0; width: 2px;
+            background: linear-gradient(to bottom, #00d4ff, #e0aaff, #52b788, #ffd166, #ff6b6b);
+        }
+
+        /* 步骤卡片 */
+        .step {
+            position: relative; margin-bottom: 16px; background: #1a1a3e; border-radius: 12px;
+            border: 1px solid #2a2a5e; overflow: hidden; transition: all 0.3s ease;
+        }
+        .step:hover { border-color: #00d4ff; box-shadow: 0 0 18px rgba(0,212,255,0.1); }
+        .step-header {
+            padding: 13px 18px; cursor: pointer; display: flex; align-items: center;
+            gap: 13px; background: linear-gradient(90deg, rgba(0,212,255,0.05), transparent);
+        }
+        .step-number {
+            width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center;
+            justify-content: center; font-weight: bold; font-size: 13px; flex-shrink: 0;
+            position: relative; z-index: 2;
+        }
+        .sn-user { background: #00d4ff; color: #000; }
+        .sn-build { background: #8888cc; color: #fff; }
+        .sn-workflow { background: #e0aaff; color: #000; }
+        .sn-ai { background: #52b788; color: #000; }
+        .sn-llm { background: #ffd166; color: #000; }
+        .sn-return { background: #ff6b6b; color: #fff; }
+        .sn-scope { background: #6db3f2; color: #000; }
+
+        .step-title { font-weight: 600; font-size: 14px; color: #fff; }
+        .step-class { font-size: 11px; color: #888; margin-left: auto; font-family: monospace; }
+        .step-toggle { font-size: 16px; color: #666; transition: transform 0.3s; }
+        .step.expanded .step-toggle { transform: rotate(90deg); }
+        .step-body { max-height: 0; overflow: hidden; transition: max-height 0.5s ease; }
+        .step.expanded .step-body { max-height: 4000px; }
+        .step-content { padding: 0 18px 16px 63px; }
+
+        /* 代码块 */
+        .code-block {
+            background: #0d0d1f; border-radius: 8px; padding: 13px; margin: 10px 0;
+            font-family: 'Fira Code', 'Consolas', monospace; font-size: 12px;
+            line-height: 1.5; overflow-x: auto; border-left: 3px solid #00d4ff;
+        }
+        .cc { color: #6a9955; } /* comment */
+        .ck { color: #569cd6; } /* keyword */
+        .cm { color: #dcdcaa; } /* method */
+        .cs { color: #ce9178; } /* string */
+        .ct { color: #4ec9b0; } /* type */
+
+        /* 状态流转 */
+        .state-box {
+            background: #1a2a0d; border: 1px solid #52b788; border-radius: 8px;
+            padding: 10px 14px; margin: 10px 0; font-family: monospace; font-size: 12px;
+        }
+        .state-box .added { color: #52b788; }
+
+        /* 调用栈 */
+        .call-stack {
+            background: #1b0d2a; border-radius: 8px; padding: 10px 14px; margin: 10px 0;
+            font-family: monospace; font-size: 12px;
+        }
+        .call-stack .frame {
+            padding: 3px 0; border-left: 2px solid #e0aaff; padding-left: 11px; margin: 3px 0; color: #ccc;
+        }
+        .call-stack .frame.hl { color: #e0aaff; font-weight: bold; }
+
+        /* 高亮框 */
+        .hl-box {
+            background: rgba(0,212,255,0.08); border-left: 3px solid #00d4ff;
+            padding: 9px 14px; border-radius: 0 8px 8px 0; margin: 10px 0;
+            font-size: 12.5px; color: #ccc;
+        }
+
+        /* 说明 */
+        .desc { color: #aaa; font-size: 12.5px; margin: 8px 0; line-height: 1.7; }
+
+        /* 图例 */
+        .legend { display: flex; gap: 18px; justify-content: center; margin-bottom: 24px; flex-wrap: wrap; }
+        .legend-item { display: flex; align-items: center; gap: 7px; font-size: 12px; color: #aaa; }
+        .legend-dot { width: 12px; height: 12px; border-radius: 50%; }
+
+        /* 总结卡片 */
+        .summary {
+            background: #16213e; border-radius: 12px; padding: 22px; margin-top: 36px;
+            border: 1px solid #2a2a5e;
+        }
+        .summary h3 { color: #00d4ff; margin-bottom: 14px; }
+        .summary-grid {
+            display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 14px;
+        }
+        .summary-card {
+            background: #0d1b2a; border-radius: 8px; padding: 14px; border-left: 3px solid #00d4ff;
+        }
+        .summary-card h4 { color: #fff; font-size: 13px; margin-bottom: 7px; }
+        .summary-card p { color: #aaa; font-size: 12px; line-height: 1.6; }
+
+        .badge {
+            display: inline-block; background: #ffd166; color: #000; font-size: 10px;
+            padding: 1px 7px; border-radius: 4px; font-weight: bold; margin-left: 6px;
+        }
+
+        /* 序列图（Tab2） */
+        .seq-table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+        .seq-table th, .seq-table td { padding: 10px 14px; text-align: left; border-bottom: 1px solid #2a2a5e; font-size: 13px; }
+        .seq-table th { background: #12122a; color: #00d4ff; font-weight: 600; }
+        .seq-table tr:hover { background: rgba(0,212,255,0.04); }
+        .seq-num { color: #00d4ff; font-weight: bold; }
+        .seq-from { color: #e0aaff; }
+        .seq-to { color: #52b788; }
+        .seq-action { color: #ffd166; font-family: monospace; font-size: 12px; }
+    </style>
+</head>
+<body>
+<div class="container">
+    <h1>agent_with_default_chat_memory_test</h1>
+    <div class="subtitle">从 sequenceAgent.invoke() 到 LLM API 的运行时全链路拆解</div>
+
+    <div class="tabs">
+        <div class="tab active" onclick="switchTab(0)">运行时流程图</div>
+        <div class="tab" onclick="switchTab(1)">架构与对象关系</div>
+        <div class="tab" onclick="switchTab(2)">调用序列表</div>
+    </div>
+
+    <!-- ==================== Tab 0: 运行时流程 ==================== -->
+    <div class="tab-content active" id="tab0">
+        <div class="legend">
+            <div class="legend-item"><div class="legend-dot" style="background:#00d4ff"></div>用户入口</div>
+            <div class="legend-item"><div class="legend-dot" style="background:#8888cc"></div>构建阶段</div>
+            <div class="legend-item"><div class="legend-dot" style="background:#e0aaff"></div>Workflow 代理层</div>
+            <div class="legend-item"><div class="legend-dot" style="background:#52b788"></div>AI Agent 代理层</div>
+            <div class="legend-item"><div class="legend-dot" style="background:#ffd166"></div>LLM 调用层</div>
+            <div class="legend-item"><div class="legend-dot" style="background:#ff6b6b"></div>结果返回</div>
+        </div>
+
+        <div class="flow-container">
+            <div class="flow-line"></div>
+
+            <!-- Step 0 -->
+            <div class="step expanded">
+                <div class="step-header" onclick="this.parentElement.classList.toggle('expanded')">
+                    <div class="step-number sn-user">0</div>
+                    <div class="step-title">用户测试代码</div>
+                    <div class="step-class">AgentsWithMemoryIT.java</div>
+                    <div class="step-toggle">&#9654;</div>
+                </div>
+                <div class="step-body"><div class="step-content">
+                    <div class="code-block">
+<span class="cc">// ① 构建 AI Agent</span>
+<span class="ct">Assistant</span> assistant = AgenticServices.<span class="cm">agentBuilder</span>(Assistant.<span class="ck">class</span>)
+        .<span class="cm">chatModel</span>(baseModel())
+        .<span class="cm">chatMemory</span>(MessageWindowChatMemory.<span class="cm">withMaxMessages</span>(<span class="cs">10</span>))
+        .<span class="cm">outputKey</span>(<span class="cs">"response"</span>)
+        .<span class="cm">build</span>();
+
+<span class="cc">// ② 构建 Sequence 包装</span>
+<span class="ct">UntypedAgent</span> sequenceAgent = AgenticServices.<span class="cm">sequenceBuilder</span>()
+        .<span class="cm">subAgents</span>(assistant)
+        .<span class="cm">outputKey</span>(<span class="cs">"response"</span>)
+        .<span class="cm">build</span>();
+
+<span class="cc">// ③ 调用</span>
+<span class="ct">Map</span>&lt;String, Object&gt; params = Map.<span class="cm">of</span>(<span class="cs">"request"</span>, <span class="cs">"构建一个机器人"</span>);
+<span class="ct">String</span> result = (<span class="ct">String</span>) sequenceAgent.<span class="cm">invoke</span>(params);
+                    </div>
+                    <div class="hl-box">
+                        这个测试有<strong>3个阶段</strong>：构建 AI Agent → 构建 Sequence 包装 → 运行时调用。下面逐步拆解。
+                    </div>
+                </div></div>
+            </div>
+
+            <!-- Step 1 -->
+            <div class="step expanded">
+                <div class="step-header" onclick="this.parentElement.classList.toggle('expanded')">
+                    <div class="step-number sn-build">1</div>
+                    <div class="step-title">构建阶段①：agentBuilder 创建 Assistant 代理</div>
+                    <div class="step-class">AgentBuilder.build()</div>
+                    <div class="step-toggle">&#9654;</div>
+                </div>
+                <div class="step-body"><div class="step-content">
+                    <div class="code-block">
+<span class="cc">// AgentBuilder.build() 内部</span>
+AiServices&lt;T&gt; aiServices = AiServices.<span class="cm">builder</span>(agentServiceClass);
+aiServices.<span class="cm">chatModel</span>(model);           <span class="cc">// baseModel()</span>
+aiServices.<span class="cm">chatMemory</span>(chatMemory);     <span class="cc">// MessageWindowChatMemory(10)</span>
+
+<span class="cc">// 用 JDK 动态代理生成代理对象</span>
+<span class="ct">AgentInstance</span> agent = (<span class="ct">AgentInstance</span>) Proxy.<span class="cm">newProxyInstance</span>(
+        agentServiceClass.<span class="cm">getClassLoader</span>(),
+        <span class="ck">new</span> Class&lt;?&gt;[] {
+            agentServiceClass,                    <span class="cc">// Assistant 接口</span>
+            InternalAgent.<span class="ck">class</span>,                 <span class="cc">// 内部管理接口</span>
+            AgenticScopeOwner.<span class="ck">class</span>,              <span class="cc">// Scope 绑定接口</span>
+            ChatMemoryAccess.<span class="ck">class</span>,               <span class="cc">// 记忆访问接口</span>
+            ChatMessagesAccess.<span class="ck">class</span>,             <span class="cc">// 消息访问接口</span>
+            AiServiceResponseReceivedListener.<span class="ck">class</span> <span class="cc">// 事件监听</span>
+        },
+        <span class="ck">new</span> <span class="ct">AgentInvocationHandler</span>(context, aiServices.<span class="cm">build</span>(), <span class="ck">this</span>, agenticScopeDependent)
+);
+                    </div>
+                    <div class="desc">
+                        <strong>产出的对象</strong>：一个 JDK 动态代理，InvocationHandler = <code>AgentInvocationHandler</code>。
+                        它同时实现了 6 个接口，对外是 <code>Assistant</code> 类型，对内可转型为 <code>InternalAgent</code> 等内部接口。
+                        <code>aiServices.build()</code> 返回的是<strong>第3层代理</strong>（DefaultAiServices 代理），最终负责调用 LLM。
+                    </div>
+                </div></div>
+            </div>
+
+            <!-- Step 2 -->
+            <div class="step expanded">
+                <div class="step-header" onclick="this.parentElement.classList.toggle('expanded')">
+                    <div class="step-number sn-build">2</div>
+                    <div class="step-title">构建阶段②：sequenceBuilder 创建 Sequence 代理</div>
+                    <div class="step-class">PlannerBasedServiceImpl.build()</div>
+                    <div class="step-toggle">&#9654;</div>
+                </div>
+                <div class="step-body"><div class="step-content">
+                    <div class="code-block">
+<span class="cc">// sequenceBuilder() → PlannerBasedServiceImpl</span>
+<span class="cc">// 使用 SequentialPlanner 作为规划器</span>
+
+<span class="cc">// build() 最终调用 AbstractServiceBuilder.build(Supplier&lt;Planner&gt;)</span>
+<span class="ct">T</span> proxy = (<span class="ct">T</span>) Proxy.<span class="cm">newProxyInstance</span>(
+        type.<span class="cm">getClassLoader</span>(),
+        <span class="ck">new</span> Class&lt;?&gt;[] { UntypedAgent.<span class="ck">class</span>, InternalAgent.<span class="ck">class</span>, AgenticScopeOwner.<span class="ck">class</span>, ... },
+        <span class="ck">new</span> <span class="ct">PlannerBasedInvocationHandler</span>(service, () -&gt; <span class="ck">new</span> <span class="ct">SequentialPlanner</span>())
+);
+
+<span class="cc">// 构建时设置父子关系</span>
+assistant.<span class="cm">setParent</span>(sequenceHandler); <span class="cc">// Assistant 的 parent = Sequence</span>
+                    </div>
+                    <div class="desc">
+                        <strong>产出的对象</strong>：另一个 JDK 动态代理，InvocationHandler = <code>PlannerBasedInvocationHandler</code>，
+                        内置 <code>SequentialPlanner</code> 作为调度策略。
+                        <code>subAgents</code> 列表 = <code>[Assistant代理]</code>。
+                    </div>
+                    <div class="hl-box">
+                        <strong>两层代理的关系</strong>：SequenceAgent（外层，负责调度编排）包裹着 Assistant（内层，负责调用 LLM）。
+                        运行时方法调用会层层穿透。
+                    </div>
+                </div></div>
+            </div>
+
+            <!-- Step 3 -->
+            <div class="step expanded">
+                <div class="step-header" onclick="this.parentElement.classList.toggle('expanded')">
+                    <div class="step-number sn-user">3</div>
+                    <div class="step-title">运行时入口：sequenceAgent.invoke(params)</div>
+                    <div class="step-class">PlannerBasedInvocationHandler.invoke()</div>
+                    <div class="step-toggle">&#9654;</div>
+                </div>
+                <div class="step-body"><div class="step-content">
+                    <div class="code-block">
+<span class="cc">// JDK 动态代理把 invoke() 调用路由到这里</span>
+<span class="ck">public</span> Object <span class="cm">invoke</span>(Object proxy, Method method, Object[] args) {
+    <span class="cc">// method = UntypedAgent.invoke(Map)</span>
+    <span class="cc">// args = [{request: "构建一个机器人"}]</span>
+
+    AgenticScopeRegistry registry = <span class="cm">agenticScopeRegistry</span>(); <span class="cc">// 创建 Registry</span>
+    <span class="ck">return</span> <span class="cm">executeAgentMethod</span>(registry, method, args);
+}
+                    </div>
+                    <div class="call-stack">
+                        <div class="frame">Test: sequenceAgent.invoke(params)</div>
+                        <div class="frame hl">Proxy → PlannerBasedInvocationHandler.invoke()</div>
+                    </div>
+                </div></div>
+            </div>
+
+            <!-- Step 4 -->
+            <div class="step expanded">
+                <div class="step-header" onclick="this.parentElement.classList.toggle('expanded')">
+                    <div class="step-number sn-scope">4</div>
+                    <div class="step-title">创建 AgenticScope + 写入参数</div>
+                    <div class="step-class">PlannerBasedInvocationHandler.executeAgentMethod()</div>
+                    <div class="step-toggle">&#9654;</div>
+                </div>
+                <div class="step-body"><div class="step-content">
+                    <div class="code-block">
+<span class="ct">DefaultAgenticScope</span> currentScope = <span class="cm">currentAgenticScope</span>(registry, method, args);
+<span class="cc">// → 创建临时 AgenticScope（因为没有 @MemoryId 参数）</span>
+<span class="cc">//   registry.createEphemeralAgenticScope() → new DefaultAgenticScope()</span>
+
+<span class="cm">writeAgenticScope</span>(currentScope, method, args);
+<span class="cc">// → UntypedAgent.invoke(Map) 走这个分支：</span>
+<span class="cc">//   agenticScope.writeStates((Map) args[0]);</span>
+<span class="cc">//   把 {request: "构建一个机器人"} 全部写入 Scope</span>
+
+<span class="cm">beforeCall</span>.accept(currentScope); <span class="cc">// 执行 beforeCall 钩子（默认空）</span>
+                    </div>
+                    <div class="state-box">
+                        Scope 状态: <span class="added">{ request: <span class="cs">"构建一个机器人"</span> }</span>
+                    </div>
+                    <div class="hl-box">
+                        <strong>AgenticScope 是什么？</strong> 它是所有 Agent 共享的<strong>运行时状态容器</strong>（内部是 ConcurrentHashMap）。
+                        每个 Agent 通过 <code>readState(key)</code> 读数据、通过 <code>writeState(key, val)</code> 写数据，实现跨 Agent 通信。
+                    </div>
+                </div></div>
+            </div>
+
+            <!-- Step 5 -->
+            <div class="step expanded">
+                <div class="step-header" onclick="this.parentElement.classList.toggle('expanded')">
+                    <div class="step-number sn-workflow">5</div>
+                    <div class="step-title">初始化 SequentialPlanner + 进入 PlannerLoop</div>
+                    <div class="step-class">PlannerLoop.loop()</div>
+                    <div class="step-toggle">&#9654;</div>
+                </div>
+                <div class="step-body"><div class="step-content">
+                    <div class="code-block">
+<span class="ct">Planner</span> planner = plannerSupplier.<span class="cm">get</span>(); <span class="cc">// new SequentialPlanner()</span>
+planner.<span class="cm">init</span>(<span class="ck">new</span> <span class="ct">InitPlanningContext</span>(currentScope, <span class="ck">this</span>, subagents));
+<span class="cc">// SequentialPlanner.init() 记住 subagents = [Assistant代理]</span>
+
+Object result = <span class="ck">new</span> <span class="ct">PlannerLoop</span>(planner, currentScope, registry).<span class="cm">loop</span>();
+                    </div>
+                    <div class="code-block">
+<span class="cc">// PlannerLoop.loop() 核心循环</span>
+nextAction = planner.<span class="cm">firstAction</span>(<span class="ck">new</span> <span class="ct">PlanningContext</span>(agenticScope, <span class="ck">null</span>));
+<span class="ck">while</span> (nextAction == <span class="ck">null</span> || !nextAction.<span class="cm">isDone</span>()) {
+    List&lt;<span class="ct">AgentExecutor</span>&gt; agents = ((<span class="ct">Action.AgentCallAction</span>) nextAction).<span class="cm">agentsToCall</span>();
+    <span class="ck">switch</span> (agents.size()) {
+        <span class="ck">case</span> <span class="ct">1</span> -&gt; agents.get(<span class="ct">0</span>).<span class="cm">execute</span>(agenticScope, <span class="ck">this</span>);  <span class="cc">// ← 串行执行</span>
+    }
+}
+                    </div>
+                    <div class="desc">
+                        <strong>PlannerLoop 是调度引擎</strong>：它不断问 Planner "下一步该做什么？"，然后执行。
+                        Planner 只返回 Action（调用谁 or 结束），PlannerLoop 负责真正执行并回调。
+                    </div>
+                </div></div>
+            </div>
+
+            <!-- Step 6 -->
+            <div class="step expanded">
+                <div class="step-header" onclick="this.parentElement.classList.toggle('expanded')">
+                    <div class="step-number sn-workflow">6</div>
+                    <div class="step-title">SequentialPlanner.firstAction() → 返回 Assistant</div>
+                    <div class="step-class">SequentialPlanner</div>
+                    <div class="step-toggle">&#9654;</div>
+                </div>
+                <div class="step-body"><div class="step-content">
+                    <div class="code-block">
+<span class="cc">// firstAction() 默认调用 nextAction()</span>
+<span class="ck">public</span> <span class="ct">Action</span> <span class="cm">nextAction</span>(<span class="ct">PlanningContext</span> ctx) {
+    <span class="ck">return</span> <span class="cm">terminated</span>() ? <span class="cm">done</span>() : <span class="cm">call</span>(agents.get(agentCursor++));
+    <span class="cc">// agents.size()=1, cursor=0 → 返回 call(Assistant代理)</span>
+    <span class="cc">// cursor 自增为 1</span>
+}
+
+<span class="ck">public</span> <span class="ck">boolean</span> <span class="cm">terminated</span>() {
+    <span class="ck">return</span> agentCursor >= agents.size(); <span class="cc">// 1 >= 1 → true</span>
+}
+                    </div>
+                    <div class="desc">
+                        因为只有1个子 Agent，第一次 <code>nextAction()</code> 返回 <code>call(Assistant)</code>，cursor 变为1。
+                        下一轮循环时 <code>terminated()=true</code>，会返回 <code>done()</code>，循环结束。
+                    </div>
+                </div></div>
+            </div>
+
+            <!-- Step 7 -->
+            <div class="step expanded">
+                <div class="step-header" onclick="this.parentElement.classList.toggle('expanded')">
+                    <div class="step-number sn-ai">7</div>
+                    <div class="step-title">AgentExecutor 执行 Assistant</div>
+                    <div class="step-class">AgentExecutor.execute()</div>
+                    <div class="step-toggle">&#9654;</div>
+                </div>
+                <div class="step-body"><div class="step-content">
+                    <div class="code-block">
+<span class="cc">// AgentExecutor.execute()</span>
+Object invokedAgent = (agent <span class="ck">instanceof</span> <span class="ct">AgenticScopeOwner</span> co
+    ? co.<span class="cm">withAgenticScope</span>(scope)  <span class="cc">// ← 命中！给 Assistant 绑定 Scope</span>
+    : agent);
+                    </div>
+                    <div class="desc">
+                        <strong>withAgenticScope() 做了什么？</strong> 它会创建一个新的 JDK 代理，
+                        InvocationHandler = <code>AgentInvocationHandler</code>，但内部持有了传入的 <code>DefaultAgenticScope</code>。
+                        这样后续调用就能从 Scope 中读取上下文。
+                    </div>
+                    <div class="code-block">
+<span class="cc">// internalExecute() 核心</span>
+<span class="ct">AgentInvocationArguments</span> args = agentInvoker.<span class="cm">toInvocationArguments</span>(scope);
+<span class="cc">// → 从 Scope.state 中提取参数，因为 UntypedAgent 传入 Map，</span>
+<span class="cc">//   AgentInvoker 会从 method 参数解析出 request="构建一个机器人"</span>
+
+Object response = <span class="cm">agentResponse</span>(scope, invokedAgent, planner, args, <span class="ck">false</span>);
+<span class="cc">// → agentInvoker.invoke(scope, invokedAgent, args)</span>
+                    </div>
+                </div></div>
+            </div>
+
+            <!-- Step 8 -->
+            <div class="step expanded">
+                <div class="step-header" onclick="this.parentElement.classList.toggle('expanded')">
+                    <div class="step-number sn-ai">8</div>
+                    <div class="step-title">AgentInvoker 反射调用 → 触发 AgentInvocationHandler</div>
+                    <div class="step-class">AgentInvoker.invoke()</div>
+                    <div class="step-toggle">&#9654;</div>
+                </div>
+                <div class="step-body"><div class="step-content">
+                    <div class="code-block">
+<span class="cc">// AgentInvoker.invoke() 默认方法</span>
+<span class="cm">beforeAgentInvocation</span>(listener, scope, <span class="ck">this</span>, args.namedArgs()); <span class="cc">// 通知监听器</span>
+
+<span class="cc">// 将 AgenticScope 绑定到当前线程的 ThreadLocal</span>
+LangChain4jManaged.<span class="cm">setCurrent</span>(Map.<span class="cm">of</span>(AgenticScope.<span class="ck">class</span>, scope));
+
+<span class="ck">try</span> {
+    <span class="ck">return</span> method().<span class="cm">invoke</span>(agent, args.positionalArgs());
+    <span class="cc">// → 反射调用 assistant.processData("构建一个机器人")</span>
+    <span class="cc">// → 因为是代理对象，触发 AgentInvocationHandler.invoke()</span>
+} <span class="ck">finally</span> {
+    LangChain4jManaged.<span class="cm">removeCurrent</span>();
+}
+                    </div>
+                    <div class="call-stack">
+                        <div class="frame">PlannerLoop.loop()</div>
+                        <div class="frame">AgentExecutor.execute()</div>
+                        <div class="frame">AgentExecutor.internalExecute()</div>
+                        <div class="frame hl">AgentInvoker.invoke() → method.invoke(agent, args)</div>
+                    </div>
+                </div></div>
+            </div>
+
+            <!-- Step 9 -->
+            <div class="step expanded">
+                <div class="step-header" onclick="this.parentElement.classList.toggle('expanded')">
+                    <div class="step-number sn-ai">9</div>
+                    <div class="step-title">AgentInvocationHandler：从 ThreadLocal 取 Scope，转发到 AiServices</div>
+                    <div class="step-class">AgentInvocationHandler.invoke()</div>
+                    <div class="step-toggle">&#9654;</div>
+                </div>
+                <div class="step-body"><div class="step-content">
+                    <div class="code-block">
+<span class="ck">public</span> Object <span class="cm">invoke</span>(Object proxy, Method method, Object[] args) {
+    <span class="cc">// method = processData(String), args = ["构建一个机器人"]</span>
+
+    <span class="ct">AgenticScope</span> scope = LangChain4jManaged.<span class="cm">current</span>(AgenticScope.<span class="ck">class</span>);
+    <span class="cc">// ← 从 ThreadLocal 取出，非 null！说明在 Agentic 系统内部</span>
+
+    <span class="ck">if</span> (scope != <span class="ck">null</span>) {
+        <span class="ck">return</span> method.<span class="cm">invoke</span>(agent, args);
+        <span class="cc">// ↑ agent 是 aiServices.build() 的产物（第3层代理）</span>
+        <span class="cc">//   反射调用会进入 DefaultAiServices 的 InvocationHandler</span>
+    }
+    <span class="ck">return</span> <span class="cm">invokeStandaloneAgent</span>(method, args); <span class="cc">// 独立调用时才走这</span>
+}
+                    </div>
+                    <div class="hl-box">
+                        <strong>关键判断</strong>：<code>LangChain4jManaged.current(AgenticScope.class)</code> 用来区分两种调用模式：
+                        <br>• <strong>嵌入模式</strong>（scope ≠ null）：作为 Agentic 系统子节点运行，Scope 由父级提供
+                        <br>• <strong>独立模式</strong>（scope = null）：单独调用，自行创建临时 Scope
+                    </div>
+                </div></div>
+            </div>
+
+            <!-- Step 10 -->
+            <div class="step expanded">
+                <div class="step-header" onclick="this.parentElement.classList.toggle('expanded')">
+                    <div class="step-number sn-llm">10</div>
+                    <div class="step-title">DefaultAiServices：构建 ChatRequest 并调用 LLM</div>
+                    <div class="step-class">DefaultAiServices InvocationHandler</div>
+                    <div class="step-toggle">&#9654;</div>
+                </div>
+                <div class="step-body"><div class="step-content">
+                    <div class="code-block">
+<span class="cc">// DefaultAiServices 的 InvocationHandler.invoke()</span>
+
+<span class="cc">// 1️⃣ 解析 @SystemMessage 注解</span>
+<span class="ct">SystemMessage</span> sysMsg = <span class="cs">"你是一名机器人研发智能体，需要确定待制造的机器人数量。"</span>;
+
+<span class="cc">// 2️⃣ 解析 @UserMessage + @V 模板替换</span>
+<span class="ct">UserMessage</span> userMsg = <span class="cs">"构建一个机器人"</span>;  <span class="cc">// {{request}} → "构建一个机器人"</span>
+
+<span class="cc">// 3️⃣ 从 ChatMemory 读取历史消息</span>
+<span class="ct">ChatMemory</span> memory = context.chatMemoryService.<span class="cm">getChatMemory</span>(memoryId);
+<span class="cc">// → MessageWindowChatMemory，最多保留10条消息</span>
+<span class="cc">//   第一次调用 → 历史为空</span>
+
+<span class="cc">// 4️⃣ 组装 ChatRequest</span>
+<span class="ct">ChatRequest</span> chatRequest = ChatRequest.<span class="cm">builder</span>()
+    .<span class="cm">messages</span>([systemMessage, ...history, userMessage])
+    .<span class="cm">build</span>();
+
+<span class="cc">// 5️⃣ 调用 LLM！</span>
+<span class="ct">ChatResponse</span> chatResponse = context.chatModel.<span class="cm">chat</span>(chatRequest);
+<span class="cc">// → baseModel() = OpenAI / Gemini 等</span>
+                    </div>
+                    <div class="state-box">
+                        ChatMemory 变化: <span class="added">[SystemMessage, UserMessage(<span class="cs">"构建一个机器人"</span>), AiMessage(...)]</span>
+                        <br><span style="color:#aaa;font-size:11px">调用完成后，UserMessage 和 AiMessage 自动追加到 ChatMemory</span>
+                    </div>
+                    <div class="call-stack">
+                        <div class="frame">PlannerLoop.loop()</div>
+                        <div class="frame">AgentExecutor.execute()</div>
+                        <div class="frame">AgentInvoker.invoke()</div>
+                        <div class="frame">AgentInvocationHandler.invoke()</div>
+                        <div class="frame hl">DefaultAiServices.invoke() → chatModel.chat()</div>
+                        <div class="frame" style="color:#ffd166">→ LLM API (OpenAI / Gemini)</div>
+                    </div>
+                </div></div>
+            </div>
+
+            <!-- Step 11 -->
+            <div class="step expanded">
+                <div class="step-header" onclick="this.parentElement.classList.toggle('expanded')">
+                    <div class="step-number sn-return">11</div>
+                    <div class="step-title">LLM 返回结果，逐层回传</div>
+                    <div class="step-class">调用栈展开</div>
+                    <div class="step-toggle">&#9654;</div>
+                </div>
+                <div class="step-body"><div class="step-content">
+                    <div class="call-stack">
+                        <div class="frame" style="color:#ffd166">LLM API 返回: "需要制造1台机器人..."</div>
+                        <div class="frame">DefaultAiServices → 解析 ChatResponse → 提取 String</div>
+                        <div class="frame">AgentInvocationHandler → 原样返回</div>
+                        <div class="frame">AgentInvoker.internalInvoke() → 返回 String</div>
+                        <div class="frame hl">AgentExecutor.internalExecute() → 准备写入 Scope</div>
+                    </div>
+                    <div class="code-block">
+<span class="cc">// AgentExecutor.internalExecute() 写入结果</span>
+<span class="ct">String</span> outputKey = agentInvoker.<span class="cm">outputKey</span>(); <span class="cc">// "response"</span>
+<span class="ck">if</span> (outputKey != <span class="ck">null</span> &amp;&amp; !outputKey.<span class="cm">isBlank</span>()) {
+    scope.<span class="cm">writeState</span>(outputKey, response);
+    <span class="cc">// → state["response"] = "需要制造1台机器人..."</span>
+}
+
+<span class="cc">// 注册调用记录</span>
+<span class="ct">AgentInvocation</span> invocation = <span class="ck">new</span> <span class="ct">AgentInvocation</span>(type, name, agentId, args, response);
+scope.<span class="cm">registerAgentInvocation</span>(invocation, invokedAgent);
+                    </div>
+                    <div class="state-box">
+                        Scope 新增: <span class="added">{ response: <span class="cs">"需要制造1台机器人..."</span> }</span>
+                    </div>
+                </div></div>
+            </div>
+
+            <!-- Step 12 -->
+            <div class="step expanded">
+                <div class="step-header" onclick="this.parentElement.classList.toggle('expanded')">
+                    <div class="step-number sn-workflow">12</div>
+                    <div class="step-title">onSubagentInvoked → Planner 判断结束</div>
+                    <div class="step-class">PlannerLoop.onSubagentInvoked()</div>
+                    <div class="step-toggle">&#9654;</div>
+                </div>
+                <div class="step-body"><div class="step-content">
+                    <div class="code-block">
+<span class="cc">// AgentExecutor 完成后回调</span>
+planner.<span class="cm">onSubagentInvoked</span>(agentInvocation);
+
+<span class="cc">// PlannerLoop 中：</span>
+<span class="ck">public</span> <span class="ck">void</span> <span class="cm">onSubagentInvoked</span>(<span class="ct">AgentInvocation</span> inv) {
+    lock.<span class="cm">lock</span>();
+    <span class="ck">try</span> {
+        <span class="ck">this</span>.nextAction = <span class="cm">composeActions</span>(<span class="ck">this</span>.nextAction,
+            planner.<span class="cm">nextAction</span>(<span class="ck">new</span> <span class="ct">PlanningContext</span>(scope, inv)));
+        <span class="cc">// SequentialPlanner.nextAction():</span>
+        <span class="cc">//   terminated() → cursor(1) >= size(1) → true</span>
+        <span class="cc">//   → 返回 done()</span>
+    } <span class="ck">finally</span> { lock.<span class="cm">unlock</span>(); }
+}
+                    </div>
+                    <div class="desc">
+                        nextAction 被设为 <code>done()</code>，while 循环条件 <code>!nextAction.isDone()</code> 变为 false，<strong>循环结束</strong>。
+                    </div>
+                </div></div>
+            </div>
+
+            <!-- Step 13 -->
+            <div class="step expanded">
+                <div class="step-header" onclick="this.parentElement.classList.toggle('expanded')">
+                    <div class="step-number sn-return">13</div>
+                    <div class="step-title">从 Scope 读取 outputKey，返回最终结果</div>
+                    <div class="step-class">PlannerBasedInvocationHandler.executeAgentMethod()</div>
+                    <div class="step-toggle">&#9654;</div>
+                </div>
+                <div class="step-body"><div class="step-content">
+                    <div class="code-block">
+<span class="cc">// PlannerLoop.loop() 退出后</span>
+Object output = outputKey != <span class="ck">null</span>
+    ? currentScope.<span class="cm">readState</span>(outputKey)   <span class="cc">// scope["response"] → "需要制造1台机器人..."</span>
+    : result;
+
+<span class="ck">return</span> method.getReturnType().equals(<span class="ct">ResultWithAgenticScope</span>.<span class="ck">class</span>)
+    ? <span class="ck">new</span> <span class="ct">ResultWithAgenticScope</span>&lt;&gt;(currentScope, output)
+    : output;
+<span class="cc">// → 返回类型是 Object (UntypedAgent.invoke), 直接返回 String</span>
+                    </div>
+                    <div class="code-block">
+<span class="cc">// 测试断言</span>
+<span class="ct">String</span> result = (<span class="ct">String</span>) sequenceAgent.<span class="cm">invoke</span>(params);
+<span class="cm">assertThat</span>(result).<span class="cm">containsIgnoringCase</span>(<span class="cs">"robot"</span>);
+<span class="cc">// ✅ PASS — 结果中包含 "robot" 关键词</span>
+                    </div>
+                    <div class="state-box">
+                        最终 Scope 状态:
+                        <br>{ request: <span class="added">"构建一个机器人"</span>,
+                        <br>&nbsp;&nbsp;response: <span class="added">"需要制造1台机器人..."</span> }
+                    </div>
+                </div></div>
+            </div>
+        </div>
+
+        <!-- 总结 -->
+        <div class="summary">
+            <h3>核心机制总结</h3>
+            <div class="summary-grid">
+                <div class="summary-card">
+                    <h4>三层代理嵌套</h4>
+                    <p>Sequence代理(PlannerBased) → AI Agent代理(AgentInvocation) → LLM代理(DefaultAiServices)。每层都是 JDK Proxy，method.invoke() 层层穿透。</p>
+                </div>
+                <div class="summary-card">
+                    <h4>Scope = 共享黑板</h4>
+                    <p>DefaultAgenticScope 是 ConcurrentHashMap 包装的状态容器。子 Agent 写 outputKey → 父 Agent 读 outputKey，实现跨层通信。</p>
+                </div>
+                <div class="summary-card">
+                    <h4>PlannerLoop 调度模式</h4>
+                    <p>Planner 只返回 Action（调用谁/结束），PlannerLoop 执行并回调 onSubagentInvoked 驱动下一步。解耦了"决策"与"执行"。</p>
+                </div>
+                <div class="summary-card">
+                    <h4>ChatMemory 自动管理</h4>
+                    <p>DefaultAiServices 在调用 LLM 前自动从 ChatMemory 读历史，调用后自动追加 UserMessage + AiMessage。MessageWindowChatMemory 保留最近10条。</p>
+                </div>
+                <div class="summary-card">
+                    <h4>ThreadLocal 传递 Scope</h4>
+                    <p>AgentInvoker 把 AgenticScope 放入 LangChain4jManaged ThreadLocal，AgentInvocationHandler 从中取出。避免显式传参。</p>
+                </div>
+                <div class="summary-card">
+                    <h4>outputKey 自动持久化</h4>
+                    <p>AgentExecutor 在子 Agent 执行后自动 writeState(outputKey, response)。父 Agent 通过 readState(outputKey) 获取最终结果。</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ==================== Tab 1: 架构图 ==================== -->
+    <div class="tab-content" id="tab1">
+        <div class="arch-diagram">
+            <h3>构建后的对象关系图</h3>
+            <div class="arch-row">
+                <div class="arch-box arch-user">测试代码<span class="arch-label">sequenceAgent.invoke(params)</span></div>
+            </div>
+            <div class="arch-arrow">▼</div>
+            <div class="arch-arrow-label">JDK Proxy</div>
+            <div class="arch-row">
+                <div class="arch-box arch-workflow">
+                    第1层: SequenceAgent
+                    <span class="arch-label">PlannerBasedInvocationHandler + SequentialPlanner</span>
+                </div>
+            </div>
+            <div class="arch-arrow">▼ <span style="font-size:12px;color:#aaa">AgentExecutor.execute() → AgentInvoker.invoke()</span></div>
+            <div class="arch-row">
+                <div class="arch-box arch-ai">
+                    第2层: Assistant
+                    <span class="arch-label">AgentInvocationHandler (持有 DefaultAiServices 代理)</span>
+                </div>
+            </div>
+            <div class="arch-arrow">▼ <span style="font-size:12px;color:#aaa">method.invoke(agent, args)</span></div>
+            <div class="arch-row">
+                <div class="arch-box arch-llm">
+                    第3层: AiServices 代理
+                    <span class="arch-label">DefaultAiServices InvocationHandler → chatModel.chat()</span>
+                </div>
+            </div>
+            <div class="arch-arrow">▼</div>
+            <div class="arch-row">
+                <div class="arch-box arch-llm" style="border-color:#ff9900;color:#ff9900;background:#2a1a0d">
+                    LLM API
+                    <span class="arch-label">OpenAI / Gemini / ...</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="arch-diagram">
+            <h3>AgenticScope 数据流</h3>
+            <div style="display:flex;gap:15px;flex-wrap:wrap;justify-content:center;">
+                <div class="arch-box arch-scope" style="flex:1;min-width:200px">
+                    <strong>写入阶段</strong>
+                    <div style="font-size:12px;margin-top:6px;text-align:left;font-family:monospace;">
+                        ① invoke(params) → writeStates()<br>
+                        &nbsp;&nbsp;state["request"] = "构建一个机器人"<br><br>
+                        ② Assistant 执行完 → writeState()<br>
+                        &nbsp;&nbsp;state["response"] = "需要制造1台..."
+                    </div>
+                </div>
+                <div class="arch-box arch-scope" style="flex:1;min-width:200px">
+                    <strong>读取阶段</strong>
+                    <div style="font-size:12px;margin-top:6px;text-align:left;font-family:monospace;">
+                        ① AgentInvoker.toInvocationArguments()<br>
+                        &nbsp;&nbsp;从 state 提取 "request" 传给 processData()<br><br>
+                        ② PlannerLoop.result()<br>
+                        &nbsp;&nbsp;从 state["response"] 读取最终结果
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="arch-diagram">
+            <h3>SequentialPlanner 游标推进</h3>
+            <div style="text-align:center;font-family:monospace;font-size:13px;line-height:2.2;">
+                <div style="color:#52b788">firstAction() → nextAction() → call(agents[0]) → cursor=1</div>
+                <div style="color:#aaa">↓ 执行 Assistant ...</div>
+                <div style="color:#e0aaff">onSubagentInvoked() → nextAction() → terminated()=true → done()</div>
+                <div style="color:#ff6b6b">↓ while 循环结束 → 返回结果</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ==================== Tab 2: 调用序列表 ==================== -->
+    <div class="tab-content" id="tab2">
+        <table class="seq-table">
+            <thead>
+                <tr><th>#</th><th>From</th><th>→</th><th>To</th><th>Action</th><th>说明</th></tr>
+            </thead>
+            <tbody>
+                <tr><td class="seq-num">1</td><td>Test</td><td>→</td><td class="seq-to">PlannerBasedInvocationHandler</td><td class="seq-action">invoke(proxy, invoke, [params])</td><td>JDK 代理拦截</td></tr>
+                <tr><td class="seq-num">2</td><td class="seq-from">PBVH</td><td>→</td><td class="seq-to">AgenticScopeRegistry</td><td class="seq-action">createEphemeralAgenticScope()</td><td>创建 Scope</td></tr>
+                <tr><td class="seq-num">3</td><td class="seq-from">PBVH</td><td>→</td><td class="seq-to">DefaultAgenticScope</td><td class="seq-action">writeStates({request: "..."})</td><td>参数写入黑板</td></tr>
+                <tr><td class="seq-num">4</td><td class="seq-from">PBVH</td><td>→</td><td class="seq-to">SequentialPlanner</td><td class="seq-action">init(ctx)</td><td>记住 subagents</td></tr>
+                <tr><td class="seq-num">5</td><td class="seq-from">PlannerLoop</td><td>→</td><td class="seq-to">SequentialPlanner</td><td class="seq-action">firstAction(ctx)</td><td>cursor=0→1, return call(Assistant)</td></tr>
+                <tr><td class="seq-num">6</td><td class="seq-from">PlannerLoop</td><td>→</td><td class="seq-to">AgentExecutor</td><td class="seq-action">execute(scope, planner)</td><td>执行唯一子 Agent</td></tr>
+                <tr><td class="seq-num">7</td><td class="seq-from">AgentExecutor</td><td>→</td><td class="seq-to">Assistant(代理)</td><td class="seq-action">withAgenticScope(scope)</td><td>绑定 Scope</td></tr>
+                <tr><td class="seq-num">8</td><td class="seq-from">AgentExecutor</td><td>→</td><td class="seq-to">AgentInvoker</td><td class="seq-action">toInvocationArguments(scope)</td><td>从 Scope 提取参数</td></tr>
+                <tr><td class="seq-num">9</td><td class="seq-from">AgentInvoker</td><td>→</td><td class="seq-to">ThreadLocal</td><td class="seq-action">setCurrent({Scope})</td><td>绑定线程上下文</td></tr>
+                <tr><td class="seq-num">10</td><td class="seq-from">AgentInvoker</td><td>→</td><td class="seq-to">Assistant(代理)</td><td class="seq-action">method.invoke(agent, ["构建..."])</td><td>反射调用</td></tr>
+                <tr><td class="seq-num">11</td><td class="seq-from">Proxy</td><td>→</td><td class="seq-to">AgentInvocationHandler</td><td class="seq-action">invoke(proxy, processData, args)</td><td>第2层代理拦截</td></tr>
+                <tr><td class="seq-num">12</td><td class="seq-from">AIH</td><td>→</td><td class="seq-to">ThreadLocal</td><td class="seq-action">current(Scope)</td><td>取出 Scope（≠null）</td></tr>
+                <tr><td class="seq-num">13</td><td class="seq-from">AIH</td><td>→</td><td class="seq-to">AiServices(代理)</td><td class="seq-action">method.invoke(aiService, args)</td><td>转发到第3层</td></tr>
+                <tr><td class="seq-num">14</td><td class="seq-from">Proxy</td><td>→</td><td class="seq-to">DefaultAiServices</td><td class="seq-action">invoke(proxy, processData, args)</td><td>第3层代理</td></tr>
+                <tr><td class="seq-num">15</td><td class="seq-from">DAIS</td><td>→</td><td class="seq-to">ChatMemory</td><td class="seq-action">messages(memoryId)</td><td>读取历史消息</td></tr>
+                <tr><td class="seq-num">16</td><td class="seq-from">DAIS</td><td>→</td><td class="seq-to">ChatModel</td><td class="seq-action">chat(ChatRequest)</td><td>调用 LLM！</td></tr>
+                <tr><td class="seq-num">17</td><td class="seq-from">ChatModel</td><td>→</td><td class="seq-to">DAIS</td><td class="seq-action">ChatResponse</td><td>LLM 返回结果</td></tr>
+                <tr><td class="seq-num">18</td><td class="seq-from">DAIS</td><td>→</td><td class="seq-to">ChatMemory</td><td class="seq-action">add(UserMsg + AiMsg)</td><td>自动追加消息</td></tr>
+                <tr><td class="seq-num">19</td><td class="seq-from">DAIS</td><td>→</td><td>↑ AIH</td><td class="seq-action">return String</td><td>逐层返回</td></tr>
+                <tr><td class="seq-num">20</td><td class="seq-from">AgentExecutor</td><td>→</td><td class="seq-to">Scope</td><td class="seq-action">writeState("response", result)</td><td>结果写入黑板</td></tr>
+                <tr><td class="seq-num">21</td><td class="seq-from">AgentExecutor</td><td>→</td><td class="seq-to">PlannerLoop</td><td class="seq-action">onSubagentInvoked(inv)</td><td>回调通知</td></tr>
+                <tr><td class="seq-num">22</td><td class="seq-from">PlannerLoop</td><td>→</td><td class="seq-to">SeqPlanner</td><td class="seq-action">nextAction(ctx)</td><td>terminated() → done()</td></tr>
+                <tr><td class="seq-num">23</td><td class="seq-from">PlannerLoop</td><td>→</td><td class="seq-to">Scope</td><td class="seq-action">readState("response")</td><td>读取最终结果</td></tr>
+                <tr><td class="seq-num">24</td><td class="seq-from">PBVH</td><td>→</td><td>Test</td><td class="seq-action">return result</td><td>返回给用户</td></tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<script>
+    function switchTab(idx) {
+        document.querySelectorAll('.tab').forEach((t, i) => t.classList.toggle('active', i === idx));
+        document.querySelectorAll('.tab-content').forEach((c, i) => c.classList.toggle('active', i === idx));
+    }
+</script>
+</body>
+</html>

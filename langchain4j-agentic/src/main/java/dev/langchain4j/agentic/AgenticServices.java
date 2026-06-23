@@ -148,12 +148,21 @@ public class AgenticServices {
      *
      * @param agentServiceClass the class of the agent service
      */
+    /**
+     * 创建代理构建器，该代理按工作流顺序执行多个子代理，
+     * 可通过传入的代理服务接口以强类型方式调用。
+     *
+     * @param agentServiceClass 代理服务对应的Class对象
+     */
     public static <T> SequentialAgentService<T> sequenceBuilder(Class<T> agentServiceClass) {
         return workflowAgentsBuilder().sequenceBuilder(agentServiceClass);
     }
 
     /**
      * Creates a builder for an untyped agent implementing a parallel workflow of its subagents.
+     */
+    /**
+     * 创建无类型智能体的构建器，该智能体实现其子智能体的并行工作流。
      */
     public static ParallelAgentService<UntypedAgent> parallelBuilder() {
         return workflowAgentsBuilder().parallelBuilder();
@@ -165,6 +174,12 @@ public class AgenticServices {
      *
      * @param agentServiceClass the class of the agent service
      */
+    /**
+     * 创建智能体构建器，该智能体实现其子智能体的并行工作流，
+     * 可通过传入的智能体服务接口以强类型方式调用。
+     *
+     * @param agentServiceClass 智能体服务类
+     */
     public static <T> ParallelAgentService<T> parallelBuilder(Class<T> agentServiceClass) {
         return workflowAgentsBuilder().parallelBuilder(agentServiceClass);
     }
@@ -172,6 +187,10 @@ public class AgenticServices {
     /**
      * Creates a builder for an untyped agent implementing a parallel mapper workflow
      * that creates multiple instances of the same sub-agent, one per item in a collection.
+     */
+    /**
+     * 创建无类型智能体构建器，该智能体实现并行映射工作流，
+     * 会为集合中的每个元素创建同一个子智能体的多个实例。
      */
     public static ParallelMapperService<UntypedAgent> parallelMapperBuilder() {
         return workflowAgentsBuilder().parallelMapperBuilder();
@@ -184,12 +203,22 @@ public class AgenticServices {
      *
      * @param agentServiceClass the class of the agent service
      */
+    /**
+     * 创建智能体构建器，该智能体实现并行映射工作流：
+     * 为集合中的每个元素创建同一个子智能体的多个实例，
+     * 并可通过提供的智能体服务接口以强类型方式调用。
+     *
+     * @param agentServiceClass 智能体服务类
+     */
     public static <T> ParallelMapperService<T> parallelMapperBuilder(Class<T> agentServiceClass) {
         return workflowAgentsBuilder().parallelMapperBuilder(agentServiceClass);
     }
 
     /**
      * Creates a builder for an untyped agent implementing a loop workflow of its subagents.
+     */
+    /**
+     * 创建无类型智能体构建器，该智能体实现其子智能体的循环工作流。
      */
     public static LoopAgentService<UntypedAgent> loopBuilder() {
         return workflowAgentsBuilder().loopBuilder();
@@ -201,12 +230,21 @@ public class AgenticServices {
      *
      * @param agentServiceClass the class of the agent service
      */
+    /**
+     * 创建智能体构建器，该智能体实现其子智能体的循环工作流，
+     * 可通过提供的智能体服务接口以强类型方式调用。
+     *
+     * @param agentServiceClass 智能体服务类
+     */
     public static <T> LoopAgentService<T> loopBuilder(Class<T> agentServiceClass) {
         return workflowAgentsBuilder().loopBuilder(agentServiceClass);
     }
 
     /**
      * Creates a builder for an untyped agent implementing a conditional workflow of its subagents.
+     */
+    /**
+     * 创建非类型化代理的构建器，该代理基于条件工作流调度各个子代理。
      */
     public static ConditionalAgentService<UntypedAgent> conditionalBuilder() {
         return workflowAgentsBuilder().conditionalBuilder();
@@ -218,6 +256,12 @@ public class AgenticServices {
      *
      * @param agentServiceClass the class of the agent service
      */
+    /**
+     * 创建智能体构建器，该智能体实现其子智能体的条件分支工作流，
+     * 可通过提供的智能体服务接口以强类型方式调用。
+     *
+     * @param agentServiceClass 智能体服务类
+     */
     public static <T> ConditionalAgentService<T> conditionalBuilder(Class<T> agentServiceClass) {
         return workflowAgentsBuilder().conditionalBuilder(agentServiceClass);
     }
@@ -225,6 +269,10 @@ public class AgenticServices {
     /**
      * Creates a builder for a supervisor agent service that can be used to manage and supervise other agents.
      * This is useful for building complex agentic systems where one agent oversees the execution of others.
+     */
+    /**
+     * 创建主管智能体服务的构建器，用于管理和监管其他智能体。
+     * 适用于构建复杂智能体系统，由一个智能体统筹其余智能体的执行流程。
      */
     public static SupervisorAgentService<SupervisorAgent> supervisorBuilder() {
         return SupervisorAgentServiceImpl.builder();
@@ -236,12 +284,21 @@ public class AgenticServices {
      *
      * @param agentServiceClass the class of the agent service
      */
+    /**
+     * 创建主管智能体服务的构建器，用于管理和监管其他智能体。
+     * 适用于构建复杂智能体系统，由一个智能体统筹其余智能体的执行流程。
+     *
+     * @param agentServiceClass 智能体服务类
+     */
     public static <T> SupervisorAgentService<T> supervisorBuilder(Class<T> agentServiceClass) {
         return SupervisorAgentServiceImpl.builder(agentServiceClass);
     }
 
     /**
      * Creates a builder for a customizable planner agent service.
+     */
+    /**
+     * 创建可自定义规划器智能体服务的构建器。
      */
     public static PlannerBasedService<UntypedAgent> plannerBuilder() {
         return PlannerBasedServiceImpl.builder(UntypedAgent.class);
@@ -251,6 +308,11 @@ public class AgenticServices {
      * Creates a builder for a customizable planner agent service.
      *
      * @param agentServiceClass the class of the agent service
+     */
+    /**
+     * 创建可自定义规划器智能体服务的构建器。
+     *
+     * @param agentServiceClass 智能体服务类
      */
     public static <T> PlannerBasedService<T> plannerBuilder(Class<T> agentServiceClass) {
         return PlannerBasedServiceImpl.builder(agentServiceClass);
@@ -263,6 +325,13 @@ public class AgenticServices {
      * @param a2aServerUrl the URL of the A2A server
      * @return a new A2AClientBuilder instance
      */
+    /**
+     * 创建A2A客户端构建器，可通过A2A协议与智能体进行交互。
+     * 适用于搭建需和远端智能体通信的智能体系统。
+     *
+     * @param a2aServerUrl A2A服务端地址
+     * @return 全新的A2AClientBuilder实例
+     */
     public static A2AClientBuilder<UntypedAgent> a2aBuilder(String a2aServerUrl) {
         return a2aBuilder(a2aServerUrl, UntypedAgent.class);
     }
@@ -274,6 +343,14 @@ public class AgenticServices {
      * @param a2aServerUrl the URL of the A2A server
      * @param agentServiceClass the class of the agent service
      * @return a new A2AClientBuilder instance
+     */
+    /**
+     * 创建A2A客户端构建器，可通过A2A协议与智能体交互。
+     * 适用于搭建需与远端智能体通信的智能体系统。
+     *
+     * @param a2aServerUrl A2A服务端地址
+     * @param agentServiceClass 智能体服务类
+     * @return 全新的A2AClientBuilder实例
      */
     public static <T> A2AClientBuilder<T> a2aBuilder(String a2aServerUrl, Class<T> agentServiceClass) {
         return A2AService.get().a2aBuilder(a2aServerUrl, agentServiceClass);
@@ -302,6 +379,11 @@ public class AgenticServices {
      *
      * @param agentServiceClass the class of the agent service
      */
+    /**
+     * 创建通过声明式API定义的智能体系统实例。
+     *
+     * @param agentServiceClass 智能体服务类
+     */
     public static <T> T createAgenticSystem(Class<T> agentServiceClass) {
         return createAgenticSystem(agentServiceClass, declarativeChatModel(agentServiceClass));
     }
@@ -312,6 +394,12 @@ public class AgenticServices {
      * @param agentServiceClass the class of the agent service
      * @param chatModel the ChatModel used by default for all agents participating in this agentic system
      */
+    /**
+     * 创建基于声明式API定义、并使用指定对话模型的智能体系统实例。
+     *
+     * @param agentServiceClass 智能体服务类
+     * @param chatModel 该智能体系统内所有智能体默认使用的对话模型
+     */
     public static <T> T createAgenticSystem(Class<T> agentServiceClass, ChatModel chatModel) {
         return createAgenticSystem(agentServiceClass, chatModel, AgentConfigurator.empty());
     }
@@ -321,6 +409,12 @@ public class AgenticServices {
      *
      * @param agentServiceClass the class of the agent service
      * @param agentConfigurator A callback to tweak the configuration of each agent created in this agentic system
+     */
+    /**
+     * 创建通过声明式API定义的智能体系统实例。
+     *
+     * @param agentServiceClass 智能体服务类
+     * @param agentConfigurator 回调函数，用于调整该系统中每个智能体的配置
      */
     public static <T> T createAgenticSystem(
             Class<T> agentServiceClass, AgentConfigurator agentConfigurator) {
@@ -333,6 +427,13 @@ public class AgenticServices {
      * @param agentServiceClass the class of the agent service
      * @param chatModel the ChatModel used by default for all agents participating in this agentic system
      * @param agentConfigurator A callback to tweak the configuration of each agent created in this agentic system
+     */
+    /**
+     * 创建基于声明式API定义、并使用指定对话模型的智能体系统实例。
+     *
+     * @param agentServiceClass 智能体服务类
+     * @param chatModel 该智能体系统中所有智能体默认使用的对话模型
+     * @param agentConfigurator 回调函数，用于调整该系统内各个智能体的配置
      */
     public static <T> T createAgenticSystem(
             Class<T> agentServiceClass,
@@ -791,6 +892,12 @@ public class AgenticServices {
      * @param runnable the runnable to be executed
      * @return an AgentAction that encapsulates the runnable
      */
+    /**
+     * 将可运行对象封装为智能体动作，使其可在智能体上下文内执行。
+     *
+     * @param runnable 待执行的可运行对象
+     * @return 封装了该可运行对象的智能体动作实例
+     */
     public static AgentAction agentAction(AgentAction.NonThrowingRunnable runnable) {
         return new AgentAction(runnable);
     }
@@ -822,6 +929,12 @@ public class AgenticServices {
      *
      * @param consumer the consumer to be executed
      * @return an AgentAction that encapsulates the consumer
+     */
+    /**
+     * 将智能体作用域消费器封装为智能体动作，使其可在智能体上下文内执行。
+     *
+     * @param consumer 待执行的消费器
+     * @return 封装该消费器的智能体动作实例
      */
     public static AgenticScopeAction agentAction(AgenticScopeAction.NonThrowingConsumer<AgenticScope> consumer) {
         return new AgenticScopeAction(consumer);

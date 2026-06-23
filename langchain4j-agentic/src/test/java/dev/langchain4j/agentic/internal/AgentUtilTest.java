@@ -32,7 +32,7 @@ class AgentUtilTest {
                 "person", "{\"name\":\"Alice\",\"age\":30,\"address\":{\"street\":\"Main St\",\"city\":\"NY\"}}");
 
         AgentInvocationArguments args =
-                AgentUtil.agentInvocationArguments(scope, List.of(new AgentArgument(Person.class, "person")));
+                AgentUtil.agentInvocationArguments(scope, List.of(new AgentArgument(Person.class, "person")));// 取的时候，会根据取数据的类型进行相应的转换，然后，更新为为获取的类型
 
         Person person = (Person) args.positionalArgs()[0];
         assertThat(person.name()).isEqualTo("Alice");

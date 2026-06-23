@@ -19,10 +19,18 @@ import java.util.stream.Stream;
  * Handles nodes with multiple input dependencies where ALL inputs must be
  * satisfied before a node can be activated/traversed.
  */
+/**
+ * 适用于依赖图的改进版A*搜索
+ * <p>
+ * 处理存在多个输入依赖的节点，节点必须满足**全部输入依赖**后，才能被激活或遍历。
+ */
 public class DependencyGraphSearch {
 
     /**
      * Represents a node with multiple inputs and a single output
+     */
+    /**
+     * 表示多输入、单输出的节点
      */
     public static class Node {
         private final String id;
@@ -39,6 +47,7 @@ public class DependencyGraphSearch {
 
         public void addOutput(Node output) {
             outputNodes.add(output);
+            // 自动建立双向关联关系
             output.addInput(this);  // Automatically set up bidirectional relationship
         }
 
@@ -75,6 +84,9 @@ public class DependencyGraphSearch {
     /**
      * Represents the state of the search: which nodes have been activated
      */
+    /**
+     * 表示搜索状态：记录已激活的节点
+     */
     record SearchState(Set<Node> activatedNodes, Node currentNode, int depth) {
         SearchState activateNode(Node node) {
             Set<Node> newActivated = new HashSet<>(activatedNodes);
@@ -91,6 +103,9 @@ public class DependencyGraphSearch {
     /**
      * Wrapper for priority queue with f-score
      */
+    /**
+     * 带估价分数的优先队列包装类
+     */
     record StateScore(SearchState state, double fScore) implements Comparable<StateScore> {
 
         @Override
@@ -101,6 +116,9 @@ public class DependencyGraphSearch {
 
     /**
      * Heuristic function for estimating remaining cost
+     */
+    /**
+     * 用于估算剩余代价的启发式函数
      */
     interface Heuristic {
         double estimate(SearchState state, Node goal);
@@ -141,6 +159,14 @@ public class DependencyGraphSearch {
      * @param goal The goal node
      * @param heuristic Heuristic function for A*
      * @return List of nodes in activation order, or null if no path exists
+     */
+    /**
+     * 结合依赖约束查找最短路径
+     *
+     * @param startNodes 已激活的节点集合（前置条件）
+     * @param goal 目标节点
+     * @param heuristic A*算法启发式函数
+     * @return 按激活顺序排列的节点列表，若无路径则返回null
      */
     private static List<Node> search(Collection<Node> startNodes, Node goal, Heuristic heuristic) {
         if (startNodes == null || startNodes.isEmpty()) {
@@ -200,10 +226,14 @@ public class DependencyGraphSearch {
     /**
      * Finds all nodes that can be activated given the current state
      */
+    /**
+     * 根据当前状态查找所有可激活的节点
+     */
     private static Set<Node> findActivatableNodes(SearchState state) {
         Set<Node> activatable = new HashSet<>();
 
         // Check all output nodes of already activated nodes
+        // 检查已激活节点的所有输出节点
         for (Node activatedNode : state.activatedNodes) {
             for (Node outputNode : activatedNode.getOutputNodes()) {
                 if (!state.activatedNodes.contains(outputNode) && state.canActivate(outputNode)) {
@@ -217,6 +247,9 @@ public class DependencyGraphSearch {
 
     /**
      * Reconstructs the path by following cameFrom references
+     */
+    /**
+     * 通过前驱引用回溯重构路径
      */
     private static List<Node> reconstructPath(Map<SearchState, SearchState> cameFrom, SearchState current) {
         List<Node> path = new ArrayList<>();

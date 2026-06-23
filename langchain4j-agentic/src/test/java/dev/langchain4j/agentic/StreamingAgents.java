@@ -10,6 +10,7 @@ import dev.langchain4j.service.V;
 
 import static dev.langchain4j.agentic.Models.streamingBaseModel;
 
+// agentic管理也支持流式的
 public class StreamingAgents {
 
     public interface StreamingCreativeWriter {

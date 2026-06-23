@@ -51,6 +51,50 @@ import static java.lang.annotation.RetentionPolicy.RUNTIME;
  * }
  * </pre>
  */
+/**
+ * 将方法标记为智能体所使用聊天模型的提供器。
+ * 该方法必须为静态方法，且返回值类型为 {@link ChatModel}。
+ * <p>
+ * 若该方法无入参，会在构建阶段执行一次，用于提供固定的聊天模型。
+ * 若方法中带有标注 {@link dev.langchain4j.service.V @V} 的参数，
+ * 每次调用时都会从当前 {@link dev.langchain4j.agentic.scope.AgenticScope 智能体作用域}
+ * 解析参数，支持根据运行时状态动态选择聊天模型。
+ * <p>
+ * 示例（固定模型）：
+ * <pre>
+ * {@code
+ *      public interface SupervisorBanker {
+ *
+ *         @SupervisorAgent(responseStrategy = SupervisorResponseStrategy.SUMMARY, subAgents = {
+ *                 @SubAgent(type = WithdrawAgent.class),
+ *                 @SubAgent(type = CreditAgent.class)
+ *         })
+ *         String invoke(@V("request") String request);
+ *
+ *         @ChatModelSupplier
+ *         static ChatModel chatModel() {
+ *             return plannerModel();
+ *         }
+ *     }
+ * }
+ * </pre>
+ * <p>
+ * 示例（动态选择模型）：
+ * <pre>
+ * {@code
+ *      public interface MyEditor {
+ *
+ *         @Agent("根据评审意见修改故事内容")
+ *         String edit(@V("story") String story, @V("critique") CritiqueResult critique);
+ *
+ *         @ChatModelSupplier
+ *         static ChatModel chatModel(@V("critique") CritiqueResult critique) {
+ *             return critique != null && critique.score() > 8.0 ? enhancedModel() : baseModel();
+ *         }
+ *     }
+ * }
+ * </pre>
+ */
 @Retention(RUNTIME)
 @Target({METHOD})
 public @interface ChatModelSupplier {

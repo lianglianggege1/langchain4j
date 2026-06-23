@@ -132,7 +132,17 @@ public class Models {
             .build();
 
     public static ChatModel baseModel() {
-        return baseModel(modelProvider);
+        return dev.langchain4j.model.anthropic.AnthropicChatModel.builder()
+                .apiKey("sk-cp-k94NcRwMEUPF_ls-fqeyN9Gk9msntO6yv1WZxwhV3joGHW8rXfeP5Xqe27hsklfARyU0YnqQW1acyFsR6nWKE85mp8HJLFoz0YiZklBukg4_LXilJ5JXbyM")
+                .baseUrl("https://api.minimaxi.com/anthropic/v1")
+                .modelName("MiniMax-M2.7")
+                .thinkingType("enabled")
+                .thinkingBudgetTokens(1024)
+                .returnThinking(true)
+                .timeout(Duration.ofSeconds(60))
+                .logRequests(true)
+                .logResponses(true)
+                .build();
     }
 
     public static ChatModel baseModel(MODEL_PROVIDER modelProvider) {

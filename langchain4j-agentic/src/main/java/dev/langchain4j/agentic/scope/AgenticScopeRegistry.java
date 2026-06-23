@@ -15,9 +15,11 @@ import static dev.langchain4j.agentic.scope.DefaultAgenticScope.ephemeralAgentic
  * Singleton registry for managing AgenticScope instances.
  * Provides methods to register, retrieve, and manage AgenticScope objects.
  * Supports persistence through a pluggable store.
- * 用于管理AgentScope实例的Singleton注册表。
- * 提供注册、检索和管理AgentScope对象的方法。
- * 通过可插拔存储支持持久性。
+ */
+/**
+ * 管理{@link AgenticScope}实例的单例注册器。
+ * 提供注册、获取及管理{@link AgenticScope}对象的方法。
+ * 支持通过可插拔存储组件实现数据持久化。
  */
 @Internal
 public class AgenticScopeRegistry {

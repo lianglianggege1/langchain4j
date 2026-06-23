@@ -2,7 +2,7 @@ package dev.langchain4j.agentic.supervisor;
 
 import java.util.Map;
 
-//agent 调用
+//agent 调用的 实体类
 public class AgentInvocation {
 
     // agent名称

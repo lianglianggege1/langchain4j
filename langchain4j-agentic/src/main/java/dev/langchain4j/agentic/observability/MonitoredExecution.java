@@ -14,9 +14,9 @@ import java.util.concurrent.ConcurrentHashMap;
  */
 public class MonitoredExecution {
 
-    private final AgentInvocation topLevelInvocations;
+    private final AgentInvocation topLevelInvocations;//顶级agent 生命周期内容
 
-    private final Map<Object, AgentInvocation> ongoingInvocations = new ConcurrentHashMap<>();
+    private final Map<Object, AgentInvocation> ongoingInvocations = new ConcurrentHashMap<>();// 当前执行中的agent 生命周期内容
 
     private AgentInvocationError agentInvocationError;
 

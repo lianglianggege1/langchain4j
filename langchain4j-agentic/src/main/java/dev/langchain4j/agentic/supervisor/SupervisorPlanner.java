@@ -28,10 +28,30 @@ import org.slf4j.LoggerFactory;
 
 import static java.util.stream.Collectors.toMap;
 
+/**
+ graph TD
+ A["SupervisorAgentServiceImpl.build()"] --> B["创建 SupervisorPlanner"]
+ B --> C["PlannerBasedInvocationHandler.invoke()"]
+ C --> D["PlannerLoop.loop()"]
+ D --> E["planner.firstAction()"]
+ E --> F["SupervisorPlanner.nextAction()"]
+ F --> G{"loopCount >= max?"}
+ G -- Yes --> H["doneAction() → 返回结果"]
+ G -- No --> I["nextSubagent()"]
+ I --> J["PlannerAgent.plan() → LLM决策"]
+ J --> K{"agentName == done?"}
+ K -- Yes --> L["doneAction() → result()策略选取"]
+ K -- No --> M["findAgentByName()"]
+ M --> N["参数写入AgenticScope"]
+ N --> O["call(agent) → 执行子Agent"]
+ O --> P["子Agent返回响应"]
+ P --> F
+ */
 public class SupervisorPlanner implements Planner, ChatMemoryAccessProvider {
 
     private static final Logger LOG = LoggerFactory.getLogger(SupervisorPlanner.class);
     public static final String SUPERVISOR_CONTEXT_KEY = "supervisorContext";
+    // 结合规划方案时，请参考以下主控上下文，以便充分理解相关约束、规则及偏好要求。
     public static final String SUPERVISOR_CONTEXT_PREFIX = "Use the following supervisor context to better understand "
             + "constraints, policies or preferences when creating the plan ";
 
@@ -73,12 +93,16 @@ public class SupervisorPlanner implements Planner, ChatMemoryAccessProvider {
 
     @Override
     public void init(final InitPlanningContext initPlanningContext) {
+        // 1. 将所有子Agent注册到 Map 中（按 agentId 索引）
         this.agents = initPlanningContext.subagents().stream().collect(toMap(AgentInstance::agentId, Function.identity()));
+        // 2. 生成子Agent的"名片"列表，供LLM识别
         this.agentsList = initPlanningContext.subagents().stream()
                 .map(SupervisorPlanner::toCard)
                 .collect(Collectors.joining(", "));
 
+        // 3. 获取用户请求（自定义生成器 或 从Scope读取）
         this.request = requestGenerator != null ? requestGenerator.apply(initPlanningContext.agenticScope()) : initPlanningContext.agenticScope().readState("request", "");
+        // 4. 如果是 SCORED 策略，创建打分用的 ResponseAgent
         if (responseStrategy == SupervisorResponseStrategy.SCORED) {
             this.responseAgent = AiServices.builder(ResponseAgent.class).chatModel(chatModel).build();
         }
@@ -89,9 +113,11 @@ public class SupervisorPlanner implements Planner, ChatMemoryAccessProvider {
         String lastResponse = planningContext.previousAgentInvocation() == null ?
                 "" :
                 planningContext.previousAgentInvocation().output().toString();
+        // 防无限循环：超过最大调用次数则终止
         if (loopCount++ >= maxAgentsInvocations) {
             return doneAction(planningContext.agenticScope(), lastResponse, null);
         }
+        // 询问 LLM：下一步该调用哪个子Agent？
         return nextSubagent(planningContext.agenticScope(), lastResponse);
     }
 
@@ -129,26 +155,33 @@ public class SupervisorPlanner implements Planner, ChatMemoryAccessProvider {
     }
 
     private Action nextSubagent(AgenticScope agenticScope, String lastResponse) {
+        // 1. 获取主管上下文（可选的约束/策略说明）
         String supervisorContext = agenticScope.hasState(SUPERVISOR_CONTEXT_KEY)
                 ? SUPERVISOR_CONTEXT_PREFIX + "'" + agenticScope.readState(SUPERVISOR_CONTEXT_KEY, "") + "'."
                 : "";
 
+        // 2. 调用 PlannerAgent（LLM）进行规划决策
         AgentInvocation agentInvocation = withAgenticScope(agenticScope,
                 () -> planner(agenticScope).plan(agenticScope.memoryId(), agentsList, request, lastResponse, supervisorContext));
         LOG.info("Agent Invocation: {}", agentInvocation);
 
+        // 3. LLM 返回 "done" → 任务完成
         if (agentInvocation.getAgentName().equalsIgnoreCase("done")) {
             return doneAction(agenticScope, lastResponse, agentInvocation);
         }
 
+        // 4. 根据 LLM 返回的 agentName 查找对应子Agent
         AgentInstance agent = findAgentByName(agentInvocation.getAgentName());
 
+        // 5. 将 LLM 生成的参数写入 AgenticScope（状态共享）
         agentInvocation.getArguments().entrySet().stream()
                 .filter(entry -> writeArgumentToScope(agenticScope, agent, entry.getKey(), entry.getValue()))
                 .forEach(entry -> agenticScope.writeState(entry.getKey(), entry.getValue()));
+        // 6. 返回"调用该子Agent"的 Action
         return call(agent);
     }
 
+    // 将当前 AgenticScope 注入到 LangChain4jManaged 线程局部变量中
     private static <T> T withAgenticScope(AgenticScope agenticScope, Supplier<T> supplier) {
         LangChain4jManaged.setCurrent(Map.of(AgenticScope.class, agenticScope));
         try {
@@ -174,6 +207,7 @@ public class SupervisorPlanner implements Planner, ChatMemoryAccessProvider {
         return agent;
     }
 
+    // 防止 LLM 生成的非结构化参数覆盖已有的结构化状态
     private boolean writeArgumentToScope(AgenticScope agenticScope, AgentInstance agent, String key, Object value) {
         if (agenticScope.hasState(key)) {
             Class<?> argType = agent.arguments().stream()
@@ -182,6 +216,7 @@ public class SupervisorPlanner implements Planner, ChatMemoryAccessProvider {
             if (argType != null) {
                 Object existingValue = agenticScope.readState(key);
                 // avoid overwriting a structured state with an unstructured argument generated from supervisor's LLM response
+                // 避免用LLM生成的非结构化值覆盖结构化状态
                 return !argType.isAssignableFrom(existingValue.getClass()) || argType.isAssignableFrom(value.getClass());
             }
         }
@@ -202,17 +237,17 @@ public class SupervisorPlanner implements Planner, ChatMemoryAccessProvider {
 
     private Object result(AgenticScope agenticScope, String request, String lastResponse, AgentInvocation done) {
         if (output != null) {
-            return output.apply(agenticScope);
+            return output.apply(agenticScope);  // 自定义输出函数优先
         }
         if (done == null || done.getArguments() == null || done.getArguments().get("response") == null) {
-            return lastResponse;
+            return lastResponse; // 退化场景
         }
         String doneResponse = done.getArguments().get("response").toString();
 
         return switch (responseStrategy) {
-            case LAST -> lastResponse;
-            case SUMMARY -> doneResponse;
-            case SCORED -> {
+            case LAST -> lastResponse;  // 最后一个子Agent的输出
+            case SUMMARY -> doneResponse; // LLM 的总结
+            case SCORED -> { // 用另一个LLM对两者打分
                 ResponseScore score = withAgenticScope(agenticScope,
                         () -> responseAgent.scoreResponses(request, lastResponse, doneResponse));
                 LOG.info("Response scores: {}", score);
@@ -235,13 +270,16 @@ public class SupervisorPlanner implements Planner, ChatMemoryAccessProvider {
             }
         } else {
             switch (contextStrategy) {
+                //仅靠聊天记忆保持上下文
                 case CHAT_MEMORY:
                     builder.chatMemoryProvider(memoryId -> MessageWindowChatMemory.withMaxMessages(20));
                     break;
+//                    仅靠摘要压缩上下文
                 case SUMMARIZATION:
                     builder.chatMemoryProvider(memoryId -> MessageWindowChatMemory.withMaxMessages(2))
                             .chatRequestTransformer(new Context.Summarizer(agenticScope, chatModel));
                     break;
+//                    两者兼用，上下文最丰富
                 case CHAT_MEMORY_AND_SUMMARIZATION:
                     builder.chatMemoryProvider(memoryId -> MessageWindowChatMemory.withMaxMessages(20))
                             .chatRequestTransformer(new Context.Summarizer(agenticScope, chatModel));
@@ -254,11 +292,13 @@ public class SupervisorPlanner implements Planner, ChatMemoryAccessProvider {
         return outputKey + "@Supervisor";
     }
 
+    // 保存当前循环计数
     @Override
     public Map<String, Object> executionState() {
         return Map.of("loopCount", loopCount);
     }
 
+    // 从崩溃中恢复
     @Override
     public void restoreExecutionState(Map<String, Object> state) {
         Object savedLoopCount = state.get("loopCount");

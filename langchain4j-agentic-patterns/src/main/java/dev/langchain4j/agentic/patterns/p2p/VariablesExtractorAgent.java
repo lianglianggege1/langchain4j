@@ -8,12 +8,12 @@ import java.util.Map;
 public interface VariablesExtractorAgent {
 
     @UserMessage("""
-            Extract the values of the given list of variables from the provided text,
-            returning a map where the keys are the variable names and the values are the corresponding extracted values.
-            If a variable is not found in the text, it should not be included in the map.
-            Be conservative in your extraction, only include values that are clearly present in the text.
-            The text is: {{text}}
-            The names of the variables to extract are: {{variableNames}}
+            从给定文本中提取指定变量列表对应的值，
+            返回一个键为变量名、值为对应提取内容的映射集合。
+            若文本中未找到某个变量，则该变量不加入映射集合。
+            提取内容需严谨，仅收录文本中明确存在的内容。
+            待处理文本：{{text}}
+            待提取变量名列表：{{variableNames}}
             """)
     Map<String, String> extractVariables(@V("text") String text, @V("variableNames") Collection<String> variableNames);
 }

@@ -11,9 +11,28 @@ import java.lang.annotation.Target;
 
 /**
  * Marks a method as a supervisor agent that can autonomously coordinate and invoke multiple sub-agents.
- * 将方法标记为可以自主协调和调用多个子代理的监督代理。
  * <p>
  * Example:
+ * <pre>
+ * {@code
+ *     public interface SupervisorBanker {
+ *
+ *         @SupervisorAgent( responseStrategy = SupervisorResponseStrategy.SUMMARY,
+ *                 subAgents = { WithdrawAgent.class, CreditAgent.class })
+ *         String invoke(@V("request") String request);
+ *
+ *         @ChatModelSupplier
+ *         static ChatModel chatModel() {
+ *             return plannerModel();
+ *         }
+ *     }
+ * }
+ * </pre>
+ */
+/**
+ * 将方法标记为管理型智能体，该智能体可自主协调并调用多个子智能体。
+ * <p>
+ * 示例：
  * <pre>
  * {@code
  *     public interface SupervisorBanker {

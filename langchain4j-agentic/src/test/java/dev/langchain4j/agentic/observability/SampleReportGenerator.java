@@ -21,19 +21,43 @@ import java.util.Map;
  * Generates a sample HTML report with mock data to preview the AgenticSystemReport visualization.
  * Run the main method and open the generated sample-report.html in a browser.
  */
+/**
+ * 使用模拟数据生成一份HTML示例报告，用于预览智能代理系统报告（AgenticSystemReport）的可视化效果。
+ * 运行主方法后，在浏览器中打开生成的 sample-report.html 文件即可查看效果。
+ */
+
+// 这个方法很有意义，能了解到agentic graph 的全景图 ，了解其内部思想
 public class SampleReportGenerator {
 
     // Marker interfaces so type().getSimpleName() returns meaningful names
+    /**
+     * 专家路由代理（负责将请求路由至对应领域的专家代理）
+     */
     interface ExpertRouterAgent {}
 
+    /**
+     * 分类路由（根据类别将请求分发至对应处理模块）
+     */
     interface CategoryRouter {}
 
+    /**
+     * 医疗专家（处理医疗领域相关请求的专家代理）
+     */
     interface MedicalExpert {}
 
+    /**
+     * 技术专家（处理技术领域相关请求的专家代理）
+     */
     interface TechnicalExpert {}
 
+    /**
+     * 故事创作者（负责创作、编写故事内容的代理）
+     */
     interface StoryWriter {}
 
+    /**
+     * 风格评分器（用于评估文本/内容的风格匹配度、质量等指标）
+     */
     interface StyleScorer {}
 
     public static void main(String[] args) throws Exception {
@@ -41,54 +65,54 @@ public class SampleReportGenerator {
         // ----- Build topology: Sequence → classify + Router(medical|technical|legal(loop)) -----
 
         MockAgent classify = new MockAgent(
-                "classify",
+                "分类",
                 CategoryRouter.class,
                 AgenticSystemTopology.AI_AGENT,
-                "Classifies user questions into domain categories",
+                "将用户问题划分至不同业务领域",
                 List.of(new AgentArgument(String.class, "question")),
                 "category",
                 String.class);
 
         MockAgent medical = new MockAgent(
-                "medical",
+                "医疗",
                 MedicalExpert.class,
                 AgenticSystemTopology.AI_AGENT,
-                "Provides medical advice and first-aid guidance",
+                "提供医疗建议与急救指导",
                 List.of(new AgentArgument(String.class, "question")),
                 "response",
                 String.class);
 
         MockAgent technical = new MockAgent(
-                "technical",
+                "技术",
                 TechnicalExpert.class,
                 AgenticSystemTopology.AI_AGENT,
-                "Provides technical support and troubleshooting",
+                "提供技术支持与故障排查",
                 List.of(new AgentArgument(String.class, "question")),
                 "response",
                 String.class);
 
         // Legal branch uses a loop: writer + scorer, max 3 iterations
         MockAgent writer = new MockAgent(
-                "writer",
+                "作家",
                 StoryWriter.class,
                 AgenticSystemTopology.AI_AGENT,
-                "Drafts a legal response",
+                "起草法律答复",
                 List.of(new AgentArgument(String.class, "question")),
                 "response",
                 String.class);
 
         MockAgent scorer = new MockAgent(
-                "scorer",
+                "评分器",
                 StyleScorer.class,
                 AgenticSystemTopology.AI_AGENT,
-                "Scores the quality of the legal response",
+                "评定法律答复的质量",
                 List.of(new AgentArgument(String.class, "response")),
                 "score",
                 Double.class);
 
         MockLoopAgent legalLoop = new MockLoopAgent(
-                "legalRefine",
-                "Iteratively refines the legal response until quality threshold is met",
+                "法律优化",
+                "迭代优化法律答复，直至达到质量阈值",
                 List.of(writer, scorer),
                 "response",
                 Object.class,
@@ -97,14 +121,14 @@ public class SampleReportGenerator {
                 true);
 
         MockConditionalAgent router = new MockConditionalAgent(
-                "router",
-                "Routes to the appropriate domain expert based on category",
+                "路由",
+                "根据类别转接至对应领域专家",
                 "response",
                 Object.class,
                 List.of(
-                        new ConditionalAgent("category is medical", null, List.of(medical)),
-                        new ConditionalAgent("category is technical", null, List.of(technical)),
-                        new ConditionalAgent("category is legal", null, List.of(legalLoop))));
+                        new ConditionalAgent("医疗类", null, List.of(medical)),
+                        new ConditionalAgent("技术类", null, List.of(technical)),
+                        new ConditionalAgent("法律类", null, List.of(legalLoop))));
 
         MockAgent sequence = new MockAgent(
                 "ask",
@@ -131,28 +155,28 @@ public class SampleReportGenerator {
         monitor.setRootAgent(sequence);
 
         // Execution 1 (user-alice): medical path
-        simulateExecution(
+        /*simulateExecution(
                 monitor,
                 new MockScope("user-alice"),
                 sequence,
                 classify,
                 router,
                 medical,
-                Map.of("question", "I broke my leg while hiking, what should I do?"),
+                Map.of("question", "徒步时摔断了腿，我该怎么办？"),
                 "MEDICAL",
-                "Seek immediate medical attention. Immobilize the leg and call emergency services.");
+                "立即就医。固定伤腿并拨打急救电话。");*/
 
         // Execution 2 (user-bob): technical path
-        simulateExecution(
-                monitor,
-                new MockScope("user-bob"),
-                sequence,
-                classify,
-                router,
-                technical,
-                Map.of("question", "My laptop screen flickers after a software update, how to fix?"),
-                "TECHNICAL",
-                "Roll back the display driver via Device Manager. If that fails, boot in Safe Mode.");
+//        simulateExecution(
+//                monitor,
+//                new MockScope("user-bob"),
+//                sequence,
+//                classify,
+//                router,
+//                technical,
+//                Map.of("question", "软件更新后笔记本电脑屏幕闪烁，该如何解决？"),
+//                "TECHNICAL",
+//                "通过设备管理器回退显卡驱动。若无效，请进入安全模式启动设备。");
 
         // Execution 3 (user-alice again): legal path with loop iterations
         simulateLegalExecution(
@@ -164,11 +188,11 @@ public class SampleReportGenerator {
                 legalLoop,
                 writer,
                 scorer,
-                Map.of("question", "Can I sue my neighbor for the hiking trail accident?"),
+                Map.of("question", "我能否就此次徒步步道事故起诉队友？"),
                 "LEGAL",
-                List.of("You may have a negligence claim...", "Given the property ownership and duty of care..."),
+                List.of("你可提起过失侵权诉讼……", "结合产权归属与安全注意义务……"),
                 List.of(0.6, 0.85),
-                "Given the property ownership and duty of care, you likely have grounds for a negligence claim.");
+                "结合产权归属及安全注意义务，你大概率有理由提起过失侵权诉讼。");
 
         // ----- Generate report -----
 
@@ -190,25 +214,25 @@ public class SampleReportGenerator {
             String category,
             String response)
             throws Exception {
-        monitor.beforeAgentInvocation(new AgentRequest(scope, sequence, inputs));
+        monitor.beforeAgentInvocation(new AgentRequest(scope, sequence, inputs)); // ask 入
         Thread.sleep(5);
 
-        monitor.beforeAgentInvocation(new AgentRequest(scope, classify, inputs));
+        monitor.beforeAgentInvocation(new AgentRequest(scope, classify, inputs)); // 分类器入
         Thread.sleep(35);
-        monitor.afterAgentInvocation(new AgentResponse(scope, classify, inputs, category));
+        monitor.afterAgentInvocation(new AgentResponse(scope, classify, inputs, category)); // 分类器 出 选择
 
-        monitor.beforeAgentInvocation(new AgentRequest(scope, router, Map.of("category", category)));
+        monitor.beforeAgentInvocation(new AgentRequest(scope, router, Map.of("category", category))); // 选择出的 专家 结果
         Thread.sleep(3);
 
-        monitor.beforeAgentInvocation(new AgentRequest(scope, expert, inputs));
+        monitor.beforeAgentInvocation(new AgentRequest(scope, expert, inputs)); // 专家 入
         Thread.sleep(55);
-        monitor.afterAgentInvocation(new AgentResponse(scope, expert, inputs, response));
+        monitor.afterAgentInvocation(new AgentResponse(scope, expert, inputs, response)); // 专家 出
 
         Thread.sleep(2);
-        monitor.afterAgentInvocation(new AgentResponse(scope, router, Map.of("category", category), response));
+        monitor.afterAgentInvocation(new AgentResponse(scope, router, Map.of("category", category), response)); // 路由器 出
 
         Thread.sleep(1);
-        monitor.afterAgentInvocation(new AgentResponse(scope, sequence, inputs, response));
+        monitor.afterAgentInvocation(new AgentResponse(scope, sequence, inputs, response)); // 序列化器 出
     }
 
     private static void simulateLegalExecution(

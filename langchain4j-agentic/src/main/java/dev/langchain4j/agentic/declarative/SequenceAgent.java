@@ -11,9 +11,24 @@ import java.lang.annotation.Target;
 /**
  * Marks a method as a definition of a sequence agent, used to orchestrate the agentic workflow
  * by invoking a series of sub-agents in a predefined order.
- * 将方法标记为序列代理的定义，用于通过按预定义顺序调用一系列子代理来编排代理工作流。
  * <p>
  * Example:
+ * <pre>
+ * {@code
+ *     public interface StoryCreatorWithConfigurableStyleEditor {
+ *
+ *         @SequenceAgent(outputKey = "styledStory",
+ *                        subAgents = { CreativeWriter.class, AudienceEditor.class, StyleEditor.class})
+ *         String write(@V("topic") String topic, @V("style") String style, @V("audience") String audience);
+ *     }
+ * }
+ * </pre>
+ */
+/**
+ * 将方法标记为顺序智能体定义，用于编排智能体工作流，
+ * 按照预定义的顺序依次调用一系列子智能体。
+ * <p>
+ * 示例：
  * <pre>
  * {@code
  *     public interface StoryCreatorWithConfigurableStyleEditor {

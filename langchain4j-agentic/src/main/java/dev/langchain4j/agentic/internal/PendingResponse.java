@@ -32,6 +32,29 @@ import java.util.concurrent.TimeoutException;
  *
  * @param <T> the type of the response value
  */
+/**
+ * 可由外部主动完成的延迟响应对象{@link DelayedResponse}，无需开启后台线程。
+ * <p>
+ * 不同于{@link AsyncResponse}会立即在线程池中执行供给函数，
+ * {@code PendingResponse}会创建一个初始未完成的异步任务，必须通过{@link #complete(Object)}方法显式完成。
+ * 该类适用于响应结果来自外部来源的场景（例如通过REST API人工介入、消息队列、外部事件等），
+ * 且对应的业务流程需要在服务重启后继续执行。
+ * <p>
+ * 经过序列化与反序列化后，会生成一个全新的未完成{@link CompletableFuture}，
+ * 支持外部系统重连并完成响应结果。
+ * <p>
+ * 结合{@link dev.langchain4j.agentic.workflow.HumanInTheLoop}（人机协同流程）的使用示例：
+ * <pre>{@code
+ * HumanInTheLoop.builder()
+ *     .responseProvider(scope -> new PendingResponse<>("user-approval"))
+ *     .build();
+ *
+ * // 后续由外部系统（如REST接口）执行：
+ * scope.completePendingResponse("user-approval", "approved");
+ * }</pre>
+ *
+ * @param <T> 响应值的类型
+ */
 public class PendingResponse<T> implements DelayedResponse<T> {
 
     private final String responseId;
@@ -44,6 +67,11 @@ public class PendingResponse<T> implements DelayedResponse<T> {
      *
      * @param responseId a unique identifier for this pending response, used to locate and
      *                   complete it from external systems
+     */
+    /**
+     * 使用指定的唯一标识创建一个新的待处理响应。
+     *
+     * @param responseId 该待处理响应的唯一标识，用于外部系统定位并完成该响应
      */
     @JsonCreator
     public PendingResponse(@JsonProperty("responseId") String responseId) {
@@ -80,6 +108,14 @@ public class PendingResponse<T> implements DelayedResponse<T> {
      * @return the response value
      * @throws TimeoutException if the wait timed out
      */
+    /**
+     * 等待响应结果，支持超时设置。
+     *
+     * @param timeout 最长等待时长
+     * @param unit 时长单位
+     * @return 响应结果
+     * @throws TimeoutException 等待超时则抛出此异常
+     */
     public T blockingGet(long timeout, TimeUnit unit) throws TimeoutException {
         try {
             return futureResponse.get(timeout, unit);
@@ -98,6 +134,14 @@ public class PendingResponse<T> implements DelayedResponse<T> {
      * @return {@code true} if this invocation caused the response to transition to a completed state,
      *         {@code false} if it was already completed
      */
+    /**
+     * 使用指定的值完成该待处理响应。
+     * 所有阻塞在 {@link #blockingGet()} 方法上的线程都会被释放。
+     *
+     * @param value 响应结果值
+     * @return 如果本次调用使响应从未完成状态切换为已完成状态，则返回 {@code true}；
+     *         如果响应此前已完成，则返回 {@code false}
+     */
     public boolean complete(T value) {
         return futureResponse.complete(value);
     }
@@ -107,6 +151,12 @@ public class PendingResponse<T> implements DelayedResponse<T> {
      *
      * @param exception the exception
      * @return {@code true} if this invocation caused the response to transition to a completed state
+     */
+    /**
+     * 以异常形式完成该待处理响应。
+     *
+     * @param exception 异常对象
+     * @return 如果本次调用使响应从未完成状态切换为已完成状态，则返回 {@code true}
      */
     public boolean completeExceptionally(Throwable exception) {
         return futureResponse.completeExceptionally(exception);

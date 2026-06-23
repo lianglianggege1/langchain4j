@@ -11,7 +11,6 @@ import java.lang.annotation.Target;
 /**
  * Marks a method as a definition of a loop agent, used to orchestrate the agentic workflow
  * by invoking a series of sub-agents in a loop until a certain predicate is met or a maximum number of iterations is reached.
- * 将方法标记为循环代理的定义，用于通过调用循环中的一系列子代理来编排代理工作流，直到满足某个谓词或达到最大迭代次数。
  * <p>
  * Example:
  * <pre>
@@ -20,6 +19,25 @@ import java.lang.annotation.Target;
  *
  *         @LoopAgent(
  *                 description = "Review the given story to ensure it aligns with the specified style",
+ *                 outputKey = "story", maxIterations = 5,
+ *                 subAgents = { StyleScorer.class, StyleEditor.class }
+ *         )
+ *         String write(@V("story") String story);
+ *     }
+ * }
+ * </pre>
+ */
+/**
+ * 将方法标记为循环智能体定义，用于编排智能体工作流。
+ * 会循环调用一系列子智能体，直到满足指定退出断言或达到最大迭代次数为止。
+ * <p>
+ * 示例：
+ * <pre>
+ * {@code
+ *     public interface StyleReviewLoopAgentWithCounter {
+ *
+ *         @LoopAgent(
+ *                 description = "审阅给定故事，确保其符合指定风格",
  *                 outputKey = "story", maxIterations = 5,
  *                 subAgents = { StyleScorer.class, StyleEditor.class }
  *         )

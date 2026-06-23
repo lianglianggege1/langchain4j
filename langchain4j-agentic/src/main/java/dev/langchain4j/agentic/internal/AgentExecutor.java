@@ -79,7 +79,11 @@ public record AgentExecutor(AgentInvoker agentInvoker, Object agent) implements 
             // 注册调用
             agenticScope.registerAgentInvocation(agentInvocation, invokedAgent);
             if (planner != null) {
-                // 添加调用
+                // 添加调用 隐式调用栈结构
+                // 每个复合型 Agent 被调用时都会压入一个新的 PlannerLoop 栈帧，
+                // 在其内部完整执行完自己的子 Agent 编排后才弹栈返回给父层的 onSubagentInvoked。
+                // 这就是一个天然的递归执行栈——深度等于 Agent 树的嵌套层数，
+                // 每层的 Planner 只感知自己直接子 Agent 的结果，层层解耦
                 planner.onSubagentInvoked(agentInvocation);
             }
             return response;

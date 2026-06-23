@@ -23,6 +23,8 @@ import java.util.Scanner;
 
 public class AssistantMain {
 
+    // 非常完美，我要把你抄到我的agent里面，并且前端可以自定义
+
     public static void main(String[] args) {
         CarRentalAssistant assistant = createAssistant();
         String memoryId = "1";
@@ -44,6 +46,7 @@ public class AssistantMain {
         System.out.println(agenticScope.readState("customerInfo"));
     }
 
+    //编排
     private static CarRentalAssistant createAssistant() {
         CustomerInfoExtractionService customerInfoExtraction = AgenticServices.agentBuilder(
                         CustomerInfoExtractionService.class)
@@ -69,6 +72,7 @@ public class AssistantMain {
                         agenticScope.writeState("customerInfo", new CustomerInfo());
                     }
                 })
+                // 添加子agent
                 .subAgents(customerInfoExtraction, towingAgentService, emergencyService(), responseGeneratorService)
                 .outputKey("response")
                 .build();

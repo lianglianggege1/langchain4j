@@ -1,0 +1,677 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>顶层 Sequence Agent Runtime 调用链</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif;
+            background: #0f0f23;
+            color: #e0e0e0;
+            line-height: 1.6;
+        }
+        .container { max-width: 1200px; margin: 0 auto; padding: 20px; }
+        h1 {
+            text-align: center;
+            color: #00d4ff;
+            margin-bottom: 10px;
+            font-size: 28px;
+        }
+        .subtitle {
+            text-align: center;
+            color: #888;
+            margin-bottom: 40px;
+            font-size: 14px;
+        }
+
+        /* 流程图样式 */
+        .flow-container {
+            position: relative;
+            padding-left: 40px;
+        }
+        .flow-line {
+            position: absolute;
+            left: 19px;
+            top: 0;
+            bottom: 0;
+            width: 2px;
+            background: linear-gradient(to bottom, #00d4ff, #e0aaff, #52b788);
+        }
+
+        .step {
+            position: relative;
+            margin-bottom: 20px;
+            background: #1a1a3e;
+            border-radius: 12px;
+            border: 1px solid #2a2a5e;
+            overflow: hidden;
+            transition: all 0.3s ease;
+        }
+        .step:hover { border-color: #00d4ff; box-shadow: 0 0 20px rgba(0,212,255,0.1); }
+
+        .step-header {
+            padding: 15px 20px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            background: linear-gradient(90deg, rgba(0,212,255,0.05), transparent);
+        }
+        .step-number {
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            font-size: 14px;
+            flex-shrink: 0;
+            position: relative;
+            z-index: 2;
+        }
+        .step-num-user { background: #00d4ff; color: #000; }
+        .step-num-workflow { background: #e0aaff; color: #000; }
+        .step-num-ai { background: #52b788; color: #000; }
+        .step-num-llm { background: #ffd166; color: #000; }
+        .step-num-return { background: #ff6b6b; color: #fff; }
+
+        .step-title { font-weight: 600; font-size: 15px; color: #fff; }
+        .step-class { font-size: 12px; color: #888; margin-left: auto; font-family: monospace; }
+        .step-toggle { font-size: 18px; color: #666; transition: transform 0.3s; }
+        .step.expanded .step-toggle { transform: rotate(90deg); }
+
+        .step-body {
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.4s ease;
+        }
+        .step.expanded .step-body { max-height: 2000px; }
+
+        .step-content {
+            padding: 0 20px 20px 71px;
+        }
+
+        /* 代码块 */
+        .code-block {
+            background: #0d0d1f;
+            border-radius: 8px;
+            padding: 15px;
+            margin: 12px 0;
+            font-family: 'Fira Code', 'Consolas', monospace;
+            font-size: 13px;
+            line-height: 1.5;
+            overflow-x: auto;
+            border-left: 3px solid #00d4ff;
+        }
+        .code-comment { color: #6a9955; }
+        .code-keyword { color: #569cd6; }
+        .code-method { color: #dcdcaa; }
+        .code-string { color: #ce9178; }
+        .code-type { color: #4ec9b0; }
+
+        /* 状态流转 */
+        .state-flow {
+            background: #1a2a0d;
+            border: 1px solid #52b788;
+            border-radius: 8px;
+            padding: 12px 15px;
+            margin: 12px 0;
+            font-family: monospace;
+            font-size: 13px;
+        }
+        .state-flow .added { color: #52b788; }
+        .state-flow .arrow { color: #888; margin: 0 8px; }
+
+        /* 调用栈 */
+        .call-stack {
+            background: #1b0d2a;
+            border-radius: 8px;
+            padding: 12px 15px;
+            margin: 12px 0;
+            font-family: monospace;
+            font-size: 12px;
+        }
+        .call-stack .frame {
+            padding: 4px 0;
+            border-left: 2px solid #e0aaff;
+            padding-left: 12px;
+            margin: 4px 0;
+            color: #ccc;
+        }
+        .call-stack .frame.highlight { color: #e0aaff; font-weight: bold; }
+
+        /* 说明文字 */
+        .desc {
+            color: #aaa;
+            font-size: 13px;
+            margin: 8px 0;
+            line-height: 1.7;
+        }
+        .highlight-box {
+            background: rgba(0,212,255,0.08);
+            border-left: 3px solid #00d4ff;
+            padding: 10px 15px;
+            border-radius: 0 8px 8px 0;
+            margin: 10px 0;
+            font-size: 13px;
+            color: #ccc;
+        }
+
+        /* 图例 */
+        .legend {
+            display: flex;
+            gap: 20px;
+            justify-content: center;
+            margin-bottom: 30px;
+            flex-wrap: wrap;
+        }
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 13px;
+            color: #aaa;
+        }
+        .legend-dot {
+            width: 14px;
+            height: 14px;
+            border-radius: 50%;
+        }
+
+        /* 嵌套标记 */
+        .nest-badge {
+            display: inline-block;
+            background: #ffd166;
+            color: #000;
+            font-size: 11px;
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-weight: bold;
+            margin-left: 8px;
+        }
+
+        /* 底部总结 */
+        .summary {
+            background: #16213e;
+            border-radius: 12px;
+            padding: 25px;
+            margin-top: 40px;
+            border: 1px solid #2a2a5e;
+        }
+        .summary h3 { color: #00d4ff; margin-bottom: 15px; }
+        .summary-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 15px;
+        }
+        .summary-card {
+            background: #0d1b2a;
+            border-radius: 8px;
+            padding: 15px;
+            border-left: 3px solid #00d4ff;
+        }
+        .summary-card h4 { color: #fff; font-size: 14px; margin-bottom: 8px; }
+        .summary-card p { color: #aaa; font-size: 12px; line-height: 1.6; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>顶层 Sequence Agent Runtime 完整调用链</h1>
+        <div class="subtitle">从 assistant.chat() 到 LLM API 的方法级跳转路径</div>
+
+        <div class="legend">
+            <div class="legend-item"><div class="legend-dot" style="background:#00d4ff"></div>用户入口</div>
+            <div class="legend-item"><div class="legend-dot" style="background:#e0aaff"></div>Workflow 代理层</div>
+            <div class="legend-item"><div class="legend-dot" style="background:#52b788"></div>AI Agent 代理层</div>
+            <div class="legend-item"><div class="legend-dot" style="background:#ffd166"></div>LLM 调用层</div>
+            <div class="legend-item"><div class="legend-dot" style="background:#ff6b6b"></div>结果返回</div>
+        </div>
+
+        <div class="flow-container">
+            <div class="flow-line"></div>
+
+            <!-- Step 0 -->
+            <div class="step expanded" onclick="this.classList.toggle('expanded')">
+                <div class="step-header">
+                    <div class="step-number step-num-user">0</div>
+                    <div class="step-title">用户发起调用</div>
+                    <div class="step-class">AssistantMain.java</div>
+                    <div class="step-toggle">▶</div>
+                </div>
+                <div class="step-body">
+                    <div class="step-content">
+                        <div class="code-block">
+<span class="code-type">ResultWithAgenticScope</span>&lt;<span class="code-type">String</span>&gt; response = assistant.<span class="code-method">chat</span>(memoryId, <span class="code-string">"My car broke down"</span>);
+                        </div>
+                        <div class="desc">
+                            <code>assistant</code> 是 <code>CarRentalAssistant</code> 接口的代理实例，
+                            其 InvocationHandler 是 <code>PlannerBasedInvocationHandler</code>。
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Step 1 -->
+            <div class="step expanded" onclick="this.classList.toggle('expanded')">
+                <div class="step-header">
+                    <div class="step-number step-num-workflow">1</div>
+                    <div class="step-title">进入 Workflow 代理（第1层）</div>
+                    <div class="step-class">PlannerBasedInvocationHandler</div>
+                    <div class="step-toggle">▶</div>
+                </div>
+                <div class="step-body">
+                    <div class="step-content">
+                        <div class="desc">JDK 动态代理将方法调用路由到 invoke 方法：</div>
+                        <div class="code-block">
+<span class="code-keyword">public</span> Object <span class="code-method">invoke</span>(Object proxy, Method method, Object[] args) {
+    <span class="code-comment">// ... 处理 AgentInstance / ChatMemoryAccess 等接口方法</span>
+    <span class="code-keyword">return</span> <span class="code-method">executeAgentMethod</span>(registry, method, args);  <span class="code-comment">// ← 核心入口</span>
+}
+                        </div>
+                        <div class="call-stack">
+                            <div class="frame">Proxy.invoke()</div>
+                            <div class="frame highlight">PlannerBasedInvocationHandler.invoke()</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Step 2 -->
+            <div class="step expanded" onclick="this.classList.toggle('expanded')">
+                <div class="step-header">
+                    <div class="step-number step-num-workflow">2</div>
+                    <div class="step-title">执行前准备 + beforeCall</div>
+                    <div class="step-class">PlannerBasedInvocationHandler</div>
+                    <div class="step-toggle">▶</div>
+                </div>
+                <div class="step-body">
+                    <div class="step-content">
+                        <div class="code-block">
+<span class="code-type">DefaultAgenticScope</span> currentScope = <span class="code-method">currentAgenticScope</span>(registry, method, args);
+<span class="code-method">writeAgenticScope</span>(currentScope, method, args);   <span class="code-comment">// 参数写入 state</span>
+<span class="code-method">beforeCall</span>.accept(currentScope);                  <span class="code-comment">// ← 执行 beforeCall 钩子</span>
+
+Planner planner = plannerSupplier.<span class="code-method">get</span>();            <span class="code-comment">// 创建 SequentialPlanner</span>
+planner.<span class="code-method">init</span>(<span class="code-keyword">new</span> InitPlanningContext(currentScope, <span class="code-keyword">this</span>, subagents));
+Object result = <span class="code-keyword">new</span> <span class="code-type">PlannerLoop</span>(planner, currentScope, registry).<span class="code-method">loop</span>();
+                        </div>
+                        <div class="state-flow">
+Scope 状态变化:  {memoryId=<span class="code-string">"1"</span>, request=<span class="code-string">"My car broke down"</span>}
+<span class="arrow">→</span> beforeCall 后: <span class="added">+ {customerInfo=<span class="code-keyword">new</span> CustomerInfo()}</span>
+                        </div>
+                        <div class="highlight-box">
+                            <strong>writeAgenticScope</strong> 会把方法参数（如 <code>@V("request")</code>）自动写入 Scope，后续 Agent 可直接读取。
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Step 3 -->
+            <div class="step expanded" onclick="this.classList.toggle('expanded')">
+                <div class="step-header">
+                    <div class="step-number step-num-workflow">3</div>
+                    <div class="step-title">PlannerLoop 调度循环</div>
+                    <div class="step-class">PlannerLoop</div>
+                    <div class="step-toggle">▶</div>
+                </div>
+                <div class="step-body">
+                    <div class="step-content">
+                        <div class="code-block">
+<span class="code-keyword">public</span> Object <span class="code-method">loop</span>() {
+    nextAction = planner.<span class="code-method">firstAction</span>(<span class="code-keyword">new</span> PlanningContext(agenticScope, <span class="code-keyword">null</span>));
+    <span class="code-keyword">while</span> (nextAction == <span class="code-keyword">null</span> || !nextAction.<span class="code-method">isDone</span>()) {
+        List&lt;AgentExecutor&gt; agents = ((Action.AgentCallAction) nextAction).<span class="code-method">agentsToCall</span>();
+        nextAction = <span class="code-keyword">null</span>;
+        <span class="code-keyword">switch</span> (agents.size()) {
+            <span class="code-keyword">case</span> <span class="code-type">1</span> -> agents.get(<span class="code-type">0</span>).<span class="code-method">execute</span>(agenticScope, <span class="code-keyword">this</span>);  <span class="code-comment">// 串行</span>
+            <span class="code-keyword">default</span> -> <span class="code-method">parallelExecution</span>(agents);               <span class="code-comment">// 并行</span>
+        }
+    }
+    <span class="code-keyword">return</span> <span class="code-method">result</span>();  <span class="code-comment">// 从 scope 读 outputKey</span>
+}
+                        </div>
+                        <div class="desc">
+                            <code>SequentialPlanner</code> 每次 <code>nextAction()</code> 返回一个子 Agent，
+                            PlannerLoop 负责真正调用它，并在完成后通过 <code>onSubagentInvoked()</code> 驱动 Planner 继续下一步。
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Step 4 -->
+            <div class="step expanded" onclick="this.classList.toggle('expanded')">
+                <div class="step-header">
+                    <div class="step-number step-num-workflow">4</div>
+                    <div class="step-title">SequentialPlanner 返回第一个子 Agent</div>
+                    <div class="step-class">SequentialPlanner</div>
+                    <div class="step-toggle">▶</div>
+                </div>
+                <div class="step-body">
+                    <div class="step-content">
+                        <div class="code-block">
+<span class="code-keyword">public</span> Action <span class="code-method">nextAction</span>(PlanningContext ctx) {
+    <span class="code-keyword">return</span> <span class="code-method">terminated</span>() ? <span class="code-method">done</span>() : <span class="code-method">call</span>(agents.get(agentCursor++));
+}
+
+<span class="code-keyword">public</span> <span class="code-type">boolean</span> <span class="code-method">terminated</span>() {
+    <span class="code-keyword">return</span> agentCursor >= agents.size();
+}
+                        </div>
+                        <div class="desc">
+                            <code>agents</code> 列表就是构建时传入的 4 个子 Agent：
+                            <code>[CustomerInfoExtraction, TowingAgent, EmergencyService, ResponseGenerator]</code>。
+                            cursor 从 0 开始，每次自增。
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Step 5 -->
+            <div class="step expanded" onclick="this.classList.toggle('expanded')">
+                <div class="step-header">
+                    <div class="step-number step-num-ai">5</div>
+                    <div class="step-title">AgentExecutor 执行子 Agent</div>
+                    <div class="step-class">AgentExecutor</div>
+                    <div class="step-toggle">▶</div>
+                </div>
+                <div class="step-body">
+                    <div class="step-content">
+                        <div class="code-block">
+<span class="code-keyword">public</span> Object <span class="code-method">execute</span>(DefaultAgenticScope scope, PlannerExecutor planner) {
+    Object invokedAgent = (agent <span class="code-keyword">instanceof</span> AgenticScopeOwner co
+        ? co.<span class="code-method">withAgenticScope</span>(scope)  <span class="code-comment">// 绑定 Scope</span>
+        : agent);
+    <span class="code-keyword">return</span> <span class="code-method">internalExecute</span>(scope, invokedAgent, planner, async);
+}
+                        </div>
+                        <div class="code-block">
+<span class="code-comment">// internalExecute 核心逻辑</span>
+AgentInvocationArguments args = agentInvoker.<span class="code-method">toInvocationArguments</span>(scope);  <span class="code-comment">// 从 scope 读参数</span>
+Object response = <span class="code-method">agentResponse</span>(scope, invokedAgent, planner, args, async);
+<span class="code-type">String</span> outputKey = agentInvoker.<span class="code-method">outputKey</span>();
+<span class="code-keyword">if</span> (outputKey != <span class="code-keyword">null</span>) {
+    scope.<span class="code-method">writeState</span>(outputKey, response);  <span class="code-comment">// ← 自动写状态！</span>
+}
+scope.<span class="code-method">registerAgentInvocation</span>(agentInvocation, invokedAgent);
+planner.<span class="code-method">onSubagentInvoked</span>(agentInvocation);  <span class="code-comment">// 通知 PlannerLoop</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Step 6 -->
+            <div class="step expanded" onclick="this.classList.toggle('expanded')">
+                <div class="step-header">
+                    <div class="step-number step-num-ai">6</div>
+                    <div class="step-title">AgentInvoker 反射调用 AI Agent</div>
+                    <div class="step-class">MethodAgentInvoker / AgentInvoker</div>
+                    <div class="step-toggle">▶</div>
+                </div>
+                <div class="step-body">
+                    <div class="step-content">
+                        <div class="code-block">
+<span class="code-comment">// AgentInvoker.invoke() 接口默认方法</span>
+<span class="code-keyword">default</span> Object <span class="code-method">invoke</span>(DefaultAgenticScope scope, Object agent, AgentInvocationArguments args) {
+    <span class="code-method">beforeAgentInvocation</span>(listener, scope, <span class="code-keyword">this</span>, args.namedArgs());
+    Object result = <span class="code-method">internalInvoke</span>(scope, listener, agent, args);
+    <span class="code-method">afterAgentInvocation</span>(listener, scope, <span class="code-keyword">this</span>, args.namedArgs(), result);
+    <span class="code-keyword">return</span> result;
+}
+
+<span class="code-keyword">private</span> Object <span class="code-method">internalInvoke</span>(...) {
+    LangChain4jManaged.<span class="code-method">setCurrent</span>(Map.<span class="code-method">of</span>(AgenticScope.<span class="code-keyword">class</span>, scope));
+    <span class="code-keyword">try</span> {
+        <span class="code-keyword">return</span> method().<span class="code-method">invoke</span>(agent, args.positionalArgs());  <span class="code-comment">// 反射 → 第2层代理</span>
+    } <span class="code-keyword">finally</span> {
+        LangChain4jManaged.<span class="code-method">removeCurrent</span>();
+    }
+}
+                        </div>
+                        <div class="desc">
+                            这里通过 Java 反射调用代理对象的方法。对于 AI Agent，<code>agent</code> 是 <code>AgentInvocationHandler</code> 代理，
+                            所以反射会触发其 <code>invoke()</code> 方法。同时 <code>AgenticScope</code> 被绑定到线程上下文。
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Step 7 -->
+            <div class="step expanded" onclick="this.classList.toggle('expanded')">
+                <div class="step-header">
+                    <div class="step-number step-num-ai">7</div>
+                    <div class="step-title">进入 AgentInvocationHandler（第2层代理）</div>
+                    <div class="step-class">AgentInvocationHandler</div>
+                    <div class="step-toggle">▶</div>
+                </div>
+                <div class="step-body">
+                    <div class="step-content">
+                        <div class="code-block">
+<span class="code-keyword">public</span> Object <span class="code-method">invoke</span>(Object proxy, Method method, Object[] args) {
+    <span class="code-comment">// ... 处理 ChatMessagesAccess / AgentInstance 等接口</span>
+
+    AgenticScope scope = LangChain4jManaged.<span class="code-method">current</span>(AgenticScope.<span class="code-keyword">class</span>);  <span class="code-comment">// 从线程上下文取出</span>
+    <span class="code-keyword">if</span> (scope != <span class="code-keyword">null</span>) {
+        <span class="code-keyword">if</span> (chatModelProvider != <span class="code-keyword">null</span>) {
+            context.chatModel = chatModelProvider.<span class="code-method">apply</span>(scope);  <span class="code-comment">// 动态选择模型</span>
+        }
+        <span class="code-keyword">return</span> method.<span class="code-method">invoke</span>(agent, args);  <span class="code-comment">// ← 进入第3层代理（AiServices）</span>
+    }
+    <span class="code-keyword">return</span> <span class="code-method">invokeStandaloneAgent</span>(method, args);
+}
+                        </div>
+                        <div class="call-stack">
+                            <div class="frame">Proxy.invoke()</div>
+                            <div class="frame">PlannerBasedInvocationHandler.invoke()</div>
+                            <div class="frame">PlannerLoop.loop()</div>
+                            <div class="frame">AgentExecutor.execute()</div>
+                            <div class="frame">AgentInvoker.internalInvoke()</div>
+                            <div class="frame highlight">AgentInvocationHandler.invoke()</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Step 8 -->
+            <div class="step expanded" onclick="this.classList.toggle('expanded')">
+                <div class="step-header">
+                    <div class="step-number step-num-llm">8</div>
+                    <div class="step-title">进入 DefaultAiServices（第3层代理）调用 LLM</div>
+                    <div class="step-class">DefaultAiServices</div>
+                    <div class="step-toggle">▶</div>
+                </div>
+                <div class="step-body">
+                    <div class="step-content">
+                        <div class="code-block">
+<span class="code-comment">// DefaultAiServices 的 InvocationHandler</span>
+<span class="code-keyword">public</span> Object <span class="code-method">invoke</span>(Object proxy, Method method, Object[] args) {
+    <span class="code-comment">// 1. 构建 SystemMessage（来自 @SystemMessage 或 systemMessageProvider）</span>
+    <span class="code-comment">// 2. 构建 UserMessage（解析 @V 参数，替换模板 {{request}}）</span>
+    <span class="code-comment">// 3. 读取 ChatMemory 历史消息</span>
+    <span class="code-comment">// 4. 如果有 @Tool，组装 ToolSpecification</span>
+
+    ChatRequest chatRequest = <span class="code-method">buildChatRequest</span>(...);
+    ChatResponse chatResponse = context.chatModel.<span class="code-method">doChat</span>(chatRequest);  <span class="code-comment">// ← 真正调用 LLM！</span>
+
+    <span class="code-comment">// 5. 如果有 ToolExecutionRequest，循环执行工具</span>
+    <span class="code-comment">// 6. 如果是结构化输出（返回 POJO），用 JSON Schema 解析</span>
+    <span class="code-keyword">return</span> <span class="code-method">parseResponse</span>(chatResponse);
+}
+                        </div>
+                        <div class="highlight-box">
+                            这里的 <code>context.chatModel</code> 就是构建时传入的 <code>baseModel()</code>，
+                            最终调用 OpenAI / Anthropic / Gemini 等提供商的 API。
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Step 9 -->
+            <div class="step expanded" onclick="this.classList.toggle('expanded')">
+                <div class="step-header">
+                    <div class="step-number step-num-return">9</div>
+                    <div class="step-title">结果逐层返回 + 写入 AgenticScope</div>
+                    <div class="step-class">AgentExecutor</div>
+                    <div class="step-toggle">▶</div>
+                </div>
+                <div class="step-body">
+                    <div class="step-content">
+                        <div class="call-stack">
+                            <div class="frame">LLM API 返回字符串</div>
+                            <div class="frame">DefaultAiServices.parseResponse()</div>
+                            <div class="frame">AgentInvocationHandler.invoke()</div>
+                            <div class="frame">MethodAgentInvoker.internalInvoke()</div>
+                            <div class="frame highlight">AgentExecutor.internalExecute()</div>
+                        </div>
+                        <div class="code-block">
+<span class="code-comment">// AgentExecutor 中</span>
+Object response = ...;  <span class="code-comment">// LLM 返回的字符串/POJO</span>
+<span class="code-type">String</span> outputKey = agentInvoker.<span class="code-method">outputKey</span>();  <span class="code-comment">// "customerInfo"</span>
+<span class="code-keyword">if</span> (outputKey != <span class="code-keyword">null</span>) {
+    scope.<span class="code-method">writeState</span>(outputKey, response);  <span class="code-comment">// state["customerInfo"] = response</span>
+}
+                        </div>
+                        <div class="state-flow">
+Scope 新增: <span class="added">{customerInfo=<span class="code-string">"Customer: John, Location: downtown..."</span>}</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Step 10 -->
+            <div class="step expanded" onclick="this.classList.toggle('expanded')">
+                <div class="step-header">
+                    <div class="step-number step-num-workflow">10</div>
+                    <div class="step-title">onSubagentInvoked 驱动 Planner 继续</div>
+                    <div class="step-class">PlannerLoop</div>
+                    <div class="step-toggle">▶</div>
+                </div>
+                <div class="step-body">
+                    <div class="step-content">
+                        <div class="code-block">
+<span class="code-comment">// AgentExecutor 执行完毕后调用：</span>
+planner.<span class="code-method">onSubagentInvoked</span>(agentInvocation);
+
+<span class="code-comment">// PlannerLoop 中：</span>
+<span class="code-keyword">public</span> <span class="code-type">void</span> <span class="code-method">onSubagentInvoked</span>(AgentInvocation inv) {
+    lock.<span class="code-method">lock</span>();
+    <span class="code-keyword">try</span> {
+        <span class="code-keyword">this</span>.nextAction = <span class="code-method">composeActions</span>(<span class="code-keyword">this</span>.nextAction,
+            planner.<span class="code-method">nextAction</span>(<span class="code-keyword">new</span> PlanningContext(agenticScope, inv)));
+
+        <span class="code-comment">// 保存 Planner 执行状态（用于故障恢复）</span>
+        Map&lt;String, Object&gt; execState = planner.<span class="code-method">executionState</span>();
+        <span class="code-keyword">if</span> (!execState.isEmpty()) {
+            scope.<span class="code-method">writeState</span>(<span class="code-method">executionStateId</span>(), execState);
+        }
+    } <span class="code-keyword">finally</span> { lock.<span class="code-method">unlock</span>(); }
+}
+                        </div>
+                        <div class="desc">
+                            <code>SequentialPlanner.nextAction()</code> 会将 cursor 从 0 推进到 1，
+                            返回 <code>call(TowingAgentService)</code>，PlannerLoop 的 while 循环继续执行下一个子 Agent。
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Step 11 -->
+            <div class="step expanded" onclick="this.classList.toggle('expanded')">
+                <div class="step-header">
+                    <div class="step-number step-num-workflow">11</div>
+                    <div class="step-title">嵌套 EmergencyService 的调用<span class="nest-badge">嵌套Sequence</span></div>
+                    <div class="step-class">PlannerBasedInvocationHandler</div>
+                    <div class="step-toggle">▶</div>
+                </div>
+                <div class="step-body">
+                    <div class="step-content">
+                        <div class="desc">
+                            当 cursor = 2 时，SequentialPlanner 调度到 <code>EmergencyService</code>。
+                            它本身也是一个 <code>PlannerBasedInvocationHandler</code> 代理（UntypedAgent），
+                            因此会<strong>递归进入一套新的 PlannerLoop</strong>，但共享同一个 <code>DefaultAgenticScope</code>。
+                        </div>
+                        <div class="code-block">
+<span class="code-comment">// EmergencyService 内部 = 新的 Sequence</span>
+AgenticServices.<span class="code-method">sequenceBuilder</span>()
+    .<span class="code-method">subAgents</span>(emergencyExtractor, emergencyExperts, emergencyResponseService)
+    .<span class="code-method">outputKey</span>(<span class="code-string">"emergencyResponse"</span>)
+    .<span class="code-method">build</span>();
+                        </div>
+                        <div class="call-stack">
+                            <div class="frame">父 PlannerLoop.loop()</div>
+                            <div class="frame">AgentExecutor.execute(EmergencyService)</div>
+                            <div class="frame highlight">EmergencyService.invoke() → 新 PlannerLoop</div>
+                            <div class="frame">→ EmergencyExtractor</div>
+                            <div class="frame">→ EmergencyExperts (Conditional)</div>
+                            <div class="frame">→ EmergencyResponseService</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Step 12 -->
+            <div class="step expanded" onclick="this.classList.toggle('expanded')">
+                <div class="step-header">
+                    <div class="step-number step-num-return">12</div>
+                    <div class="step-title">最终返回结果给用户</div>
+                    <div class="step-class">PlannerBasedInvocationHandler</div>
+                    <div class="step-toggle">▶</div>
+                </div>
+                <div class="step-body">
+                    <div class="step-content">
+                        <div class="code-block">
+<span class="code-comment">// 顶层 executeAgentMethod 末尾</span>
+Object output = outputKey != <span class="code-keyword">null</span>
+    ? currentScope.<span class="code-method">readState</span>(outputKey)   <span class="code-comment">// 读取 state["response"]</span>
+    : result;
+
+<span class="code-keyword">return</span> method.getReturnType().equals(ResultWithAgenticScope.<span class="code-keyword">class</span>)
+    ? <span class="code-keyword">new</span> ResultWithAgenticScope&lt;&gt;(currentScope, output)
+    : output;
+                        </div>
+                        <div class="state-flow">
+最终 Scope 状态:
+{memoryId=<span class="code-string">"1"</span>, request=<span class="code-string">"My car broke down"</span>,
+ customerInfo=<span class="code-string">"John, downtown..."</span>, towingResponse=<span class="code-string">"Truck dispatched"</span>,
+ emergencies=..., fireEmergency=<span class="code-string">"fire"</span>, fireResponse=<span class="code-string">"Evacuate..."</span>,
+ emergencyResponse=<span class="code-string">"Fire handled..."</span>,
+ <span class="added">response=<span class="code-string">"Hi John, towing is on the way..."</span></span>}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="summary">
+            <h3>核心机制总结</h3>
+            <div class="summary-grid">
+                <div class="summary-card">
+                    <h4>三层代理嵌套</h4>
+                    <p>Workflow代理(PlannerBased) → AI Agent代理(AgentInvocation) → LLM代理(DefaultAiServices)。每层都通过 JDK Proxy 实现，method.invoke() 层层穿透。</p>
+                </div>
+                <div class="summary-card">
+                    <h4>Scope 状态共享</h4>
+                    <p>所有 Agent 共享同一个 DefaultAgenticScope（内部是 ConcurrentHashMap）。子 Agent 通过 writeState 写入结果，后续 Agent 通过 readState 读取。</p>
+                </div>
+                <div class="summary-card">
+                    <h4>PlannerLoop 调度</h4>
+                    <p>Planner 只决定"下一步调用谁"（返回 Action），PlannerLoop 负责真正执行。Action 完成后通过 onSubagentInvoked 回调驱动 Planner 继续。</p>
+                </div>
+                <div class="summary-card">
+                    <h4>outputKey 自动持久化</h4>
+                    <p>AgentExecutor 在子 Agent 执行完毕后，自动把 response 写入 AgenticScope[outputKey]。父 Agent 通过相同的 key 读取结果。</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 默认展开所有步骤，点击可折叠
+        document.querySelectorAll('.step').forEach(step => {
+            step.classList.add('expanded');
+        });
+    </script>
+</body>
+</html>

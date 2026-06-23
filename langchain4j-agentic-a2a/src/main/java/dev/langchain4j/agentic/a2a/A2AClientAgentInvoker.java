@@ -19,6 +19,7 @@ import java.util.stream.Stream;
 import static dev.langchain4j.agentic.internal.AgentUtil.agentInvocationArguments;
 import static dev.langchain4j.agentic.internal.AgentUtil.argumentsFromMethod;
 
+// 果然底层原理都一样
 public class A2AClientAgentInvoker implements AgentInvoker {
 
     // agent id

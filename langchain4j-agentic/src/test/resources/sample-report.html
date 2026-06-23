@@ -279,56 +279,56 @@ body { font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,
 </div>
 <ul>
 <li>
-<div class="node-card node-border-ai" data-agent-id="classify" data-output-key="category" data-output-color="#457b9d" data-input-keys="question">
-<div class="node-card-header"><span class="topology-badge ai">AI</span><span class="agent-name">classify</span></div>
+<div class="node-card node-border-ai" data-agent-id="分类" data-output-key="category" data-output-color="#457b9d" data-input-keys="question">
+<div class="node-card-header"><span class="topology-badge ai">AI</span><span class="agent-name">分类</span></div>
 <div class="node-details">
 <div class="node-detail"><span class="nd-label">Type</span> <span class="nd-value">CategoryRouter</span></div>
-<div class="node-detail"><span class="nd-label">Desc</span> <span class="nd-value">Classifies user questions into domain categories</span></div>
+<div class="node-detail"><span class="nd-label">Desc</span> <span class="nd-value">将用户问题划分至不同业务领域</span></div>
 <div class="node-detail"><span class="nd-label">Returns</span> <span class="nd-value">String</span></div>
 </div>
 <div class="key-flow"><span class="key-pill key-in" style="--kc:#2a9d8f">&#8592; question</span><span class="key-pill key-out" style="--kc:#457b9d">&#8594; category</span></div>
 </div>
 </li>
 <li>
-<div class="node-card node-border-rtr" data-agent-id="router" data-output-key="response" data-output-color="#e63946">
-<div class="node-card-header"><span class="topology-badge rtr">Router</span><span class="agent-name">router</span></div>
+<div class="node-card node-border-rtr" data-agent-id="路由" data-output-key="response" data-output-color="#e63946">
+<div class="node-card-header"><span class="topology-badge rtr">Router</span><span class="agent-name">路由</span></div>
 <div class="node-details">
-<div class="node-detail"><span class="nd-label">Desc</span> <span class="nd-value">Routes to the appropriate domain expert based on category</span></div>
+<div class="node-detail"><span class="nd-label">Desc</span> <span class="nd-value">根据类别转接至对应领域专家</span></div>
 <div class="node-detail"><span class="nd-label">Returns</span> <span class="nd-value">Object</span></div>
 </div>
 <div class="key-flow"><span class="key-pill key-out" style="--kc:#e63946">&#8594; response</span></div>
 </div>
 <ul>
 <li>
-<div class="condition-label">when: category is medical</div>
-<div class="node-card node-border-ai" data-agent-id="medical" data-output-key="response" data-output-color="#e63946" data-input-keys="question">
-<div class="node-card-header"><span class="topology-badge ai">AI</span><span class="agent-name">medical</span></div>
+<div class="condition-label">when: 医疗类</div>
+<div class="node-card node-border-ai" data-agent-id="医疗" data-output-key="response" data-output-color="#e63946" data-input-keys="question">
+<div class="node-card-header"><span class="topology-badge ai">AI</span><span class="agent-name">医疗</span></div>
 <div class="node-details">
 <div class="node-detail"><span class="nd-label">Type</span> <span class="nd-value">MedicalExpert</span></div>
-<div class="node-detail"><span class="nd-label">Desc</span> <span class="nd-value">Provides medical advice and first-aid guidance</span></div>
+<div class="node-detail"><span class="nd-label">Desc</span> <span class="nd-value">提供医疗建议与急救指导</span></div>
 <div class="node-detail"><span class="nd-label">Returns</span> <span class="nd-value">String</span></div>
 </div>
 <div class="key-flow"><span class="key-pill key-in" style="--kc:#2a9d8f">&#8592; question</span><span class="key-pill key-out" style="--kc:#e63946">&#8594; response</span></div>
 </div>
 </li>
 <li>
-<div class="condition-label">when: category is technical</div>
-<div class="node-card node-border-ai" data-agent-id="technical" data-output-key="response" data-output-color="#e63946" data-input-keys="question">
-<div class="node-card-header"><span class="topology-badge ai">AI</span><span class="agent-name">technical</span></div>
+<div class="condition-label">when: 技术类</div>
+<div class="node-card node-border-ai" data-agent-id="技术" data-output-key="response" data-output-color="#e63946" data-input-keys="question">
+<div class="node-card-header"><span class="topology-badge ai">AI</span><span class="agent-name">技术</span></div>
 <div class="node-details">
 <div class="node-detail"><span class="nd-label">Type</span> <span class="nd-value">TechnicalExpert</span></div>
-<div class="node-detail"><span class="nd-label">Desc</span> <span class="nd-value">Provides technical support and troubleshooting</span></div>
+<div class="node-detail"><span class="nd-label">Desc</span> <span class="nd-value">提供技术支持与故障排查</span></div>
 <div class="node-detail"><span class="nd-label">Returns</span> <span class="nd-value">String</span></div>
 </div>
 <div class="key-flow"><span class="key-pill key-in" style="--kc:#2a9d8f">&#8592; question</span><span class="key-pill key-out" style="--kc:#e63946">&#8594; response</span></div>
 </div>
 </li>
 <li>
-<div class="condition-label">when: category is legal</div>
-<div class="node-card node-border-loop" data-agent-id="legalRefine" data-output-key="response" data-output-color="#e63946">
-<div class="node-card-header"><span class="topology-badge loop">Loop</span><span class="agent-name">legalRefine</span></div>
+<div class="condition-label">when: 法律类</div>
+<div class="node-card node-border-loop" data-agent-id="法律优化" data-output-key="response" data-output-color="#e63946">
+<div class="node-card-header"><span class="topology-badge loop">Loop</span><span class="agent-name">法律优化</span></div>
 <div class="node-details">
-<div class="node-detail"><span class="nd-label">Desc</span> <span class="nd-value">Iteratively refines the legal response until quality thresho...</span></div>
+<div class="node-detail"><span class="nd-label">Desc</span> <span class="nd-value">迭代优化法律答复，直至达到质量阈值</span></div>
 <div class="node-detail"><span class="nd-label">Returns</span> <span class="nd-value">Object</span></div>
 <div class="loop-info"><span class="loop-tag">max 3</span><span class="loop-tag">exit: score greater than 0.8</span><span class="loop-tag">test at end</span></div>
 </div>
@@ -336,22 +336,22 @@ body { font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,
 </div>
 <ul>
 <li>
-<div class="node-card node-border-ai" data-agent-id="writer" data-output-key="response" data-output-color="#e63946" data-input-keys="question">
-<div class="node-card-header"><span class="topology-badge ai">AI</span><span class="agent-name">writer</span></div>
+<div class="node-card node-border-ai" data-agent-id="作家" data-output-key="response" data-output-color="#e63946" data-input-keys="question">
+<div class="node-card-header"><span class="topology-badge ai">AI</span><span class="agent-name">作家</span></div>
 <div class="node-details">
 <div class="node-detail"><span class="nd-label">Type</span> <span class="nd-value">StoryWriter</span></div>
-<div class="node-detail"><span class="nd-label">Desc</span> <span class="nd-value">Drafts a legal response</span></div>
+<div class="node-detail"><span class="nd-label">Desc</span> <span class="nd-value">起草法律答复</span></div>
 <div class="node-detail"><span class="nd-label">Returns</span> <span class="nd-value">String</span></div>
 </div>
 <div class="key-flow"><span class="key-pill key-in" style="--kc:#2a9d8f">&#8592; question</span><span class="key-pill key-out" style="--kc:#e63946">&#8594; response</span></div>
 </div>
 </li>
 <li>
-<div class="node-card node-border-ai" data-agent-id="scorer" data-output-key="score" data-output-color="#e9c46a" data-input-keys="response">
-<div class="node-card-header"><span class="topology-badge ai">AI</span><span class="agent-name">scorer</span></div>
+<div class="node-card node-border-ai" data-agent-id="评分器" data-output-key="score" data-output-color="#e9c46a" data-input-keys="response">
+<div class="node-card-header"><span class="topology-badge ai">AI</span><span class="agent-name">评分器</span></div>
 <div class="node-details">
 <div class="node-detail"><span class="nd-label">Type</span> <span class="nd-value">StyleScorer</span></div>
-<div class="node-detail"><span class="nd-label">Desc</span> <span class="nd-value">Scores the quality of the legal response</span></div>
+<div class="node-detail"><span class="nd-label">Desc</span> <span class="nd-value">评定法律答复的质量</span></div>
 <div class="node-detail"><span class="nd-label">Returns</span> <span class="nd-value">Double</span></div>
 </div>
 <div class="key-flow"><span class="key-pill key-in" style="--kc:#e63946">&#8592; response</span><span class="key-pill key-out" style="--kc:#e9c46a">&#8594; score</span></div>
@@ -370,61 +370,32 @@ body { font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,
 <div class="section-header">
   <div class="section-icon"><svg width="16" height="16" viewBox="0 0 16 16" fill="none"><rect x="1" y="3" width="14" height="2" rx="1" fill="white"/><rect x="1" y="7" width="10" height="2" rx="1" fill="white"/><rect x="1" y="11" width="12" height="2" rx="1" fill="white"/></svg></div>
   <h2 class="section-title">Execution History</h2>
-  <span class="section-count">2 session(s)</span>
+  <span class="section-count">1 session(s)</span>
 </div>
 <div class="execution-group">
 <div class="execution-header" onclick="toggle('g0')">
-  <span class="chevron">&#9660;</span>  <span class="execution-memory-id">Session: user-alice</span>  <div class="execution-meta">    <span class="section-count">2 run(s)</span><span class="status-badge st-ok">2 success</span>  </div>
+  <span class="chevron">&#9660;</span>  <span class="execution-memory-id">Session: user-alice</span>  <div class="execution-meta">    <span class="section-count">1 run(s)</span><span class="status-badge st-ok">1 success</span>  </div>
 </div>
 <div id="g0" class="execution-body">
 <div class="single-exec">
-<div class="exec-summary"><span class="status-dot st-dot-ok"></span><span class="exec-agent">ask</span><span class="dur-badge">110ms</span><span class="exec-time">15:24:18.563 &#8594; 15:24:18.673</span></div>
+<div class="exec-summary"><span class="status-dot st-dot-ok"></span><span class="exec-agent">ask</span><span class="dur-badge">15m 51s</span><span class="exec-time">19:26:30.374 &#8594; 19:42:22.013</span></div>
 <table class="wf-table">
 <thead><tr><th>Agent</th><th>Duration</th><th>Tokens</th><th class="wf-timeline-col">Timeline</th><th>Input</th><th>Output</th></tr></thead>
 <tbody>
-<tr><td><div class="wf-agent"><span class="topology-badge sm seq">Sequence</span> ask</div></td><td class="wf-dur">110ms</td><td class="wf-dur"></td><td><div class="wf-bar-track"><div class="wf-bar bar-seq" style="left:0.0%;width:100.0%;" title="ask: 110ms"></div></div></td><td class="wf-io"><span class="tt-trigger">{question=I broke my leg while hiking, what should I do?}</span></td><td class="wf-io"><span class="tt-trigger">Seek immediate medical attention. Immobilize the leg and call emergency services...<span class="tt-content">Seek immediate medical attention. Immobilize the leg and call emergency services.</span></span></td></tr>
-<tr><td><div class="wf-agent"><span class="wf-indent"></span><span class="wf-connector">&#x2514;</span><span class="topology-badge sm ai">AI</span> classify</div></td><td class="wf-dur">40ms</td><td class="wf-dur"></td><td><div class="wf-bar-track"><div class="wf-bar bar-ai" style="left:5.5%;width:36.4%;" title="classify: 40ms"></div></div></td><td class="wf-io"><span class="tt-trigger">{question=I broke my leg while hiking, what should I do?}</span></td><td class="wf-io"><span class="tt-trigger">MEDICAL</span></td></tr>
-<tr><td><div class="wf-agent"><span class="wf-indent"></span><span class="wf-connector">&#x2514;</span><span class="topology-badge sm rtr">Router</span> router</div></td><td class="wf-dur">61ms</td><td class="wf-dur"></td><td><div class="wf-bar-track"><div class="wf-bar bar-rtr" style="left:42.7%;width:55.5%;" title="router: 61ms"></div></div></td><td class="wf-io"><span class="tt-trigger">{category=MEDICAL}</span></td><td class="wf-io"><span class="tt-trigger">Seek immediate medical attention. Immobilize the leg and call emergency services...<span class="tt-content">Seek immediate medical attention. Immobilize the leg and call emergency services.</span></span></td></tr>
-<tr><td><div class="wf-agent"><span class="wf-indent"></span><span class="wf-indent"></span><span class="wf-connector">&#x2514;</span><span class="topology-badge sm ai">AI</span> medical</div></td><td class="wf-dur">55ms</td><td class="wf-dur"></td><td><div class="wf-bar-track"><div class="wf-bar bar-ai" style="left:45.5%;width:50.0%;" title="medical: 55ms"></div></div></td><td class="wf-io"><span class="tt-trigger">{question=I broke my leg while hiking, what should I do?}</span></td><td class="wf-io"><span class="tt-trigger">Seek immediate medical attention. Immobilize the leg and call emergency services...<span class="tt-content">Seek immediate medical attention. Immobilize the leg and call emergency services.</span></span></td></tr>
-</tbody></table>
-</div>
-<div class="single-exec">
-<div class="exec-summary"><span class="status-dot st-dot-ok"></span><span class="exec-agent">ask</span><span class="dur-badge">182ms</span><span class="exec-time">15:24:18.786 &#8594; 15:24:18.968</span></div>
-<table class="wf-table">
-<thead><tr><th>Agent</th><th>Duration</th><th>Tokens</th><th class="wf-timeline-col">Timeline</th><th>Input</th><th>Output</th></tr></thead>
-<tbody>
-<tr><td><div class="wf-agent"><span class="topology-badge sm seq">Sequence</span> ask</div></td><td class="wf-dur">182ms</td><td class="wf-dur"></td><td><div class="wf-bar-track"><div class="wf-bar bar-seq" style="left:0.0%;width:100.0%;" title="ask: 182ms"></div></div></td><td class="wf-io"><span class="tt-trigger">{question=Can I sue my neighbor for the hiking trail accident?}</span></td><td class="wf-io"><span class="tt-trigger">Given the property ownership and duty of care, you likely have grounds for a neg...<span class="tt-content">Given the property ownership and duty of care, you likely have grounds for a negligence claim.</span></span></td></tr>
-<tr><td><div class="wf-agent"><span class="wf-indent"></span><span class="wf-connector">&#x2514;</span><span class="topology-badge sm ai">AI</span> classify</div></td><td class="wf-dur">35ms</td><td class="wf-dur"></td><td><div class="wf-bar-track"><div class="wf-bar bar-ai" style="left:3.3%;width:19.2%;" title="classify: 35ms"></div></div></td><td class="wf-io"><span class="tt-trigger">{question=Can I sue my neighbor for the hiking trail accident?}</span></td><td class="wf-io"><span class="tt-trigger">LEGAL</span></td></tr>
-<tr><td><div class="wf-agent"><span class="wf-indent"></span><span class="wf-connector">&#x2514;</span><span class="topology-badge sm rtr">Router</span> router</div></td><td class="wf-dur">139ms</td><td class="wf-dur"></td><td><div class="wf-bar-track"><div class="wf-bar bar-rtr" style="left:22.5%;width:76.4%;" title="router: 139ms"></div></div></td><td class="wf-io"><span class="tt-trigger">{category=LEGAL}</span></td><td class="wf-io"><span class="tt-trigger">Given the property ownership and duty of care, you likely have grounds for a neg...<span class="tt-content">Given the property ownership and duty of care, you likely have grounds for a negligence claim.</span></span></td></tr>
-<tr><td><div class="wf-agent"><span class="wf-indent"></span><span class="wf-indent"></span><span class="wf-connector">&#x2514;</span><span class="topology-badge sm loop">Loop</span> legalRefine</div></td><td class="wf-dur">134ms</td><td class="wf-dur"></td><td><div class="wf-bar-track"><div class="wf-bar bar-loop" style="left:24.7%;width:73.6%;" title="legalRefine: 134ms"></div></div></td><td class="wf-io"><span class="tt-trigger">{question=Can I sue my neighbor for the hiking trail accident?}</span></td><td class="wf-io"><span class="tt-trigger">Given the property ownership and duty of care, you likely have grounds for a neg...<span class="tt-content">Given the property ownership and duty of care, you likely have grounds for a negligence claim.</span></span></td></tr>
-<tr><td><div class="wf-agent"><span class="wf-indent"></span><span class="wf-indent"></span><span class="wf-indent"></span><span class="wf-connector">&#x2514;</span><span class="topology-badge sm ai">AI</span> writer <span class="iter-tag">iter 0</span></div></td><td class="wf-dur">42ms</td><td class="wf-dur"></td><td><div class="wf-bar-track"><div class="wf-bar bar-ai" style="left:25.8%;width:23.1%;" title="writer: 42ms"></div></div></td><td class="wf-io"><span class="tt-trigger">{question=Can I sue my neighbor for the hiking trail accident?}</span></td><td class="wf-io"><span class="tt-trigger">You may have a negligence claim...</span></td></tr>
-<tr><td><div class="wf-agent"><span class="wf-indent"></span><span class="wf-indent"></span><span class="wf-indent"></span><span class="wf-connector">&#x2514;</span><span class="topology-badge sm ai">AI</span> scorer <span class="iter-tag">iter 0</span></div></td><td class="wf-dur">21ms</td><td class="wf-dur"></td><td><div class="wf-bar-track"><div class="wf-bar bar-ai" style="left:49.5%;width:11.5%;" title="scorer: 21ms"></div></div></td><td class="wf-io"><span class="tt-trigger">{response=You may have a negligence claim...}</span></td><td class="wf-io"><span class="tt-trigger">0.6</span></td></tr>
-<tr><td><div class="wf-agent"><span class="wf-indent"></span><span class="wf-indent"></span><span class="wf-indent"></span><span class="wf-connector">&#x2514;</span><span class="topology-badge sm ai">AI</span> writer <span class="iter-tag">iter 1</span></div></td><td class="wf-dur">41ms</td><td class="wf-dur"></td><td><div class="wf-bar-track"><div class="wf-bar bar-ai" style="left:61.5%;width:22.5%;" title="writer: 41ms"></div></div></td><td class="wf-io"><span class="tt-trigger">{question=Can I sue my neighbor for the hiking trail accident?}</span></td><td class="wf-io"><span class="tt-trigger">Given the property ownership and duty of care...</span></td></tr>
-<tr><td><div class="wf-agent"><span class="wf-indent"></span><span class="wf-indent"></span><span class="wf-indent"></span><span class="wf-connector">&#x2514;</span><span class="topology-badge sm ai">AI</span> scorer <span class="iter-tag">iter 1</span></div></td><td class="wf-dur">23ms</td><td class="wf-dur"></td><td><div class="wf-bar-track"><div class="wf-bar bar-ai" style="left:84.6%;width:12.6%;" title="scorer: 23ms"></div></div></td><td class="wf-io"><span class="tt-trigger">{response=Given the property ownership and duty of care...}</span></td><td class="wf-io"><span class="tt-trigger">0.85</span></td></tr>
-</tbody></table>
-</div>
-</div>
-</div>
-<div class="execution-group">
-<div class="execution-header collapsed" onclick="toggle('g1')">
-  <span class="chevron">&#9660;</span>  <span class="execution-memory-id">Session: user-bob</span>  <div class="execution-meta">    <span class="section-count">1 run(s)</span><span class="status-badge st-ok">1 success</span>  </div>
-</div>
-<div id="g1" class="execution-body collapsed">
-<div class="single-exec">
-<div class="exec-summary"><span class="status-dot st-dot-ok"></span><span class="exec-agent">ask</span><span class="dur-badge">112ms</span><span class="exec-time">15:24:18.674 &#8594; 15:24:18.786</span></div>
-<table class="wf-table">
-<thead><tr><th>Agent</th><th>Duration</th><th>Tokens</th><th class="wf-timeline-col">Timeline</th><th>Input</th><th>Output</th></tr></thead>
-<tbody>
-<tr><td><div class="wf-agent"><span class="topology-badge sm seq">Sequence</span> ask</div></td><td class="wf-dur">112ms</td><td class="wf-dur"></td><td><div class="wf-bar-track"><div class="wf-bar bar-seq" style="left:0.0%;width:100.0%;" title="ask: 112ms"></div></div></td><td class="wf-io"><span class="tt-trigger">{question=My laptop screen flickers after a software update, how to fi...}</span></td><td class="wf-io"><span class="tt-trigger">Roll back the display driver via Device Manager. If that fails, boot in Safe Mod...<span class="tt-content">Roll back the display driver via Device Manager. If that fails, boot in Safe Mode.</span></span></td></tr>
-<tr><td><div class="wf-agent"><span class="wf-indent"></span><span class="wf-connector">&#x2514;</span><span class="topology-badge sm ai">AI</span> classify</div></td><td class="wf-dur">39ms</td><td class="wf-dur"></td><td><div class="wf-bar-track"><div class="wf-bar bar-ai" style="left:5.4%;width:34.8%;" title="classify: 39ms"></div></div></td><td class="wf-io"><span class="tt-trigger">{question=My laptop screen flickers after a software update, how to fi...}</span></td><td class="wf-io"><span class="tt-trigger">TECHNICAL</span></td></tr>
-<tr><td><div class="wf-agent"><span class="wf-indent"></span><span class="wf-connector">&#x2514;</span><span class="topology-badge sm rtr">Router</span> router</div></td><td class="wf-dur">64ms</td><td class="wf-dur"></td><td><div class="wf-bar-track"><div class="wf-bar bar-rtr" style="left:41.1%;width:57.1%;" title="router: 64ms"></div></div></td><td class="wf-io"><span class="tt-trigger">{category=TECHNICAL}</span></td><td class="wf-io"><span class="tt-trigger">Roll back the display driver via Device Manager. If that fails, boot in Safe Mod...<span class="tt-content">Roll back the display driver via Device Manager. If that fails, boot in Safe Mode.</span></span></td></tr>
-<tr><td><div class="wf-agent"><span class="wf-indent"></span><span class="wf-indent"></span><span class="wf-connector">&#x2514;</span><span class="topology-badge sm ai">AI</span> technical</div></td><td class="wf-dur">58ms</td><td class="wf-dur"></td><td><div class="wf-bar-track"><div class="wf-bar bar-ai" style="left:43.8%;width:51.8%;" title="technical: 58ms"></div></div></td><td class="wf-io"><span class="tt-trigger">{question=My laptop screen flickers after a software update, how to fi...}</span></td><td class="wf-io"><span class="tt-trigger">Roll back the display driver via Device Manager. If that fails, boot in Safe Mod...<span class="tt-content">Roll back the display driver via Device Manager. If that fails, boot in Safe Mode.</span></span></td></tr>
+<tr><td><div class="wf-agent"><span class="topology-badge sm seq">Sequence</span> ask</div></td><td class="wf-dur">15m 51s</td><td class="wf-dur"></td><td><div class="wf-bar-track"><div class="wf-bar bar-seq" style="left:0.0%;width:100.0%;" title="ask: 15m 51s"></div></div></td><td class="wf-io"><span class="tt-trigger">{question=我能否就此次徒步步道事故起诉队友？}</span></td><td class="wf-io"><span class="tt-trigger">结合产权归属及安全注意义务，你大概率有理由提起过失侵权诉讼。</span></td></tr>
+<tr><td><div class="wf-agent"><span class="wf-indent"></span><span class="wf-connector">&#x2514;</span><span class="topology-badge sm ai">AI</span> 分类</div></td><td class="wf-dur">8m 34s</td><td class="wf-dur"></td><td><div class="wf-bar-track"><div class="wf-bar bar-ai" style="left:10.6%;width:54.0%;" title="分类: 8m 34s"></div></div></td><td class="wf-io"><span class="tt-trigger">{question=我能否就此次徒步步道事故起诉队友？}</span></td><td class="wf-io"><span class="tt-trigger">LEGAL</span></td></tr>
+<tr><td><div class="wf-agent"><span class="wf-indent"></span><span class="wf-connector">&#x2514;</span><span class="topology-badge sm rtr">Router</span> 路由</div></td><td class="wf-dur">5m 12s</td><td class="wf-dur"></td><td><div class="wf-bar-track"><div class="wf-bar bar-rtr" style="left:66.0%;width:32.8%;" title="路由: 5m 12s"></div></div></td><td class="wf-io"><span class="tt-trigger">{category=LEGAL}</span></td><td class="wf-io"><span class="tt-trigger">结合产权归属及安全注意义务，你大概率有理由提起过失侵权诉讼。</span></td></tr>
+<tr><td><div class="wf-agent"><span class="wf-indent"></span><span class="wf-indent"></span><span class="wf-connector">&#x2514;</span><span class="topology-badge sm loop">Loop</span> 法律优化</div></td><td class="wf-dur">4m 32s</td><td class="wf-dur"></td><td><div class="wf-bar-track"><div class="wf-bar bar-loop" style="left:68.8%;width:28.7%;" title="法律优化: 4m 32s"></div></div></td><td class="wf-io"><span class="tt-trigger">{question=我能否就此次徒步步道事故起诉队友？}</span></td><td class="wf-io"><span class="tt-trigger">结合产权归属及安全注意义务，你大概率有理由提起过失侵权诉讼。</span></td></tr>
+<tr><td><div class="wf-agent"><span class="wf-indent"></span><span class="wf-indent"></span><span class="wf-indent"></span><span class="wf-connector">&#x2514;</span><span class="topology-badge sm ai">AI</span> 作家 <span class="iter-tag">iter 0</span></div></td><td class="wf-dur">36.8s</td><td class="wf-dur"></td><td><div class="wf-bar-track"><div class="wf-bar bar-ai" style="left:72.9%;width:3.9%;" title="作家: 36.8s"></div></div></td><td class="wf-io"><span class="tt-trigger">{question=我能否就此次徒步步道事故起诉队友？}</span></td><td class="wf-io"><span class="tt-trigger">你可提起过失侵权诉讼……</span></td></tr>
+<tr><td><div class="wf-agent"><span class="wf-indent"></span><span class="wf-indent"></span><span class="wf-indent"></span><span class="wf-connector">&#x2514;</span><span class="topology-badge sm ai">AI</span> 评分器 <span class="iter-tag">iter 0</span></div></td><td class="wf-dur">1m 4s</td><td class="wf-dur"></td><td><div class="wf-bar-track"><div class="wf-bar bar-ai" style="left:78.0%;width:6.8%;" title="评分器: 1m 4s"></div></div></td><td class="wf-io"><span class="tt-trigger">{response=你可提起过失侵权诉讼……}</span></td><td class="wf-io"><span class="tt-trigger">0.6</span></td></tr>
+<tr><td><div class="wf-agent"><span class="wf-indent"></span><span class="wf-indent"></span><span class="wf-indent"></span><span class="wf-connector">&#x2514;</span><span class="topology-badge sm ai">AI</span> 作家 <span class="iter-tag">iter 1</span></div></td><td class="wf-dur">44.1s</td><td class="wf-dur"></td><td><div class="wf-bar-track"><div class="wf-bar bar-ai" style="left:85.8%;width:4.6%;" title="作家: 44.1s"></div></div></td><td class="wf-io"><span class="tt-trigger">{question=我能否就此次徒步步道事故起诉队友？}</span></td><td class="wf-io"><span class="tt-trigger">结合产权归属与安全注意义务……</span></td></tr>
+<tr><td><div class="wf-agent"><span class="wf-indent"></span><span class="wf-indent"></span><span class="wf-indent"></span><span class="wf-connector">&#x2514;</span><span class="topology-badge sm ai">AI</span> 评分器 <span class="iter-tag">iter 1</span></div></td><td class="wf-dur">43.4s</td><td class="wf-dur"></td><td><div class="wf-bar-track"><div class="wf-bar bar-ai" style="left:91.7%;width:4.6%;" title="评分器: 43.4s"></div></div></td><td class="wf-io"><span class="tt-trigger">{response=结合产权归属与安全注意义务……}</span></td><td class="wf-io"><span class="tt-trigger">0.85</span></td></tr>
 </tbody></table>
 </div>
 </div>
 </div>
 </section>
-<footer class="footer">Generated by LangChain4j at 2026-05-12 15:24:18</footer>
+<footer class="footer">Generated by LangChain4j at 2026-06-09 19:42:48</footer>
 </main>
 <script>
 function toggle(id) {

@@ -35,7 +35,7 @@ public class SingleAgentIT {
     @Test
     public void invoke_standalone_agent_with_tools_and_listeners() {
         ConsoleAgentListener listener = new ConsoleAgentListener("[agent-02-standalone]");
-        String topic = "dragons and wizards";
+        String topic = "龙与巫师";
 
         ToolProvider demoTools = buildDemoTools();
 
@@ -58,9 +58,9 @@ public class SingleAgentIT {
 
         ToolSpecification spec = ToolSpecification.builder()
                 .name("demo_hint")
-                .description("Give a short story opening hint based on topic")
+                .description("根据主题撰写一段短篇故事开篇提示")
                 .parameters(JsonObjectSchema.builder()
-                        .addStringProperty("topic", "Optional user topic")
+                        .addStringProperty("topic", "可选用户主题")
                         .build())
                 .build();
 
@@ -74,7 +74,7 @@ public class SingleAgentIT {
                 // demo only
             }
             String t = (topic == null || topic.isBlank()) ? "your topic" : topic.trim();
-            return "Opening hint: when you stare at \"" + t + "\", the story ignites.";
+            return "开篇提示：当你凝望\"" + t + "\"，故事便就此启程。";
         };
 
         return ignored -> ToolProviderResult.builder().add(spec, executor).build();
@@ -136,13 +136,13 @@ public class SingleAgentIT {
     public interface TextCreativeWriter {
 
         @UserMessage("""
-            You are a creative fiction writer.
-            Blend the inspiration naturally into the story and output only the final story content.
-            Write a short story draft around the given topic in no more than 3 sentences.
-            Return only the story text, without any explanation, title, or extra prefix/suffix.
-            The topic is: {{topic}}.
+                你是一名创意小说作者。
+                将灵感自然融入故事中，仅输出最终故事内容。
+                围绕指定主题撰写短篇故事初稿，内容不超过三句话。
+                仅返回故事文本，无需附加说明、标题及多余前后缀。
+                主题：{{topic}}。
             """)
-        @Agent(outputKey = "story", description = "Generates a story based on topic (non-streaming)")
+        @Agent(outputKey = "story", description = "根据主题生成故事（非流式输出）")
         String generateStoryText(@V("topic") String topic);
     }
 }

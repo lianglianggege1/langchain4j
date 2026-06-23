@@ -8,7 +8,6 @@ import static java.lang.annotation.RetentionPolicy.RUNTIME;
 
 /**
  * Marks a method as a supplier of the planner for a planner based agent.
- * 将一种方法标记为基于计划器的代理的计划器供应商。
  * <p>
  * Example:
  * <pre>
@@ -26,7 +25,32 @@ import static java.lang.annotation.RetentionPolicy.RUNTIME;
  *
  *         @PlannerSupplier
  *         static Planner planner() {
- *             return new SequentialPlanner(); //顺序计划器
+ *             return new SequentialPlanner();
+ *         }
+ *     }
+ * }
+ * </pre>
+ */
+/**
+ * 将方法标记为**基于规划器的智能体**的规划器提供器。
+ * <p>
+ * 示例：
+ * <pre>
+ * {@code
+ *     public interface PlannerBasedStoryCreator {
+ *
+ *         @PlannerAgent(
+ *                 outputKey = "story",
+ *                 subAgents = {
+ *                     @SubAgent(type = CreativeWriter.class, outputKey = "story"),
+ *                     @SubAgent(type = AudienceEditor.class, outputKey = "story"),
+ *                     @SubAgent(type = StyleEditor.class, outputKey = "story")
+ *                 })
+ *         String write(@V("topic") String topic, @V("style") String style, @V("audience") String audience);
+ *
+ *         @PlannerSupplier
+ *         static Planner planner() {
+ *             return new SequentialPlanner(); // 顺序规划器
  *         }
  *     }
  * }

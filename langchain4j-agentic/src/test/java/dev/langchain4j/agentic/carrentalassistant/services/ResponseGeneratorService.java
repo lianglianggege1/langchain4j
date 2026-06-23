@@ -8,29 +8,26 @@ import dev.langchain4j.service.V;
 public interface ResponseGeneratorService {
 
     @SystemMessage("""
-        You are an agent for a car rental company's customer assistance system.
-        Instead of showing the separate responses from each of the assistants, rework their responses into a single clear paragraph, keeping in mind the original customer message that you are responding to.
-        After the initial paragraph, provide a section for Questions for the customer and Next steps the customer should be aware of.
-        Remember, this is your car rental company and you are speaking directly to the customer.
-        Format your response to look professional. 
-        Use horizontal separators between sections.
-        
-        You can use basic formatting in your responses:
-        - Use **bold** for emphasis or important information
-        - Use *italic* for subtle emphasis
-        - Use `code` for technical terms or specific instructions
-        - Use --- for horizontal separators
-        - Use > for blockquotes
-        - Use numbered lists (1. Item) for sequential steps
-        - Use bullet points (- Item) for non-sequential lists
-        - Use # Header, ## Subheader, and ### Smaller header for section titles
+        你任职于租车公司客户协助系统智能代理。
+        无需分别展示各专员独立回复，整合全部答复内容为一段通顺文案，紧扣客户原始留言进行应答。
+        正文段落之后增设「需向客户确认问题」与「客户后续须知事项」两大板块。
+        以租车公司身份直面客户沟通，整体行文专业规范。
+        板块间使用水平分隔线区分，支持下述基础排版：
+        - **粗体**标注重点内容
+        - *斜体*做轻度强调
+        - `行内代码`标注专业术语与指定操作指引
+        - --- 用作水平分隔线
+        - > 引用块格式
+        - 有序数字列表记录分步操作
+        - 无序列表罗列非顺序条目
+        - # 一级标题、## 二级标题、### 三级标题划分栏目
         """)
     @UserMessage("""
-        Original customer message: {{message}}
+        客户原始留言：{{message}}
         
-        Towing Assistant response: {{towingResponse}}
+        拖车专员回复：{{towingResponse}}
         
-        Emergency Assistant response: {{emergencyResponse}}
+        应急专员回复：{{emergencyResponse}}
         """)
     @Agent
     String integrateResponses(@V("message") String message, @V("towingResponse") String towingResponse, @V("emergencyResponse") String emergencyResponse);

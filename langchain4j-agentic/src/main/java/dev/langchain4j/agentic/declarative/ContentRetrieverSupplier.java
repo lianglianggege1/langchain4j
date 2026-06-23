@@ -9,15 +9,32 @@ import static java.lang.annotation.RetentionPolicy.RUNTIME;
 
 /**
  * Marks a method as a supplier of content retriever that an agent can utilize during its operation.
- * 将方法标记为代理在操作过程中可以使用的内容检索器的供应商。
  * The annotated method must be static, with no arguments, and return an instance of {@link ContentRetriever}.
- * 将带注释的方法必须是静态的，没有参数，并返回{@link ContentRetriever}的实例。
  * <p>
  * Example:
  * <pre>
  * {@code
  *     public interface ResearchAgent {
  *         @Agent("A research agent")
+ *         String research(@V("topic") String topic);
+ *
+ *         @ContentRetrieverSupplier
+ *         static ContentRetriever contentRetriever() {
+ *             return ContentRetrievers.from(yourVectorStore);
+ *         }
+ *     }
+ * }
+ * </pre>
+ */
+/**
+ * 将方法标记为内容检索器提供器，智能体运行过程中可使用该检索器。
+ * 被该注解修饰的方法必须为无参静态方法，且返回 {@link ContentRetriever} 实例。
+ * <p>
+ * 示例：
+ * <pre>
+ * {@code
+ *     public interface ResearchAgent {
+ *         @Agent("调研智能体")
  *         String research(@V("topic") String topic);
  *
  *         @ContentRetrieverSupplier

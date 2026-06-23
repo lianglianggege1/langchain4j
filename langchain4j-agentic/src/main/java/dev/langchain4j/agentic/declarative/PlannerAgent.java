@@ -30,6 +30,27 @@ import java.lang.annotation.Target;
  * }
  * </pre>
  */
+/**
+ * 将方法标记为基于自定义规划器的智能体定义。
+ * <p>
+ * 示例：
+ * <pre>
+ * {@code
+ *     public interface PlannerBasedStoryCreator {
+ *
+ *         @PlannerAgent( outputKey = "story",
+ *                        subAgents = { CreativeWriter.class, AudienceEditor.class, StyleEditor.class})
+ *         String write(@V("topic") String topic, @V("style") String style, @V("audience") String audience);
+ *
+ *         @PlannerSupplier
+ *         static Planner planner() {
+ *             // 顺序规划器
+ *             return new SequentialPlanner();
+ *         }
+ *     }
+ * }
+ * </pre>
+ */
 @Retention(RUNTIME)
 @Target({METHOD})
 public @interface PlannerAgent {

@@ -87,6 +87,7 @@ import java.util.concurrent.atomic.AtomicReference;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.condition.EnabledIfEnvironmentVariable;
 
+// 声明式智能体
 @EnabledIfEnvironmentVariable(named = "OPENAI_API_KEY", matches = ".+")
 @EnabledIfEnvironmentVariable(named = "GOOGLE_AI_GEMINI_API_KEY", matches = ".+")
 public class DeclarativeAgentIT {
@@ -989,4 +990,6 @@ public class DeclarativeAgentIT {
         assertThat(assertThrows(AgenticSystemConfigurationException.class, () ->
                 AgenticServices.createAgenticSystem(BatchHoroscopeAgentWith2Lists.class, baseModel())));
     }
+
+    // 没有完全理解
 }

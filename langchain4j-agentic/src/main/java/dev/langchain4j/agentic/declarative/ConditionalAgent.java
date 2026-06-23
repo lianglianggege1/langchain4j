@@ -44,6 +44,39 @@ import java.lang.annotation.Target;
  * }
  * </pre>
  */
+/**
+ * 将方法标记为条件智能体定义。该注解一般用于依据激活条件的判定结果，
+ * 将智能体工作流路由至一个或多个子智能体。
+ * 每个子智能体均配备专属激活断言，该断言为被 {@link ActivationCondition} 注解修饰的静态方法，
+ * 用以判定当前子智能体的执行时机。
+ * <p>
+ * 示例：
+ * <pre>
+ * {@code
+ *     public interface ExpertsAgent {
+ *
+ *         @ConditionalAgent(outputKey = "response",
+ *                           subAgents = { MedicalExpert.class, TechnicalExpert.class, LegalExpert.class } )
+ *         String askExpert(@V("request") String request);
+ *
+ *         @ActivationCondition(MedicalExpert.class)
+ *         static boolean activateMedical(@V("category") RequestCategory category) {
+ *             return category == RequestCategory.MEDICAL;
+ *         }
+ *
+ *         @ActivationCondition(TechnicalExpert.class)
+ *         static boolean activateTechnical(@V("category") RequestCategory category) {
+ *             return category == RequestCategory.TECHNICAL;
+ *         }
+ *
+ *         @ActivationCondition(LegalExpert.class)
+ *         static boolean activateLegal(AgenticScope agenticScope) {
+ *             return agenticScope.readState("category", RequestCategory.UNKNOWN) == RequestCategory.LEGAL;
+ *         }
+ *     }
+ * }
+ * </pre>
+ */
 @Retention(RUNTIME)
 @Target({METHOD})
 public @interface ConditionalAgent {
@@ -73,12 +106,17 @@ public @interface ConditionalAgent {
 
     /**
      * Strongly typed key of the output variable that will be used to store the result of the agent's invocation.
-     * 输出变量的强类型键，将用于存储代理调用的结果。
      * It enforces type safety when retrieving the output from the agent's state and can be used in alternative
      * to the {@code outputKey()} attribute. Note that only one of those two attributes can be used at a time.
-     * 它在从代理的状态检索输出时强制执行类型安全，可以替代outputKey（）属性使用。请注意，一次只能使用这两个属性中的一个。
      *
      * @return class representing the typed output variable.
+     */
+    /**
+     * 用于存储智能体调用结果的输出变量强类型键。
+     * 从智能体状态中读取输出时可保证类型安全，可替代 {@code outputKey()} 属性使用。
+     * 注意：同一时刻仅能使用二者之一。
+     *
+     * @return 表示强类型输出变量的类对象
      */
     Class<? extends TypedKey<?>> typedOutputKey() default Agent.NoTypedKey.class;
 

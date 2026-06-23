@@ -8,9 +8,30 @@ import java.lang.annotation.Target;
 
 /**
  * Marks a method as a definition of the request that will be sent to the supervisor.
- * 将方法标记为将发送给主管的请求的定义。
  * <p>
  * Example:
+ * <pre>
+ * {@code
+ *     public interface SupervisorStoryCreator {
+ *
+ *         @SupervisorAgent(outputKey = "story", subAgents = {
+ *                 @SubAgent(type = CreativeWriter.class, outputKey = "story"),
+ *                 @SubAgent(type = StyleReviewLoopAgent.class, outputKey = "story")
+ *         })
+ *         String write(@V("topic") String topic, @V("style") String style);
+ *
+ *         @SupervisorRequest
+ *         static String request(@V("topic") String topic, @V("style") String style) {
+ *             return "Write a story about " + topic + " in " + style + " style";
+ *         }
+ *     }
+ * }
+ * </pre>
+ */
+/**
+ * 将方法标记为发送给管理智能体的请求定义。
+ * <p>
+ * 示例：
  * <pre>
  * {@code
  *     public interface SupervisorStoryCreator {

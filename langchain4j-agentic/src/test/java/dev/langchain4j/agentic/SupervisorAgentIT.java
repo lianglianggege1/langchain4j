@@ -935,6 +935,7 @@ public class SupervisorAgentIT {
         String result = loanAgent.invoke("John Doe submitted a loan application of 80000. He is 30 years old. Evaluate his application.");
         assertThat(result).containsIgnoringCase("rejected");
     }
+    // 每执行一步都需要规划agent决定调用哪个agent或者done
 
     static class PlannerModelReturningDoneWithoutResponse implements ChatModel {
 

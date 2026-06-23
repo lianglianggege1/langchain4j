@@ -10,9 +10,25 @@ import java.lang.annotation.Target;
 /**
  * Marks a method as a definition of a parallel multi-instance agent, used to orchestrate the agentic workflow
  * by creating multiple instances of the same sub-agent, one for each item in a collection read from the agentic scope.
- * 将方法标记为并行多实例代理的定义，用于通过创建同一子代理的多个实例来编排代理工作流，每个实例对应从代理作用域读取的集合中的每个项目。
  * <p>
  * Example:
+ * <pre>
+ * {@code
+ *     public interface BatchProcessorAgent {
+ *
+ *         @ParallelMapperAgent( outputKey = "results",
+ *                 subAgent = ItemProcessor.class,
+ *                 itemsProvider = "items" )
+ *         List<Result> process(@V("items") List<Item> items);
+ *     }
+ * }
+ * </pre>
+ */
+/**
+ * 将方法标记为并行多实例智能体定义，用于编排智能体工作流。
+ * 会为从智能体作用域读取的集合中的每一项创建同一个子智能体的多个实例，并并行执行。
+ * <p>
+ * 示例：
  * <pre>
  * {@code
  *     public interface BatchProcessorAgent {

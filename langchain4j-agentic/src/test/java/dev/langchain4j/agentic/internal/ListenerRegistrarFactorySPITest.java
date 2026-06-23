@@ -31,6 +31,14 @@ import org.junit.jupiter.api.Test;
  * are listening on. The sub-agent listener receives the event with null {@code managedParameters()}, causing NPE
  * at {@code AgentInvocationHandler.invoke()} line 82.
  */
+/**
+ * 复现了 GitHub 上 langchain4j 仓库 #5103 号问题中上报的空指针异常。
+ *
+ * 当通过服务提供者接口注册 AiServiceListenerRegistrarFactory 并返回共享的单例注册器时，
+ * 管理者内部的 PlannerAgent 会经由该注册器分发事件，而各类子代理的代理实例正监听此注册器。
+ * 子代理监听器接收到的事件中，managedParameters() 方法返回值为 null，
+ * 进而在 AgentInvocationHandler.invoke 方法的第82行引发空指针异常。
+ */
 class ListenerRegistrarFactorySPITest {
 
     private static final String SPI_SERVICE_FILE =

@@ -10,19 +10,22 @@ import dev.langchain4j.service.V;
 /**
  * AI service interface for the fire emergency assistant.
  */
+/**
+ * 消防应急助手的AI服务接口
+ */
 public interface EmergencyExtractorService {
-    
+
     @SystemMessage("""
-        You are an emergencies handler.
-        Your role is to:
-        1. Analyze customer messages to identify emergencies
-        2. Determine the type of emergency among police, medical and fire. There could be multiple emergencies in one message.
-        3. Extract relevant emergency information and put them into the corresponding field in the Emergencies object.
-        4. If no emergency is detected for a specific emergency type leave the corresponding field blank.
+        你是一名紧急事件处置人员。
+        你的工作职责：
+        1. 分析用户消息，识别紧急险情
+        2. 判定险情类型：公安警情、医疗急救、火灾火警，单条消息可包含多种险情
+        3. 提取险情相关信息，填入应急事件对象的对应字段
+        4. 某类险情未发生时，对应字段置空
         """)
     @UserMessage("""
-        I'm the customer: {{customerInfo}}
-        My message is: {{message}}
+        我是求助用户：{{customerInfo}}
+        我的留言内容：{{message}}
         """)
     @Agent
     Emergencies extractEmergencies(@V("message") String message, @V("customerInfo") CustomerInfo customerInfo);

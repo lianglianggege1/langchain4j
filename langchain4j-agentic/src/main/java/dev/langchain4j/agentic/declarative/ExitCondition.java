@@ -8,9 +8,7 @@ import java.lang.annotation.Target;
 
 /**
  * Marks a method as an exit predicate for a loop in a loop-based agent.
- * 将方法标记为基于循环的代理中循环的退出谓词。
  * The method must be static and return a boolean indicating whether the loop should exit.
- * 该方法必须是静态的，并返回一个布尔值，指示循环是否应该退出。
  * <p>
  * Example:
  * <pre>
@@ -35,30 +33,65 @@ import java.lang.annotation.Target;
  * }
  * </pre>
  */
+/**
+ * 将方法标记为循环型智能体的循环退出断言。
+ * 该方法必须为静态方法，返回布尔值，用于判定是否退出循环。
+ * <p>
+ * 示例：
+ * <pre>
+ * {@code
+ *      public interface StyleReviewLoopAgentWithCounter {
+ *
+ *         @LoopAgent(
+ *                 description = "审阅指定故事，确保其符合既定风格",
+ *                 outputKey = "story", maxIterations = 5,
+ *                 subAgents = {
+ *                     @SubAgent(type = StyleScorer.class, outputKey = "score"),
+ *                     @SubAgent(type = StyleEditor.class, outputKey = "story")
+ *             }
+ *         )
+ *         String write(@V("story") String story);
+ *
+ *         @ExitCondition(testExitAtLoopEnd = true, description = "得分大于0.8")
+ *         static boolean exit(@V("score") double score) {
+ *             return score >= 0.8;
+ *         }
+ *     }
+ * }
+ * </pre>
+ */
 @Retention(RUNTIME)
 @Target({METHOD})
 public @interface ExitCondition {
 
     /**
      * If true, the exit predicate will be tested only at the end of each loop iteration.
-     * 如果为真，则仅在每次循环迭代结束时测试退出谓词。
      * If false, the exit predicate will be tested after each sub-agent invocation.
-     * 如果为false，则退出谓词将在每次子代理调用后进行测试。
      * Default is false.
-     * 默认为false。
      *
      * @return whether to test the exit predicate at the end of the loop iteration.
      * @return 是否在循环迭代结束时测试退出谓词。
+     */
+    /**
+     * 若为 true，仅在每次循环迭代结束时校验退出断言。
+     * 若为 false，每个子智能体调用完成后都会校验退出断言。
+     * 默认值为 false。
+     *
+     * @return 是否在循环迭代结束时执行退出断言校验
      */
     boolean testExitAtLoopEnd() default false;
 
     /**
      * Description of the exit condition.
-     * 退出条件的描述。
      * It should be clear and descriptive to allow understanding the purpose of the condition.
-     * 它应该是清晰和描述性的，以便理解条件的目的。
      *
      * @return description of the exit condition.
+     */
+    /**
+     * 退出条件的描述信息。
+     * 应清晰、详尽，便于理解该条件的作用与目的。
+     *
+     * @return 退出条件的描述
      */
     String description() default "<unknown>";
 }

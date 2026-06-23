@@ -1,0 +1,540 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AgenticSystemTopology 拓扑结构说明</title>
+    <style>
+        :root {
+            --bg: #f6f7fb;
+            --panel: #ffffff;
+            --ink: #1d2533;
+            --muted: #677286;
+            --line: #d8dee9;
+            --blue: #3267c8;
+            --green: #21856b;
+            --amber: #b66b14;
+            --red: #c94848;
+            --violet: #7a57c9;
+            --teal: #16829a;
+            --shadow: 0 12px 30px rgba(29, 37, 51, 0.08);
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
+            color: var(--ink);
+            background:
+                linear-gradient(180deg, #eef3ff 0, rgba(238, 243, 255, 0) 340px),
+                var(--bg);
+        }
+
+        main {
+            width: min(1180px, calc(100% - 32px));
+            margin: 0 auto;
+            padding: 38px 0 56px;
+        }
+
+        header {
+            margin-bottom: 26px;
+        }
+
+        h1 {
+            margin: 0 0 10px;
+            font-size: clamp(28px, 4vw, 46px);
+            line-height: 1.12;
+            letter-spacing: 0;
+        }
+
+        .lead {
+            max-width: 820px;
+            margin: 0;
+            color: var(--muted);
+            font-size: 17px;
+            line-height: 1.75;
+        }
+
+        .enum-strip {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-top: 20px;
+        }
+
+        .enum-pill {
+            border: 1px solid var(--line);
+            background: rgba(255, 255, 255, 0.72);
+            border-radius: 999px;
+            padding: 7px 11px;
+            font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+            font-size: 13px;
+            color: #2f3b52;
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 18px;
+        }
+
+        .card {
+            display: grid;
+            grid-template-columns: minmax(260px, 1fr) minmax(240px, 320px);
+            gap: 18px;
+            min-height: 270px;
+            padding: 20px;
+            border: 1px solid var(--line);
+            border-radius: 8px;
+            background: var(--panel);
+            box-shadow: var(--shadow);
+        }
+
+        .card h2 {
+            margin: 0;
+            font-size: 22px;
+            letter-spacing: 0;
+        }
+
+        .code-name {
+            display: block;
+            margin-top: 5px;
+            color: var(--muted);
+            font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+            font-size: 13px;
+            font-weight: 600;
+        }
+
+        .desc {
+            margin: 15px 0 0;
+            color: #38465c;
+            line-height: 1.7;
+        }
+
+        .meta {
+            display: grid;
+            grid-template-columns: 76px 1fr;
+            gap: 8px 12px;
+            margin-top: 16px;
+            font-size: 14px;
+            line-height: 1.55;
+        }
+
+        .meta dt {
+            color: var(--muted);
+            font-weight: 700;
+        }
+
+        .meta dd {
+            margin: 0;
+            color: #2e3a4d;
+        }
+
+        .diagram {
+            width: 100%;
+            min-height: 230px;
+            border-radius: 8px;
+            background: #f8fafc;
+            border: 1px solid #e4e9f2;
+        }
+
+        .node {
+            fill: #fff;
+            stroke-width: 2;
+        }
+
+        .agent {
+            stroke: var(--blue);
+        }
+
+        .non-ai {
+            stroke: var(--green);
+        }
+
+        .human {
+            stroke: var(--amber);
+        }
+
+        .control {
+            stroke: var(--violet);
+        }
+
+        .danger {
+            stroke: var(--red);
+        }
+
+        .route {
+            stroke: var(--teal);
+        }
+
+        .edge {
+            fill: none;
+            stroke: #8290a5;
+            stroke-width: 2.2;
+            marker-end: url(#arrow);
+        }
+
+        .soft-edge {
+            fill: none;
+            stroke: #9aa7ba;
+            stroke-width: 2;
+            stroke-dasharray: 5 5;
+            marker-end: url(#arrow);
+        }
+
+        .label {
+            fill: #233044;
+            font-size: 13px;
+            font-weight: 700;
+            text-anchor: middle;
+            dominant-baseline: middle;
+        }
+
+        .small {
+            fill: #64748b;
+            font-size: 11px;
+            font-weight: 600;
+            text-anchor: middle;
+            dominant-baseline: middle;
+        }
+
+        .wide {
+            grid-column: 1 / -1;
+        }
+
+        footer {
+            margin-top: 24px;
+            padding: 18px 20px;
+            border: 1px solid var(--line);
+            border-radius: 8px;
+            background: #ffffff;
+            color: var(--muted);
+            line-height: 1.7;
+        }
+
+        code {
+            font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+            color: #244c94;
+        }
+
+        @media (max-width: 980px) {
+            .grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        @media (max-width: 660px) {
+            main {
+                width: min(100% - 20px, 1180px);
+                padding-top: 24px;
+            }
+
+            .card {
+                grid-template-columns: 1fr;
+                padding: 16px;
+            }
+
+            .diagram {
+                min-height: 210px;
+            }
+        }
+    </style>
+</head>
+<body>
+<main>
+    <header>
+        <h1>AgenticSystemTopology 拓扑结构说明</h1>
+        <p class="lead">
+            这些枚举值描述的是一个 agentic system 的组织形态：有的是“节点类型”，有的是“多个节点如何协作”的结构。
+            下面每一块都给出直观图、中文含义和适合使用的场景。
+        </p>
+        <div class="enum-strip" aria-label="enum names">
+            <span class="enum-pill">AI_AGENT</span>
+            <span class="enum-pill">NON_AI_AGENT</span>
+            <span class="enum-pill">HUMAN_IN_THE_LOOP</span>
+            <span class="enum-pill">SEQUENCE</span>
+            <span class="enum-pill">PARALLEL</span>
+            <span class="enum-pill">LOOP</span>
+            <span class="enum-pill">ROUTER</span>
+            <span class="enum-pill">STAR</span>
+        </div>
+    </header>
+
+    <section class="grid">
+        <article class="card">
+            <div>
+                <h2>AI Agent <span class="code-name">AI_AGENT</span></h2>
+                <p class="desc">
+                    一个由大模型驱动的智能节点。它可以理解任务、调用工具、生成回答或做决策。
+                    在图里它通常是工作流中的一个“会思考的处理单元”。
+                </p>
+                <dl class="meta">
+                    <dt>像什么</dt>
+                    <dd>客服助手、信息抽取器、代码审查 agent、规划 agent。</dd>
+                    <dt>特点</dt>
+                    <dd>输出不只是固定规则，可能依赖上下文、提示词和模型推理。</dd>
+                </dl>
+            </div>
+            <svg class="diagram" viewBox="0 0 320 230" role="img" aria-label="AI Agent diagram">
+                <defs>
+                    <marker id="arrow" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto" markerUnits="strokeWidth">
+                        <path d="M0,0 L0,6 L9,3 z" fill="#8290a5"></path>
+                    </marker>
+                </defs>
+                <rect x="92" y="66" width="136" height="84" rx="8" class="node agent"></rect>
+                <circle cx="132" cy="106" r="16" fill="#eef4ff" stroke="#3267c8" stroke-width="2"></circle>
+                <path d="M124 106h16M132 98v16" stroke="#3267c8" stroke-width="2"></path>
+                <text x="172" y="100" class="label">AI Agent</text>
+                <text x="172" y="121" class="small">LLM + tools</text>
+                <path d="M30 108H88" class="edge"></path>
+                <path d="M230 108H288" class="edge"></path>
+                <text x="50" y="90" class="small">input</text>
+                <text x="270" y="90" class="small">answer</text>
+            </svg>
+        </article>
+
+        <article class="card">
+            <div>
+                <h2>Non-AI Agent <span class="code-name">NON_AI_AGENT</span></h2>
+                <p class="desc">
+                    一个不依赖大模型推理的确定性节点。它可以是普通函数、服务、数据库查询、规则引擎或 API 调用。
+                </p>
+                <dl class="meta">
+                    <dt>像什么</dt>
+                    <dd>查库存、算价格、发邮件、读写数据库、格式化结果。</dd>
+                    <dt>特点</dt>
+                    <dd>逻辑更稳定，输入相同通常输出相同，适合承担可确定的业务动作。</dd>
+                </dl>
+            </div>
+            <svg class="diagram" viewBox="0 0 320 230" role="img" aria-label="Non-AI Agent diagram">
+                <defs>
+                    <marker id="arrow2" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto" markerUnits="strokeWidth">
+                        <path d="M0,0 L0,6 L9,3 z" fill="#8290a5"></path>
+                    </marker>
+                </defs>
+                <path d="M34 116H92" class="edge" marker-end="url(#arrow2)"></path>
+                <rect x="94" y="70" width="132" height="92" rx="8" class="node non-ai"></rect>
+                <text x="160" y="103" class="label">Service</text>
+                <text x="160" y="126" class="small">rules / API / code</text>
+                <path d="M226 116H284" class="edge" marker-end="url(#arrow2)"></path>
+                <rect x="112" y="42" width="96" height="18" rx="3" fill="#eaf8f3"></rect>
+                <text x="160" y="51" class="small">deterministic</text>
+            </svg>
+        </article>
+
+        <article class="card">
+            <div>
+                <h2>Human In The Loop <span class="code-name">HUMAN_IN_THE_LOOP</span></h2>
+                <p class="desc">
+                    流程中插入人的确认、补充或审批。系统可以先生成建议，但关键步骤需要人来判断。
+                </p>
+                <dl class="meta">
+                    <dt>像什么</dt>
+                    <dd>审批退款、确认高风险操作、人工补全缺失信息。</dd>
+                    <dt>特点</dt>
+                    <dd>适合高风险、低容错或需要责任归属的流程。</dd>
+                </dl>
+            </div>
+            <svg class="diagram" viewBox="0 0 320 230" role="img" aria-label="Human in the loop diagram">
+                <defs>
+                    <marker id="arrow3" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto" markerUnits="strokeWidth">
+                        <path d="M0,0 L0,6 L9,3 z" fill="#8290a5"></path>
+                    </marker>
+                </defs>
+                <rect x="30" y="82" width="82" height="58" rx="8" class="node agent"></rect>
+                <text x="71" y="111" class="label">Agent</text>
+                <path d="M112 111H154" class="edge" marker-end="url(#arrow3)"></path>
+                <rect x="156" y="72" width="86" height="78" rx="8" class="node human"></rect>
+                <circle cx="199" cy="96" r="12" fill="#fff7ed" stroke="#b66b14" stroke-width="2"></circle>
+                <path d="M176 136c7-17 39-17 46 0" fill="none" stroke="#b66b14" stroke-width="2"></path>
+                <text x="199" y="119" class="small">Human</text>
+                <path d="M242 111H286" class="edge" marker-end="url(#arrow3)"></path>
+                <text x="199" y="174" class="small">confirm / edit / approve</text>
+            </svg>
+        </article>
+
+        <article class="card">
+            <div>
+                <h2>Sequence <span class="code-name">SEQUENCE</span></h2>
+                <p class="desc">
+                    多个节点按固定顺序执行，前一个节点的输出可以成为后一个节点的输入。
+                    这是最常见的流水线结构。
+                </p>
+                <dl class="meta">
+                    <dt>像什么</dt>
+                    <dd>抽取信息 → 查询数据 → 生成回复 → 输出结果。</dd>
+                    <dt>特点</dt>
+                    <dd>路径清晰，容易调试；缺点是后续步骤依赖前面步骤质量。</dd>
+                </dl>
+            </div>
+            <svg class="diagram" viewBox="0 0 320 230" role="img" aria-label="Sequence diagram">
+                <defs>
+                    <marker id="arrow4" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto" markerUnits="strokeWidth">
+                        <path d="M0,0 L0,6 L9,3 z" fill="#8290a5"></path>
+                    </marker>
+                </defs>
+                <rect x="26" y="88" width="66" height="52" rx="8" class="node agent"></rect>
+                <rect x="124" y="88" width="66" height="52" rx="8" class="node non-ai"></rect>
+                <rect x="222" y="88" width="66" height="52" rx="8" class="node agent"></rect>
+                <path d="M92 114H122" class="edge" marker-end="url(#arrow4)"></path>
+                <path d="M190 114H220" class="edge" marker-end="url(#arrow4)"></path>
+                <text x="59" y="114" class="label">A</text>
+                <text x="157" y="114" class="label">B</text>
+                <text x="255" y="114" class="label">C</text>
+                <text x="160" y="170" class="small">step 1 -> step 2 -> step 3</text>
+            </svg>
+        </article>
+
+        <article class="card">
+            <div>
+                <h2>Parallel <span class="code-name">PARALLEL</span></h2>
+                <p class="desc">
+                    多个节点同时处理同一个任务或同一份上下文，最后再汇总结果。
+                    适合互不依赖的子任务。
+                </p>
+                <dl class="meta">
+                    <dt>像什么</dt>
+                    <dd>同时让多个专家分析问题，再由汇总节点合成答案。</dd>
+                    <dt>特点</dt>
+                    <dd>速度快、覆盖面广；需要处理结果合并、冲突和失败分支。</dd>
+                </dl>
+            </div>
+            <svg class="diagram" viewBox="0 0 320 230" role="img" aria-label="Parallel diagram">
+                <defs>
+                    <marker id="arrow5" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto" markerUnits="strokeWidth">
+                        <path d="M0,0 L0,6 L9,3 z" fill="#8290a5"></path>
+                    </marker>
+                </defs>
+                <rect x="24" y="96" width="58" height="44" rx="8" class="node control"></rect>
+                <text x="53" y="118" class="label">Start</text>
+                <rect x="132" y="36" width="58" height="42" rx="8" class="node agent"></rect>
+                <rect x="132" y="97" width="58" height="42" rx="8" class="node non-ai"></rect>
+                <rect x="132" y="158" width="58" height="42" rx="8" class="node agent"></rect>
+                <rect x="242" y="96" width="58" height="44" rx="8" class="node control"></rect>
+                <text x="271" y="118" class="label">Join</text>
+                <path d="M82 118C102 118 104 57 130 57" class="edge" marker-end="url(#arrow5)"></path>
+                <path d="M82 118H130" class="edge" marker-end="url(#arrow5)"></path>
+                <path d="M82 118C102 118 104 179 130 179" class="edge" marker-end="url(#arrow5)"></path>
+                <path d="M190 57C218 57 214 118 240 118" class="edge" marker-end="url(#arrow5)"></path>
+                <path d="M190 118H240" class="edge" marker-end="url(#arrow5)"></path>
+                <path d="M190 179C218 179 214 118 240 118" class="edge" marker-end="url(#arrow5)"></path>
+                <text x="161" y="57" class="label">A</text>
+                <text x="161" y="118" class="label">B</text>
+                <text x="161" y="179" class="label">C</text>
+            </svg>
+        </article>
+
+        <article class="card">
+            <div>
+                <h2>Loop <span class="code-name">LOOP</span></h2>
+                <p class="desc">
+                    某个节点或一组节点会反复执行，直到满足停止条件。常用于迭代优化、重试、反思和多轮处理。
+                </p>
+                <dl class="meta">
+                    <dt>像什么</dt>
+                    <dd>生成草稿 → 检查质量 → 不合格则继续修改。</dd>
+                    <dt>特点</dt>
+                    <dd>能提升质量；必须设置终止条件，避免无限循环。</dd>
+                </dl>
+            </div>
+            <svg class="diagram" viewBox="0 0 320 230" role="img" aria-label="Loop diagram">
+                <defs>
+                    <marker id="arrow6" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto" markerUnits="strokeWidth">
+                        <path d="M0,0 L0,6 L9,3 z" fill="#8290a5"></path>
+                    </marker>
+                </defs>
+                <rect x="78" y="76" width="86" height="54" rx="8" class="node agent"></rect>
+                <text x="121" y="103" class="label">Work</text>
+                <rect x="202" y="76" width="76" height="54" rx="8" class="node danger"></rect>
+                <text x="240" y="103" class="label">Check</text>
+                <path d="M164 103H200" class="edge" marker-end="url(#arrow6)"></path>
+                <path d="M240 132C240 180 103 184 103 132" class="edge" marker-end="url(#arrow6)"></path>
+                <path d="M278 103H302" class="edge" marker-end="url(#arrow6)"></path>
+                <text x="160" y="171" class="small">not done: repeat</text>
+                <text x="291" y="84" class="small">done</text>
+            </svg>
+        </article>
+
+        <article class="card">
+            <div>
+                <h2>Router <span class="code-name">ROUTER</span></h2>
+                <p class="desc">
+                    先由路由节点判断任务类型，再把请求分发给最合适的下游节点。
+                    下游通常只会命中一个，或者命中一小组。
+                </p>
+                <dl class="meta">
+                    <dt>像什么</dt>
+                    <dd>问题分类后转给售前、售后、技术支持或投诉处理。</dd>
+                    <dt>特点</dt>
+                    <dd>结构清楚，专业分工强；路由判断错了会影响后续结果。</dd>
+                </dl>
+            </div>
+            <svg class="diagram" viewBox="0 0 320 230" role="img" aria-label="Router diagram">
+                <defs>
+                    <marker id="arrow7" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto" markerUnits="strokeWidth">
+                        <path d="M0,0 L0,6 L9,3 z" fill="#8290a5"></path>
+                    </marker>
+                </defs>
+                <path d="M52 116H104" class="edge" marker-end="url(#arrow7)"></path>
+                <polygon points="160,66 214,116 160,166 106,116" fill="#fff" stroke="#16829a" stroke-width="2"></polygon>
+                <text x="160" y="116" class="label">Router</text>
+                <rect x="248" y="34" width="58" height="40" rx="8" class="node agent"></rect>
+                <rect x="248" y="96" width="58" height="40" rx="8" class="node non-ai"></rect>
+                <rect x="248" y="158" width="58" height="40" rx="8" class="node human"></rect>
+                <path d="M205 88L246 54" class="edge" marker-end="url(#arrow7)"></path>
+                <path d="M214 116H246" class="edge" marker-end="url(#arrow7)"></path>
+                <path d="M205 144L246 178" class="edge" marker-end="url(#arrow7)"></path>
+                <text x="277" y="54" class="label">A</text>
+                <text x="277" y="116" class="label">B</text>
+                <text x="277" y="178" class="label">C</text>
+            </svg>
+        </article>
+
+        <article class="card">
+            <div>
+                <h2>Star <span class="code-name">STAR</span></h2>
+                <p class="desc">
+                    一个中心节点协调多个外围节点。中心负责分配任务、收集结果、维护上下文或做最终决策。
+                </p>
+                <dl class="meta">
+                    <dt>像什么</dt>
+                    <dd>主管 agent 调度多个专家 agent，最后统一输出。</dd>
+                    <dt>特点</dt>
+                    <dd>适合中心化协调；中心节点能力和稳定性会成为关键。</dd>
+                </dl>
+            </div>
+            <svg class="diagram" viewBox="0 0 320 230" role="img" aria-label="Star topology diagram">
+                <defs>
+                    <marker id="arrow8" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto" markerUnits="strokeWidth">
+                        <path d="M0,0 L0,6 L9,3 z" fill="#8290a5"></path>
+                    </marker>
+                </defs>
+                <circle cx="160" cy="116" r="38" fill="#fff" stroke="#7a57c9" stroke-width="2"></circle>
+                <text x="160" y="108" class="label">Center</text>
+                <text x="160" y="128" class="small">coordinator</text>
+                <rect x="32" y="24" width="58" height="40" rx="8" class="node agent"></rect>
+                <rect x="230" y="24" width="58" height="40" rx="8" class="node non-ai"></rect>
+                <rect x="32" y="166" width="58" height="40" rx="8" class="node human"></rect>
+                <rect x="230" y="166" width="58" height="40" rx="8" class="node agent"></rect>
+                <path d="M93 66L130 89" class="soft-edge" marker-end="url(#arrow8)"></path>
+                <path d="M227 66L190 89" class="soft-edge" marker-end="url(#arrow8)"></path>
+                <path d="M93 166L130 139" class="soft-edge" marker-end="url(#arrow8)"></path>
+                <path d="M227 166L190 139" class="soft-edge" marker-end="url(#arrow8)"></path>
+                <text x="61" y="44" class="label">A</text>
+                <text x="259" y="44" class="label">B</text>
+                <text x="61" y="186" class="label">C</text>
+                <text x="259" y="186" class="label">D</text>
+            </svg>
+        </article>
+    </section>
+
+    <footer>
+        简单记忆：<code>AI_AGENT</code>、<code>NON_AI_AGENT</code>、<code>HUMAN_IN_THE_LOOP</code> 更像“节点类型”；
+        <code>SEQUENCE</code>、<code>PARALLEL</code>、<code>LOOP</code>、<code>ROUTER</code>、<code>STAR</code> 更像“节点之间的组织结构”。
+    </footer>
+</main>
+</body>
+</html>

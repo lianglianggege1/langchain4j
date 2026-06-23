@@ -11,9 +11,39 @@ import java.lang.annotation.Target;
  * Marks a method as the output definition of a workflow agent,
  * generally combining results from different states of the {@link AgenticScope}.
  * The method must be static and return the output of the agent.
- * 将方法标记为工作流agent的输出定义，通常组合来自AgentScope不同状态的结果。该方法必须是静态的，并返回代理的输出。
  * <p>
  * Example:
+ * <pre>
+ * {@code
+ *     public interface EveningPlannerAgent {
+ *
+ *         @ParallelAgent(outputKey = "plans", subAgents = {
+ *                 @SubAgent(type = FoodExpert.class, outputKey = "meals"),
+ *                 @SubAgent(type = MovieExpert.class, outputKey = "movies")
+ *         })
+ *         List<EveningPlan> plan(@V("mood") String mood);
+ *
+ *         @Output
+ *         static List<EveningPlan> createPlans(@V("movies") List<String> movies, @V("meals") List<String> meals) {
+ *             List<EveningPlan> moviesAndMeals = new ArrayList<>();
+ *             for (int i = 0; i < movies.size(); i++) {
+ *                 if (i >= meals.size()) {
+ *                     break;
+ *                 }
+ *                 moviesAndMeals.add(new EveningPlan(movies.get(i), meals.get(i)));
+ *             }
+ *             return moviesAndMeals;
+ *         }
+ *     }
+ * }
+ * </pre>
+ */
+/**
+ * 将方法标记为工作流智能体的输出定义，
+ * 通常用于聚合 {@link AgenticScope} 中不同状态的执行结果。
+ * 该方法必须为静态方法，且返回智能体的最终输出结果。
+ * <p>
+ * 示例：
  * <pre>
  * {@code
  *     public interface EveningPlannerAgent {

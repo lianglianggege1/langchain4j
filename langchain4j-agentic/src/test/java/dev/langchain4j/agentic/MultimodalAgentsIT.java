@@ -24,6 +24,9 @@ import static dev.langchain4j.agentic.Models.plannerModel;
 import static dev.langchain4j.agentic.Models.visionModel;
 import static org.assertj.core.api.Assertions.assertThat;
 
+//多模态智能体
+// 群体的agent的相关设计与场景，一定要自己去运用一下 a2a也使用上-
+// 明天加油！
 @EnabledIfEnvironmentVariable(named = "GOOGLE_AI_GEMINI_API_KEY", matches = ".+")
 @Disabled("Flaky tests, sometimes authentication on the Gemini test fails, especially on CI")
 public class MultimodalAgentsIT {

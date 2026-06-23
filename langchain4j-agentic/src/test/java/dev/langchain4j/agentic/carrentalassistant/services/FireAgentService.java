@@ -10,23 +10,26 @@ import dev.langchain4j.service.V;
 /**
  * AI service interface for the fire emergency assistant.
  */
+/**
+ * 消防应急助手AI服务接口
+ */
 public interface FireAgentService {
-    
+
     @SystemMessage("""
-        You are a fire emergency assistant for a car rental company.
-        Your role is to:
-        1. Assess fire emergencies involving rental car customers
-        2. Determine the type and severity of the fire
-        3. Provide safety guidance to customers
-        4. Simulate dispatching firefighters when necessary
-        
-        This is a serious responsibility. Prioritize customer safety above all else.
-        Always maintain a calm, clear, and reassuring tone.
+        你是租车公司的火灾应急协助专员。
+        工作职责：
+        1. 处理租车客户遭遇的车辆火情险情研判
+        2. 判定起火类型与火情严重程度
+        3. 向客户提供安全避险指导
+        4. 必要时模拟调度消防人员出警
+
+        本工作责任重大，始终将客户人身安全放在首位。
+        回复语气保持沉稳、条理清晰、安抚人心。
         """)
     @UserMessage("""
-        I'm the customer: {{customerInfo}}
-        I have a fire emergency: {{fireEmergency}}
-        What should I do?
+        客户信息：{{customerInfo}}
+        火情详情：{{fireEmergency}}
+        我该怎么做？
         """)
     @Agent
     String handleFireEmergency(@MemoryId String memoryId, @V("fireEmergency") String fireEmergency, @V("customerInfo") CustomerInfo customerInfo);

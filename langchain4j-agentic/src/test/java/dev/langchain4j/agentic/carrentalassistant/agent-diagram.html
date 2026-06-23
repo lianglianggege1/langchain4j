@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CarRentalAssistant Agent 调用关系图</title>
+    <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            background: #1a1a2e;
+            color: #e0e0e0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 20px;
+        }
+        h1 {
+            color: #00d4ff;
+            margin-bottom: 5px;
+        }
+        .subtitle {
+            color: #888;
+            margin-bottom: 30px;
+            font-size: 14px;
+        }
+        .mermaid {
+            background: #16213e;
+            border-radius: 12px;
+            padding: 30px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+        }
+        .legend {
+            margin-top: 30px;
+            background: #16213e;
+            border-radius: 12px;
+            padding: 20px 30px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+            width: 100%;
+            max-width: 900px;
+        }
+        .legend h3 { color: #00d4ff; margin-top: 0; }
+        .legend table { width: 100%; border-collapse: collapse; }
+        .legend th { text-align: left; color: #00d4ff; padding: 8px; border-bottom: 1px solid #333; }
+        .legend td { padding: 8px; border-bottom: 1px solid #222; }
+        .tag { 
+            display: inline-block; 
+            padding: 2px 8px; 
+            border-radius: 4px; 
+            font-size: 12px; 
+            font-weight: bold; 
+        }
+        .tag-seq { background: #1b4332; color: #52b788; }
+        .tag-cond { background: #4a1942; color: #e0aaff; }
+        .tag-agent { background: #1a3a5c; color: #74b9ff; }
+        .tag-data { background: #5c4a1a; color: #ffd166; }
+    </style>
+</head>
+<body>
+    <h1>🚗 CarRentalAssistant Agent 调用关系图</h1>
+    <div class="subtitle">AssistantMain.java 中的 Agent 层级与数据流向</div>
+
+    <div class="mermaid">
+graph TB
+    subgraph 顶层["🎯 CarRentalAssistant — Sequence Agent"]
+        direction TB
+        A["① CustomerInfoExtractionService<br/><b>outputKey:</b> customerInfo"]
+        B["② TowingAgentService<br/><b>outputKey:</b> towingResponse"]
+        C["③ EmergencyService<br/><b>outputKey:</b> emergencyResponse"]
+        D["④ ResponseGeneratorService<br/><b>outputKey:</b> response"]
+    end
+
+    subgraph 紧急事件子流程["🚨 EmergencyService — Sequence Agent"]
+        direction TB
+        E["EmergencyExtractorService<br/><b>outputKey:</b> emergencies"]
+        F["EmergencyExperts<br/><b>Conditional 路由</b>"]
+        G["EmergencyResponseService<br/><b>outputKey:</b> emergencyResponse"]
+    end
+
+    subgraph 专家Agent["🛟 EmergencyExperts — Conditional Agent"]
+        direction TB
+        H["🔥 FireAgentService<br/><b>条件:</b> fireEmergency<br/><b>outputKey:</b> fireResponse"]
+        I["🏥 MedicalAgentService<br/><b>条件:</b> medicalEmergency<br/><b>outputKey:</b> medicalResponse"]
+        J["🚔 PoliceAgentService<br/><b>条件:</b> policeEmergency<br/><b>outputKey:</b> policeResponse"]
+    end
+
+    C --> 紧急事件子流程
+    F --> 专家Agent
+
+    顶层 -->|"顺序执行"| A
+    A -->|"①→②"| B
+    B -->|"②→③"| C
+    C -->|"③→④"| D
+
+    紧急事件子流程 -->|"③-1→③-2"| E
+    E --> F
+    F -->|"③-2→③-3"| G
+
+    专家Agent -->|"条件触发"| H
+    专家Agent -->|"条件触发"| I
+    专家Agent -->|"条件触发"| J
+
+    %% 数据流
+    A -.->|"writeState<br/>customerInfo"| DS1(("🔍 AgenticScope"))
+    E -.->|"writeState<br/>emergencies"| DS1
+    DS1 -.->|"readState<br/>emergencies"| F
+    DS1 -.->|"writeState<br/>fireEmergency<br/>medicalEmergency<br/>policeEmergency"| DS1
+    D -.->|"最终输出<br/>response"| OUT(("📤 输出"))
+
+    style 顶层 fill:#0d1b2a,stroke:#00d4ff,stroke-width:2px,color:#e0e0e0
+    style 紧急事件子流程 fill:#1b0d2a,stroke:#e0aaff,stroke-width:2px,color:#e0e0e0
+    style 专家Agent fill:#2a1b0d,stroke:#ffd166,stroke-width:2px,color:#e0e0e0
+    style DS1 fill:#1a2a0d,stroke:#52b788,stroke-width:2px,color:#e0e0e0
+    style OUT fill:#2a0d0d,stroke:#ff6b6b,stroke-width:2px,color:#e0e0e0
+    </div>
+
+    <div class="legend">
+        <h3>📋 图例说明</h3>
+        <table>
+            <tr><th>标记</th><th>类型</th><th>说明</th></tr>
+            <tr>
+                <td><span class="tag tag-seq">Sequence</span></td>
+                <td>顺序编排</td>
+                <td>子Agent按声明顺序依次执行，上游输出作为下游上下文</td>
+            </tr>
+            <tr>
+                <td><span class="tag tag-cond">Conditional</span></td>
+                <td>条件路由</td>
+                <td>根据 AgenticScope 中的状态动态选择激活哪些子Agent</td>
+            </tr>
+            <tr>
+                <td><span class="tag tag-agent">Agent</span></td>
+                <td>单个Agent</td>
+                <td>独立的LLM调用单元，拥有自己的 chatModel 和 chatMemory</td>
+            </tr>
+            <tr>
+                <td><span class="tag tag-data">AgenticScope</span></td>
+                <td>共享状态</td>
+                <td>Agent间通过 writeState/readState 传递数据</td>
+            </tr>
+        </table>
+        <br/>
+        <h3>🔄 执行流程</h3>
+        <table>
+            <tr><th>步骤</th><th>Agent</th><th>数据产出</th></tr>
+            <tr><td>①</td><td>CustomerInfoExtractionService</td><td>提取客户信息 → state[customerInfo]</td></tr>
+            <tr><td>②</td><td>TowingAgentService</td><td>处理拖车请求 → state[towingResponse]</td></tr>
+            <tr><td>③-1</td><td>EmergencyExtractorService</td><td>识别紧急事件 → state[emergencies]</td></tr>
+            <tr><td>③-2</td><td>EmergencyExperts (beforeCall)</td><td>解析emergencies → state[fire/medical/policeEmergency]</td></tr>
+            <tr><td>③-2a</td><td>FireAgentService</td><td>火灾建议 → state[fireResponse] (条件触发)</td></tr>
+            <tr><td>③-2b</td><td>MedicalAgentService</td><td>医疗建议 → state[medicalResponse] (条件触发)</td></tr>
+            <tr><td>③-2c</td><td>PoliceAgentService</td><td>报警建议 → state[policeResponse] (条件触发)</td></tr>
+            <tr><td>③-3</td><td>EmergencyResponseService</td><td>汇总紧急响应 → state[emergencyResponse]</td></tr>
+            <tr><td>④</td><td>ResponseGeneratorService</td><td>最终输出 → state[response]</td></tr>
+        </table>
+    </div>
+
+    <script>
+        mermaid.initialize({ 
+            theme: 'dark',
+            startOnLoad: true,
+            flowchart: { 
+                useMaxWidth: true,
+                htmlLabels: true,
+                curve: 'basis'
+            } 
+        });
+    </script>
+</body>
+</html>

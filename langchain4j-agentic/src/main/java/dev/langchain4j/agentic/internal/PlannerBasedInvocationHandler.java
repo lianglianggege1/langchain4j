@@ -223,7 +223,7 @@ public class PlannerBasedInvocationHandler implements InvocationHandler, Interna
 
         Planner planner = plannerSupplier.get();
         planner.init(new InitPlanningContext(currentScope, this, subagents));
-        Object result = new PlannerLoop(planner, currentScope, registry).loop();
+        Object result = new PlannerLoop(planner, currentScope, registry).loop();//此部分太重要了 todo
         Object output = outputKey != null ? currentScope.readState(outputKey) : result;
 
         if (isRootCall()) {
@@ -394,9 +394,9 @@ public class PlannerBasedInvocationHandler implements InvocationHandler, Interna
                 List<AgentExecutor> agents = ((Action.AgentCallAction) nextAction).agentsToCall();
                 nextAction = null;
                 switch (agents.size()) {
-                    case 0 -> Thread.yield();
-                    case 1 -> agents.get(0).execute(agenticScope, this);
-                    default -> parallelExecution(agents);
+                    case 0 -> Thread.yield(); // 不调用
+                    case 1 -> agents.get(0).execute(agenticScope, this);// 同步调用
+                    default -> parallelExecution(agents); // 并发调用
                 }
             }
 
@@ -411,13 +411,13 @@ public class PlannerBasedInvocationHandler implements InvocationHandler, Interna
         }
 
         private void parallelExecution(List<AgentExecutor> agents) {
-            Executor exec = executor != null ? executor : DefaultExecutorProvider.getDefaultExecutorService();
+            Executor exec = executor != null ? executor : DefaultExecutorProvider.getDefaultExecutorService();// 并行计数器还是用了虚拟线程
             var tasks = agents.stream()
                     .map(agentExecutor -> CompletableFuture.supplyAsync(() -> agentExecutor.execute(agenticScope, this), exec))
                     .toList();
             try {
                 for (Future<?> future : tasks) {
-                    future.get();
+                    future.get(); // 并行执行，逐个等待结果
                 }
             } catch (InterruptedException e) {
                 Thread.currentThread().interrupt();
@@ -444,7 +444,7 @@ public class PlannerBasedInvocationHandler implements InvocationHandler, Interna
         public void onSubagentInvoked(AgentInvocation agentInvocation) {
             lock.lock();
             try {
-                this.nextAction = composeActions(this.nextAction, planner.nextAction(new PlanningContext(agenticScope, agentInvocation)));
+                this.nextAction = composeActions(this.nextAction, planner.nextAction(new PlanningContext(agenticScope, agentInvocation)));// 让LLM决定是下一步怎么办
 
                 // Save planner execution state after each agent invocation
                 Map<String, Object> execState = planner.executionState();

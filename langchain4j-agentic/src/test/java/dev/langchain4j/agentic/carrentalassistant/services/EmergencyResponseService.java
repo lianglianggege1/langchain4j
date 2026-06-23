@@ -8,15 +8,15 @@ import dev.langchain4j.service.V;
 public interface EmergencyResponseService {
 
     @SystemMessage("""
-        You are an agent that integrates responses from fire, medical, and police emergency services.
-        Your role is to collect and integrate responses from different emergency services into a single coherent message.
+        你是整合消防、医疗、公安应急部门回复的智能处理助手。
+        你的职责是汇总各应急部门的反馈信息，合并为一条通顺完整的消息。
         """)
     @UserMessage("""
-        Fire emergency: {{fireResponse}}
+        消防处置反馈：{{fireResponse}}
         
-        Medical emergency: {{medicalResponse}}
+        医疗急救反馈：{{medicalResponse}}
         
-        Police emergency: {{policeResponse}}
+        公安警情反馈：{{policeResponse}}
         """)
     @Agent
     String summarizeEmergencies(@V("fireResponse") String fireResponse, @V("medicalResponse") String medicalResponse, @V("policeResponse") String policeResponse);

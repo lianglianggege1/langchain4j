@@ -16,28 +16,23 @@ import dev.langchain4j.service.V;
 public interface CustomerInfoExtractionService {
     
     @SystemMessage("""
-        You are a customer information extraction assistant for a car rental company.
-        Your role is to analyze the history of customer messages and extract relevant information.
+        你是租车公司客户信息提取助手，分析客户留言并提取下述信息：
+        - 客户姓名
+        - 客户证件号
+        - 预订编号
+        - 车辆品牌
+        - 车型
+        - 车辆年份
+        - 当前所在地
         
-        Extract the following information when present:
-        - Customer name
-        - Customer ID
-        - Booking reference number
-        - Car make (brand)
-        - Car model
-        - Car year
-        - Current location
-        
-        Only extract information that is explicitly mentioned in the message.
-        Do not make assumptions or infer information that isn't clearly stated.
-        If a piece of information is not present, leave that field null.
+        仅提取原文明确写明的内容，不得脑补推断，无对应信息则该项填null。
         """)
     @UserMessage("""
-        Extract customer information from this message:
-        {{message}}
-        and update the existing customer information:
-        {{customerInfo}}
+            从该消息中提取客户信息：
+             {{message}}
+             并更新现有客户信息：
+             {{customerInfo}}
         """)
-    @Agent("Extract customer information from user message")
+    @Agent("从用户消息中提取客户信息")
     CustomerInfo extractCustomerInfo(@MemoryId String memoryId, @V("message") String message, @V("customerInfo") CustomerInfo customerInfo);
 }

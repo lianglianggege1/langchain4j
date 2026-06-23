@@ -43,6 +43,30 @@ import java.util.function.Function;
  * @see SystemMessage
  * @see PromptTemplate
  */
+/**
+ * 智能体方法的参数使用 {@code @K} 注解标注，用于表示该参数会从智能体系统中
+ * 读取对应类型键的特定状态值进行填充。
+ * 该参数同时会成为提示模板变量，其值会自动注入通过 @{@link UserMessage}、@{@link SystemMessage}
+ * 以及 {@link AiServices#systemMessageProvider(Function)} 定义的提示模板中。
+ * 提示模板中使用的变量名，与作为该注解值指定的类所调用的 {@link TypedKey#name()} 方法返回值一致；
+ * 默认情况下，该名称为实现 {@link TypedKey} 接口的类的简单类名。
+ * <p>
+ * 示例：
+ * <pre>
+ * {@code @UserMessage("你好，我叫 {{UserName}}。我今年 {{UserAge}} 岁。")
+ * String chat(@K(UserName.class) String name, @K(UserAge.class) int age);}
+ * </pre>
+ * <p>
+ * 其中：
+ * <pre>
+ * {@code public class UserName implements AgentState<String> {}
+ * public class UserAge implements AgentState<Integer> {}"}
+ * </pre>
+ *
+ * @see UserMessage
+ * @see SystemMessage
+ * @see PromptTemplate
+ */
 @Target(PARAMETER)
 @Retention(RUNTIME)
 public @interface K {
