@@ -178,21 +178,21 @@ public class SampleReportGenerator {
 //                "TECHNICAL",
 //                "通过设备管理器回退显卡驱动。若无效，请进入安全模式启动设备。");
 
-        // Execution 3 (user-alice again): legal path with loop iterations
-        simulateLegalExecution(
-                monitor,
-                new MockScope("user-alice"),
-                sequence,
-                classify,
-                router,
-                legalLoop,
-                writer,
-                scorer,
-                Map.of("question", "我能否就此次徒步步道事故起诉队友？"),
-                "LEGAL",
-                List.of("你可提起过失侵权诉讼……", "结合产权归属与安全注意义务……"),
-                List.of(0.6, 0.85),
-                "结合产权归属及安全注意义务，你大概率有理由提起过失侵权诉讼。");
+//        // Execution 3 (user-alice again): legal path with loop iterations
+//        simulateLegalExecution(
+//                monitor,
+//                new MockScope("user-alice"),
+//                sequence,
+//                classify,
+//                router,
+//                legalLoop,
+//                writer,
+//                scorer,
+//                Map.of("question", "我能否就此次徒步步道事故起诉队友？"),
+//                "LEGAL",
+//                List.of("你可提起过失侵权诉讼……", "结合产权归属与安全注意义务……"),
+//                List.of(0.6, 0.85),
+//                "结合产权归属及安全注意义务，你大概率有理由提起过失侵权诉讼。");
 
         // ----- Generate report -----
 

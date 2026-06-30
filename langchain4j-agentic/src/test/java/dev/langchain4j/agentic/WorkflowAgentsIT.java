@@ -751,6 +751,8 @@ public class WorkflowAgentsIT {
         assertThat(loopInstance.testExitAtLoopEnd()).isEqualTo(testExitAtLoopEnd);
         assertThat(loopInstance.exitCondition()).isEqualTo("score greater than 0.8");
 
+        // 什么场景下 需要什么样的结构，其实最重要的不是结构复杂，是什么结构的选择
+
         ResultWithAgenticScope<String> result = styledWriter.writeStoryWithStyle("dragons and wizards", "comedy");
         String story = result.result();
         System.out.println(story);

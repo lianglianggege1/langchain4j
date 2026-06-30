@@ -214,6 +214,8 @@ public class DeclarativeAgentIT {
                 .hasMessageContaining("topic");
     }
 
+    // 注解的肯定是要用的 这样才能做好各个场景的兼容性
+
     public interface StoryCreatorWithErrorRecovery {
 
         @SequenceAgent(
@@ -233,6 +235,8 @@ public class DeclarativeAgentIT {
         }
     }
 
+    // 多参数的情况也要试一下，这样才能学到更多
+
     @Test
     void declarative_sequence_with_error_recover_tests() {
         StoryCreatorWithErrorRecovery storyCreator =
@@ -242,6 +246,7 @@ public class DeclarativeAgentIT {
         assertThat(story).isNotBlank();
     }
 
+    // 加上测一下 每个场景都要加上，这个应该就是组织方式了，
     public interface StyleReviewLoopAgent {
 
         @LoopAgent(
@@ -729,6 +734,8 @@ public class DeclarativeAgentIT {
 
         AgenticScopePersister.setStore(null);
     }
+
+    // 这个也要看 但是是在以后看
 
     static SupervisorAgentIT.BankTool bankTool = new SupervisorAgentIT.BankTool();
 
