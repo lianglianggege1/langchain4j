@@ -19,13 +19,7 @@ public class DefaultSkill extends AbstractSkill {
      * }</pre>
      */
     public Builder toBuilder() {
-        Builder builder = new Builder();
-        builder.name(name())
-                .description(description())
-                .content(content())
-                .resources(resources())
-                .toolProviders(toolProviders());
-        return builder;
+        return builder().copyFrom(this);
     }
 
     public static Builder builder() {

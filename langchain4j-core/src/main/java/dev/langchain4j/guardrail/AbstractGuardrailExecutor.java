@@ -172,6 +172,7 @@ public abstract sealed class AbstractGuardrailExecutor<
                         .request(request)
                         .result(result)
                         .guardrailClass((Class<G>) guardrail.getClass())
+                        .guardrailName(guardrail.name())
                         .duration(duration)
                         .build());
     }

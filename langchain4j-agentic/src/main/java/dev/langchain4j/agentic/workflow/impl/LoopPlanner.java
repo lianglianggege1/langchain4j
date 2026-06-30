@@ -58,7 +58,7 @@ public class LoopPlanner implements Planner {
         agentCursor = (agentCursor+1) % agents.size();
         if (agentCursor == 0) {
             // 当agent光标大于最大迭代次数后，该task就已经完成了
-            if (iterationsCounter > maxIterations || exitCondition.test(planningContext.agenticScope(), iterationsCounter)) {
+            if (iterationsCounter >= maxIterations || exitCondition.test(planningContext.agenticScope(), iterationsCounter)) {
                 return done();
             }
             iterationsCounter++;

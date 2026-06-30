@@ -65,7 +65,7 @@ public class AgentInvocationHandler implements InvocationHandler, InternalAgent 
 
     private final Map<Object, AiServiceResponseReceivedEvent> lastResponseEvents = new ConcurrentHashMap<>();
 
-    AgentInvocationHandler(
+    public AgentInvocationHandler(
             AiServiceContext context,
             Object agent,
             AgentBuilder<?, ?> builder,
@@ -123,9 +123,8 @@ public class AgentInvocationHandler implements InvocationHandler, InternalAgent 
                         yield proxy;
                     }
                     Object agentProxy = ((DefaultAgenticScope) args[0]).getOrCreateAgent(agentId, builder::build);
-                    AgentInvocationHandler agent = (AgentInvocationHandler) Proxy.getInvocationHandler(agentProxy);
-                    agent.setParent(parent);
-                    agent.agentId = agentId;
+                    ((InternalAgent) agentProxy).setParent(parent);
+                    ((InternalAgent) agentProxy).setAgentId(agentId);
                     yield agentProxy;
                 }
                 case "registry" ->
@@ -152,7 +151,7 @@ public class AgentInvocationHandler implements InvocationHandler, InternalAgent 
         }
 
         if (method.getDeclaringClass() == AgentInstance.class || method.getDeclaringClass() == InternalAgent.class) {
-            return method.invoke(Proxy.getInvocationHandler(proxy), args);
+            return method.invoke(this, args);
         }
 
         if (method.getDeclaringClass() == MonitoredAgent.class) {
@@ -266,6 +265,11 @@ public class AgentInvocationHandler implements InvocationHandler, InternalAgent 
     @Override
     public void appendId(String idSuffix) {
         this.agentId = this.agentId + idSuffix;
+    }
+
+    @Override
+    public void setAgentId(String agentId) {
+        this.agentId = agentId;
     }
 
     @Override

@@ -17,11 +17,8 @@ import java.lang.annotation.Target;
  * {@code
  *     public interface ExpertsAgent {
  *
- *         @ConditionalAgent(outputKey = "response", subAgents = {
- *                 @SubAgent(type = MedicalExpert.class, outputKey = "response"),
- *                 @SubAgent(type = TechnicalExpert.class, outputKey = "response"),
- *                 @SubAgent(type = LegalExpert.class, outputKey = "response")
- *         })
+ *         @ConditionalAgent(outputKey = "response",
+ *                 subAgents = { MedicalExpert.class, TechnicalExpert.class, LegalExpert.class })
  *         String askExpert(@V("request") String request);
  *
  *         @ActivationCondition(value = MedicalExpert.class, description = "category is medical")

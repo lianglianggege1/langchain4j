@@ -66,6 +66,7 @@ public class AiServiceContext {
     public Function<Object, Optional<String>> userMessageProvider = DEFAULT_USER_MESSAGE_PROVIDER;
     // 获取系统消息
     public Function<Object, Optional<String>> systemMessageProvider = DEFAULT_SYSTEM_MESSAGE_PROVIDER;
+    public Function<InvocationContext, String> systemMessageProviderWithContext = null;
 
     // 系统信息转换
     public BiFunction<String, InvocationContext, String> systemMessageTransformer = null;

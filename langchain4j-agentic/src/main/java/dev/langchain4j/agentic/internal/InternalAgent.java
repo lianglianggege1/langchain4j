@@ -15,6 +15,8 @@ public interface InternalAgent extends AgentInstance {
     // 添加id
     void appendId(String idSuffix);
 
+    default void setAgentId(String agentId) {}
+
     // 获取侦听器
     AgentListener listener();
 

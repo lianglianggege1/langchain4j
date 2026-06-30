@@ -17,16 +17,16 @@ import java.lang.reflect.Type;
 import java.util.List;
 import java.util.Map;
 
+import static dev.langchain4j.agentic.scope.DefaultAgenticScope.isSerializable;
+
 public record AgentExecutor(AgentInvoker agentInvoker, Object agent) implements AgentInstance, InternalAgent {
 
     private static final Logger LOG = LoggerFactory.getLogger(AgentExecutor.class);
 
-    // 异步执行agent
     public Object execute(DefaultAgenticScope agenticScope, PlannerExecutor planner) {
         return execute(agenticScope, planner, agentInvoker.async());
     }
 
-    // 同步执行agent
     public Object syncExecute(DefaultAgenticScope agenticScope, PlannerExecutor planner) {
         if (agentInvoker.async()) {
             LOG.info("Executing '{}' agent in a sync way even if declared as async", agentInvoker.name());
@@ -75,7 +75,7 @@ public record AgentExecutor(AgentInvoker agentInvoker, Object agent) implements 
                 agenticScope.writeState(outputKey, response);
             }
             // 记录调用
-            AgentInvocation agentInvocation = new AgentInvocation(type(), name(), agentId(), args.namedArgs(), response);
+            AgentInvocation agentInvocation = new AgentInvocation(type(), name(), agentId(), args.namedArgs(), isSerializable(response) ? response : "<unknown>");
             // 注册调用
             agenticScope.registerAgentInvocation(agentInvocation, invokedAgent);
             if (planner != null) {

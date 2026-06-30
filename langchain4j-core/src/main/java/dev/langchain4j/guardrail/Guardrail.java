@@ -17,6 +17,18 @@ package dev.langchain4j.guardrail;
  * @param <R> {@link GuardrailResult} 结果类型
  */
 public interface Guardrail<P extends GuardrailRequest, R extends GuardrailResult<R>> {
+
+    /**
+     * Returns the logical name of this guardrail.
+     *
+     * Wrappers/decorators can override this method to expose the wrapped guardrail's name.
+     *
+     * @return the logical guardrail name
+     */
+    default String name() {
+        return getClass().getSimpleName();
+    }
+
     /**
      * Validate the interaction between the model and the user in one of the two directions.
      *

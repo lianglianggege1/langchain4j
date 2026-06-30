@@ -1,28 +1,30 @@
 package dev.langchain4j.agentic.supervisor;
 
+import static java.util.stream.Collectors.toMap;
+
+import dev.langchain4j.agentic.internal.Context;
+import dev.langchain4j.agentic.planner.Action;
+import dev.langchain4j.agentic.planner.AgentArgument;
+import dev.langchain4j.agentic.planner.AgentInstance;
+import dev.langchain4j.agentic.planner.ChatMemoryAccessProvider;
+import dev.langchain4j.agentic.planner.InitPlanningContext;
+import dev.langchain4j.agentic.planner.Planner;
+import dev.langchain4j.agentic.planner.PlanningContext;
+import dev.langchain4j.agentic.scope.AgenticScope;
+import dev.langchain4j.agentic.scope.DefaultAgenticScope;
+import dev.langchain4j.invocation.LangChain4jManaged;
+import dev.langchain4j.memory.chat.ChatMemoryProvider;
+import dev.langchain4j.memory.chat.MessageWindowChatMemory;
+import dev.langchain4j.model.chat.ChatModel;
+import dev.langchain4j.service.AiServices;
+import dev.langchain4j.service.ParameterNameResolver;
+import dev.langchain4j.service.memory.ChatMemoryAccess;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-import dev.langchain4j.agentic.internal.Context;
-import dev.langchain4j.agentic.planner.Action;
-import dev.langchain4j.invocation.LangChain4jManaged;
-import dev.langchain4j.agentic.planner.AgentArgument;
-import dev.langchain4j.agentic.planner.AgentInstance;
-import dev.langchain4j.agentic.planner.ChatMemoryAccessProvider;
-import dev.langchain4j.agentic.planner.InitPlanningContext;
-import dev.langchain4j.service.ParameterNameResolver;
-import dev.langchain4j.agentic.planner.Planner;
-import dev.langchain4j.agentic.planner.PlanningContext;
-import dev.langchain4j.agentic.scope.AgenticScope;
-import dev.langchain4j.agentic.scope.DefaultAgenticScope;
-import dev.langchain4j.memory.chat.ChatMemoryProvider;
-import dev.langchain4j.memory.chat.MessageWindowChatMemory;
-import dev.langchain4j.model.chat.ChatModel;
-import dev.langchain4j.service.AiServices;
-import dev.langchain4j.service.memory.ChatMemoryAccess;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -78,9 +80,15 @@ public class SupervisorPlanner implements Planner, ChatMemoryAccessProvider {
 
     private String request;
 
-    public SupervisorPlanner(ChatModel chatModel, ChatMemoryProvider chatMemoryProvider, int maxAgentsInvocations,
-                             SupervisorContextStrategy contextStrategy, SupervisorResponseStrategy responseStrategy,
-                             Function<AgenticScope, String> requestGenerator, String outputKey, Function<AgenticScope, Object> output) {
+    public SupervisorPlanner(
+            ChatModel chatModel,
+            ChatMemoryProvider chatMemoryProvider,
+            int maxAgentsInvocations,
+            SupervisorContextStrategy contextStrategy,
+            SupervisorResponseStrategy responseStrategy,
+            Function<AgenticScope, String> requestGenerator,
+            String outputKey,
+            Function<AgenticScope, Object> output) {
         this.chatModel = chatModel;
         this.chatMemoryProvider = chatMemoryProvider;
         this.maxAgentsInvocations = maxAgentsInvocations;
@@ -94,25 +102,31 @@ public class SupervisorPlanner implements Planner, ChatMemoryAccessProvider {
     @Override
     public void init(final InitPlanningContext initPlanningContext) {
         // 1. 将所有子Agent注册到 Map 中（按 agentId 索引）
-        this.agents = initPlanningContext.subagents().stream().collect(toMap(AgentInstance::agentId, Function.identity()));
+        this.agents =
+                initPlanningContext.subagents().stream().collect(toMap(AgentInstance::agentId, Function.identity()));
         // 2. 生成子Agent的"名片"列表，供LLM识别
         this.agentsList = initPlanningContext.subagents().stream()
                 .map(SupervisorPlanner::toCard)
                 .collect(Collectors.joining(", "));
 
+        this.request = requestGenerator != null
+                ? requestGenerator.apply(initPlanningContext.agenticScope())
+                : initPlanningContext.agenticScope().readState("request", "");
         // 3. 获取用户请求（自定义生成器 或 从Scope读取）
         this.request = requestGenerator != null ? requestGenerator.apply(initPlanningContext.agenticScope()) : initPlanningContext.agenticScope().readState("request", "");
         // 4. 如果是 SCORED 策略，创建打分用的 ResponseAgent
         if (responseStrategy == SupervisorResponseStrategy.SCORED) {
-            this.responseAgent = AiServices.builder(ResponseAgent.class).chatModel(chatModel).build();
+            this.responseAgent =
+                    AiServices.builder(ResponseAgent.class).chatModel(chatModel).build();
         }
     }
 
     @Override
     public Action nextAction(PlanningContext planningContext) {
-        String lastResponse = planningContext.previousAgentInvocation() == null ?
-                "" :
-                planningContext.previousAgentInvocation().output().toString();
+        String lastResponse = planningContext.previousAgentInvocation() == null
+                || planningContext.previousAgentInvocation().output() == null
+                ? ""
+                : planningContext.previousAgentInvocation().output().toString();
         // 防无限循环：超过最大调用次数则终止
         if (loopCount++ >= maxAgentsInvocations) {
             return doneAction(planningContext.agenticScope(), lastResponse, null);
@@ -138,16 +152,19 @@ public class SupervisorPlanner implements Planner, ChatMemoryAccessProvider {
             return "";
         }
 
-        if (type.isPrimitive() || type.isEnum() || type == String.class ||
-                type == Boolean.class || Number.class.isAssignableFrom(type)) {
+        if (type.isPrimitive()
+                || type.isEnum()
+                || type == String.class
+                || type == Boolean.class
+                || Number.class.isAssignableFrom(type)) {
             return name + ": " + type.getSimpleName();
         }
 
-        String fieldsDescription = type.isRecord() ?
-                Stream.of(type.getDeclaredConstructors()[0].getParameters())
+        String fieldsDescription = type.isRecord()
+                ? Stream.of(type.getDeclaredConstructors()[0].getParameters())
                         .map(p -> argumentDescription(p.getType(), ParameterNameResolver.name(p)))
-                        .collect(Collectors.joining(", ")) :
-                Stream.of(type.getDeclaredFields())
+                        .collect(Collectors.joining(", "))
+                : Stream.of(type.getDeclaredFields())
                         .map(f -> argumentDescription(f.getType(), f.getName()))
                         .collect(Collectors.joining(", "));
 
@@ -161,8 +178,10 @@ public class SupervisorPlanner implements Planner, ChatMemoryAccessProvider {
                 : "";
 
         // 2. 调用 PlannerAgent（LLM）进行规划决策
-        AgentInvocation agentInvocation = withAgenticScope(agenticScope,
-                () -> planner(agenticScope).plan(agenticScope.memoryId(), agentsList, request, lastResponse, supervisorContext));
+        AgentInvocation agentInvocation = withAgenticScope(
+                agenticScope,
+                () -> planner(agenticScope)
+                        .plan(agenticScope.memoryId(), agentsList, request, lastResponse, supervisorContext));
         LOG.info("Agent Invocation: {}", agentInvocation);
 
         // 3. LLM 返回 "done" → 任务完成
@@ -212,12 +231,16 @@ public class SupervisorPlanner implements Planner, ChatMemoryAccessProvider {
         if (agenticScope.hasState(key)) {
             Class<?> argType = agent.arguments().stream()
                     .filter(arg -> arg.name().equals(key))
-                    .findFirst().map(AgentArgument::rawType).orElse(null);
+                    .findFirst()
+                    .map(AgentArgument::rawType)
+                    .orElse(null);
             if (argType != null) {
                 Object existingValue = agenticScope.readState(key);
                 // avoid overwriting a structured state with an unstructured argument generated from supervisor's LLM response
                 // 避免用LLM生成的非结构化值覆盖结构化状态
-                return !argType.isAssignableFrom(existingValue.getClass()) || argType.isAssignableFrom(value.getClass());
+                // response
+                return !argType.isAssignableFrom(existingValue.getClass())
+                        || argType.isAssignableFrom(value.getClass());
             }
         }
         return true;
@@ -248,8 +271,8 @@ public class SupervisorPlanner implements Planner, ChatMemoryAccessProvider {
             case LAST -> lastResponse;  // 最后一个子Agent的输出
             case SUMMARY -> doneResponse; // LLM 的总结
             case SCORED -> { // 用另一个LLM对两者打分
-                ResponseScore score = withAgenticScope(agenticScope,
-                        () -> responseAgent.scoreResponses(request, lastResponse, doneResponse));
+                ResponseScore score = withAgenticScope(
+                        agenticScope, () -> responseAgent.scoreResponses(request, lastResponse, doneResponse));
                 LOG.info("Response scores: {}", score);
                 yield score.getScore2() > score.getScore1() ? doneResponse : lastResponse;
             }
