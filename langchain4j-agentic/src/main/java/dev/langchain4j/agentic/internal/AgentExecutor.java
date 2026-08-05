@@ -1,8 +1,11 @@
 package dev.langchain4j.agentic.internal;
 
+import static dev.langchain4j.agentic.scope.DefaultAgenticScope.isSerializable;
+
 import dev.langchain4j.agentic.agent.AgentInvocationException;
 import dev.langchain4j.agentic.agent.ErrorRecoveryResult;
 import dev.langchain4j.agentic.agent.MissingArgumentException;
+import dev.langchain4j.agentic.scope.AgenticSystemSuspendedException;
 import dev.langchain4j.agentic.observability.AgentListener;
 import dev.langchain4j.agentic.planner.AgentArgument;
 import dev.langchain4j.agentic.planner.AgentInstance;
@@ -11,13 +14,11 @@ import dev.langchain4j.agentic.planner.Planner;
 import dev.langchain4j.agentic.scope.AgentInvocation;
 import dev.langchain4j.agentic.scope.DefaultAgenticScope;
 import dev.langchain4j.service.TokenStream;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import java.lang.reflect.Type;
 import java.util.List;
 import java.util.Map;
-
-import static dev.langchain4j.agentic.scope.DefaultAgenticScope.isSerializable;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public record AgentExecutor(AgentInvoker agentInvoker, Object agent) implements AgentInstance, InternalAgent {
 
@@ -40,7 +41,12 @@ public record AgentExecutor(AgentInvoker agentInvoker, Object agent) implements 
     }
 
     private Object handleAgentFailure(
-            AgentInvocationException e, DefaultAgenticScope agenticScope, Object invokedAgent, PlannerExecutor planner) {
+            AgentInvocationException e,
+            DefaultAgenticScope agenticScope,
+            Object invokedAgent,
+            PlannerExecutor planner,
+            AgentInvocationArguments args,
+            boolean plannerAlreadyNotified) {
         ErrorRecoveryResult recoveryResult = agenticScope.handleError(agentInvoker.name(), e);
         return switch (recoveryResult.type()) {
             // 抛出异常
@@ -48,18 +54,25 @@ public record AgentExecutor(AgentInvoker agentInvoker, Object agent) implements 
             // 重试
             case RETRY -> internalExecute(agenticScope, invokedAgent, planner, false);
             // 返回结果
-            case RETURN_RESULT -> recoveryResult.result();
+            case RETURN_RESULT ->
+                plannerAlreadyNotified
+                        ? recoveryResult.result()
+                        : completeAgentInvocation(recoveryResult.result(), agenticScope, invokedAgent, planner, args);
         };
     }
 
-    private Object internalExecute(DefaultAgenticScope agenticScope, Object invokedAgent, PlannerExecutor planner, boolean async) {
+    private Object internalExecute(
+            DefaultAgenticScope agenticScope, Object invokedAgent, PlannerExecutor planner, boolean async) {
+        AgentInvocationArguments args = null;
         try {
-            AgentInvocationArguments args = null;
             try {
                 args = agentInvoker.toInvocationArguments(agenticScope);
             } catch (MissingArgumentException e) {
                 if (optional()) {
-                    LOG.info("Skipping optional agent '{}' because of missing argument '{}'", agentInvoker.name(), e.argumentName());
+                    LOG.info(
+                            "Skipping optional agent '{}' because of missing argument '{}'",
+                            agentInvoker.name(),
+                            e.argumentName());
                     Object response = agenticScope.readState(agentInvoker.outputKey());
                     if (planner != null) {
                         planner.onSubagentInvoked(new AgentInvocation(type(), name(), agentId(), Map.of(), response));
@@ -70,36 +83,57 @@ public record AgentExecutor(AgentInvoker agentInvoker, Object agent) implements 
             }
 
             Object response = agentResponse(agenticScope, invokedAgent, planner, args, async);
-            String outputKey = agentInvoker.outputKey();
-            if (outputKey != null && !outputKey.isBlank()) {
-                agenticScope.writeState(outputKey, response);
-            }
-            // 记录调用
-            AgentInvocation agentInvocation = new AgentInvocation(type(), name(), agentId(), args.namedArgs(), isSerializable(response) ? response : "<unknown>");
-            // 注册调用
-            agenticScope.registerAgentInvocation(agentInvocation, invokedAgent);
+            return completeAgentInvocation(response, agenticScope, invokedAgent, planner, args);
+        } catch (AgenticSystemSuspendedException e) {
             if (planner != null) {
-                // 添加调用 隐式调用栈结构
-                // 每个复合型 Agent 被调用时都会压入一个新的 PlannerLoop 栈帧，
-                // 在其内部完整执行完自己的子 Agent 编排后才弹栈返回给父层的 onSubagentInvoked。
-                // 这就是一个天然的递归执行栈——深度等于 Agent 树的嵌套层数，
-                // 每层的 Planner 只感知自己直接子 Agent 的结果，层层解耦
-                planner.onSubagentInvoked(agentInvocation);
+                planner.onSubagentSuspended();
             }
-            return response;
+            return null;
         } catch (AgentInvocationException e) {
-            return handleAgentFailure(e, agenticScope, invokedAgent, planner);
+            return handleAgentFailure(e, agenticScope, invokedAgent, planner, args, false);
         }
     }
 
-    private Object agentResponse(DefaultAgenticScope agenticScope, Object invokedAgent, PlannerExecutor planner, AgentInvocationArguments args, boolean async) {
+    private Object completeAgentInvocation(
+            Object response,
+            DefaultAgenticScope agenticScope,
+            Object invokedAgent,
+            PlannerExecutor planner,
+            AgentInvocationArguments args) {
+        String outputKey = agentInvoker.outputKey();
+        if (outputKey != null && !outputKey.isBlank()) {
+            agenticScope.writeState(outputKey, response);
+        }
+        Map<String, Object> namedArgs = args != null ? args.namedArgs() : Map.of();
+        // 记录调用
+        AgentInvocation agentInvocation = new AgentInvocation(
+                type(), name(), agentId(), namedArgs, isSerializable(response) ? response : "<unknown>");
+        // 注册调用
+        agenticScope.registerAgentInvocation(agentInvocation, invokedAgent);
+        if (planner != null) {
+            // 添加调用 隐式调用栈结构
+            // 每个复合型 Agent 被调用时都会压入一个新的 PlannerLoop 栈帧，
+            // 在其内部完整执行完自己的子 Agent 编排后才弹栈返回给父层的 onSubagentInvoked。
+            // 这就是一个天然的递归执行栈——深度等于 Agent 树的嵌套层数，
+            // 每层的 Planner 只感知自己直接子 Agent 的结果，层层解耦
+            planner.onSubagentInvoked(agentInvocation);
+        }
+        return response;
+    }
+
+    private Object agentResponse(
+            DefaultAgenticScope agenticScope,
+            Object invokedAgent,
+            PlannerExecutor planner,
+            AgentInvocationArguments args,
+            boolean async) {
         if (async) {
             return new AsyncResponse<>(() -> {
                 try {
                     // 执行代理， agent response
                     return agentInvoker.invoke(agenticScope, invokedAgent, args);
                 } catch (AgentInvocationException e) {
-                    return handleAgentFailure(e, agenticScope, invokedAgent, planner);
+                    return handleAgentFailure(e, agenticScope, invokedAgent, planner, args, true);
                 }
             });
         }
@@ -179,6 +213,16 @@ public record AgentExecutor(AgentInvoker agentInvoker, Object agent) implements 
     @Override
     public void setParent(InternalAgent parent) {
         agentInvoker.setParent(parent);
+    }
+
+    @Override
+    public boolean compensateOnError() {
+        return agentInvoker.compensateOnError();
+    }
+
+    @Override
+    public void enableCrossAgentCompensation() {
+        agentInvoker.enableCrossAgentCompensation();
     }
 
     @Override

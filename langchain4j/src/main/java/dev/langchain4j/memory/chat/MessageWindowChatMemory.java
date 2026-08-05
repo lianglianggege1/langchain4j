@@ -130,6 +130,7 @@ public class MessageWindowChatMemory implements ChatMemory {
     private void set(List<ChatMessage> messages) {
         Integer maxMessages = this.maxMessagesProvider.apply(this.id);
         ensureGreaterThanZero(maxMessages, "maxMessages");
+        messages = new ArrayList<>(messages);
         ensureCapacity(messages, maxMessages);
         store.updateMessages(id, messages);
     }

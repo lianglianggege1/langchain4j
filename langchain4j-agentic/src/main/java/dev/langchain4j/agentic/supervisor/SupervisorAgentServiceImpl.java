@@ -58,11 +58,9 @@ public class SupervisorAgentServiceImpl<T> extends AbstractServiceBuilder<T, Sup
         // 添加主管上下文
         if (supervisorContext != null) {
             // 在call之前
-            this.beforeCall(agenticScope -> {
-                if (!agenticScope.hasState(SupervisorPlanner.SUPERVISOR_CONTEXT_KEY)) {
-                    agenticScope.writeState(SupervisorPlanner.SUPERVISOR_CONTEXT_KEY, supervisorContext);
-                }
-            });
+            this.beforeCall(this.beforeCall.andThen(agenticScope ->
+                    agenticScope.writeStateIfAbsent(SupervisorPlanner.SUPERVISOR_CONTEXT_KEY, supervisorContext)
+            ));
         }
 
         // 主管规划师

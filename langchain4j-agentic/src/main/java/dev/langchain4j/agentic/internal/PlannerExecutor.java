@@ -8,6 +8,8 @@ public interface PlannerExecutor {
     // 响应子代理调用
     void onSubagentInvoked(AgentInvocation agentInvocation);
 
+    default void onSubagentSuspended() {}
+
     // 是否传递流式响应
     boolean propagateStreaming();
 }

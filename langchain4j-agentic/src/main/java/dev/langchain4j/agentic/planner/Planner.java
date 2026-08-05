@@ -53,46 +53,108 @@ public interface Planner {
      */
     default void restoreExecutionState(Map<String, Object> state) { }
 
+    /**
+     * Returns the first action to execute when the planner starts (or resumes).
+     * Defaults to delegating to {@link #nextAction(PlanningContext)}.
+     *
+     * @param planningContext the current planning context
+     * @return the first action to execute
+     */
     default Action firstAction(PlanningContext planningContext) {
         return nextAction(planningContext);
     }
 
     // 拓扑
+    /**
+     * Returns the topology of the agentic system managed by this planner.
+     *
+     * @return the topology (defaults to {@link AgenticSystemTopology#SEQUENCE})
+     */
     default AgenticSystemTopology topology() {
         return AgenticSystemTopology.SEQUENCE;
     }
 
     // 下一个动作
+    /**
+     * Determines the next action to execute based on the result of the previous agent invocation.
+     *
+     * @param planningContext the current planning context, including the previous agent's result
+     * @return the next action to execute
+     */
     Action nextAction(PlanningContext planningContext);
 
     // 终止
+    /**
+     * Returns {@code true} if the planner has reached a terminal state and will not
+     * produce further actions.
+     *
+     * @return {@code true} if the planner is terminated
+     */
     default boolean terminated() {
         return false;
     }
 
     // 无操作
+    /**
+     * Returns a no-op action that yields control without invoking any agent.
+     *
+     * @return a no-op action
+     */
     default Action noOp() {
         return Action.NoOpAction.INSTANCE;
     }
 
     // 调用
+    /**
+     * Returns an action that invokes the given agents. Multiple agents are dispatched in parallel.
+     *
+     * @param agents the agents to invoke
+     * @return an agent call action
+     */
     default Action call(AgentInstance... agents) {
         return new Action.AgentCallAction(agents);
     }
 
     // 调用
+    /**
+     * Returns an action that invokes the given agents. Multiple agents are dispatched in parallel.
+     *
+     * @param agents the agents to invoke
+     * @return an agent call action
+     */
     default Action call(List<AgentInstance> agents) {
         return call(agents.toArray(new AgentInstance[0]));
     }
 
     // 完成
+    /**
+     * Returns an action signaling that the planner has completed with no explicit result.
+     *
+     * @return a done action
+     */
     default Action done() {
         return Action.DoneAction.INSTANCE;
     }
 
     // 完成
+    /**
+     * Returns an action signaling that the planner has completed with the given result.
+     *
+     * @param result the result value
+     * @return a done action carrying the result
+     */
     default Action done(Object result) {
         return new Action.DoneWithResultAction(result);
+    }
+
+    /**
+     * Returns an action signaling that the agentic system should suspend.
+     * The execution loop will checkpoint the scope state and release the calling thread.
+     *
+     * @return a suspend action
+     */
+    default Action suspend() {
+        return Action.SuspendAction.INSTANCE;
     }
 
     default <T extends AgentInstance> T as(Class<T> agentInstanceClass, AgentInstance agentInstance) {

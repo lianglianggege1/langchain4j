@@ -251,7 +251,7 @@ public class SupervisorPlanner implements Planner, ChatMemoryAccessProvider {
         if (outputKey != null) {
             agenticScope.writeState(outputKey, result);
         }
-        return done(result);
+        return done(output != null ? output.apply(agenticScope) : result);
     }
 
     private PlannerAgent planner(AgenticScope agenticScope) {
@@ -259,9 +259,6 @@ public class SupervisorPlanner implements Planner, ChatMemoryAccessProvider {
     }
 
     private Object result(AgenticScope agenticScope, String request, String lastResponse, AgentInvocation done) {
-        if (output != null) {
-            return output.apply(agenticScope);  // 自定义输出函数优先
-        }
         if (done == null || done.getArguments() == null || done.getArguments().get("response") == null) {
             return lastResponse; // 退化场景
         }

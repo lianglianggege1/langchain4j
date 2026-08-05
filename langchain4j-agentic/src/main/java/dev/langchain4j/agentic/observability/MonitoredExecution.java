@@ -59,7 +59,13 @@ public class MonitoredExecution {
 
     // 在代理执行错误时
     void onAgentInvocationError(AgentInvocationError agentInvocationError) {
-        this.agentInvocationError = agentInvocationError;
+        // Preserve the first (root-cause) error: when an error propagates up a sequential
+        // chain, onAgentInvocationError is called once per agent in the chain, but only the
+        // first call carries the original failing agent.
+        if (this.agentInvocationError == null) {
+            this.agentInvocationError = agentInvocationError;
+        }
+        ongoingInvocations.remove(agentInvocationError.agentId());
     }
 
     // 代理工具执行继承

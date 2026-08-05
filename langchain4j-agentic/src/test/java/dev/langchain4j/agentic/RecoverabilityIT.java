@@ -1,9 +1,10 @@
 package dev.langchain4j.agentic;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import dev.langchain4j.agentic.internal.AgenticScopeOwner;
-import dev.langchain4j.agentic.internal.PendingResponse;
+import dev.langchain4j.agentic.internal.SuspendedResponse;
 import dev.langchain4j.agentic.scope.AgenticScope;
 import dev.langchain4j.agentic.scope.AgenticScopeAccess;
 import dev.langchain4j.agentic.scope.AgenticScopeKey;
@@ -11,6 +12,7 @@ import dev.langchain4j.agentic.scope.AgenticScopePersister;
 import dev.langchain4j.agentic.scope.AgenticScopeRegistry;
 import dev.langchain4j.agentic.scope.AgenticScopeSerializer;
 import dev.langchain4j.agentic.scope.AgenticScopeStore;
+import dev.langchain4j.agentic.scope.AgenticSystemSuspendedException;
 import dev.langchain4j.agentic.scope.DefaultAgenticScope;
 import dev.langchain4j.agentic.workflow.HumanInTheLoop;
 import dev.langchain4j.service.MemoryId;
@@ -24,27 +26,25 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Optional;
 import java.util.Set;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 /**
- * End-to-end integration test demonstrating workflow persistence and recovery
+ * End-to-end integration test demonstrating workflow suspension and recovery
  * after a simulated crash, including HumanInTheLoop with PendingResponse.
  *
  * <p>Scenario: a sequential workflow runs three agents:
  * <ol>
  *   <li><b>DataProcessor</b> — processes input and writes intermediate state</li>
  *   <li><b>HumanReviewer</b> — a HumanInTheLoop that creates a {@link PendingResponse}
- *       to request human approval; the workflow blocks waiting for this response</li>
+ *       to request human approval; the workflow suspends here</li>
  *   <li><b>ResultFinalizer</b> — reads the human approval and produces the final output</li>
  * </ol>
  *
  * <p>The test:
  * <ol>
- *   <li>Starts the workflow — agents 1 and 2 execute; agent 3 blocks on the pending response</li>
+ *   <li>Starts the workflow — agents 1 and 2 execute; the workflow suspends
+ *       (throws {@link AgenticSystemSuspendedException}) instead of blocking</li>
  *   <li>Simulates a crash — clears all in-memory state</li>
  *   <li>Recovers from the file-persisted scope — provides the human response and re-invokes</li>
  *   <li>The planner resumes from the checkpoint: only agent 3 runs, using the provided response</li>
@@ -70,14 +70,10 @@ import java.util.stream.Stream;
  */
 class RecoverabilityIT {
 
-    // ---- Agent interface with @MemoryId for persistence ----
-
     public interface RecoverableWorkflow extends AgenticScopeAccess {
         @Agent
         String process(@MemoryId String sessionId, @V("input") String input);
     }
-
-    // ---- File-based AgenticScopeStore using JSON serialization to temp files ----
 
     static class FileBasedAgenticScopeStore implements AgenticScopeStore {
 
@@ -150,50 +146,28 @@ class RecoverabilityIT {
     }
 
     @Test
-    void workflow_recovers_from_crash_with_human_in_the_loop(@TempDir Path tempDir) throws Exception {
+    void workflow_suspends_and_recovers_from_crash_with_human_in_the_loop(@TempDir Path tempDir) {
 
         // ---- Setup persistence with file-based store ----
         // ---- 配置基于文件存储的持久化功能 ----
         FileBasedAgenticScopeStore store = new FileBasedAgenticScopeStore(tempDir);
         AgenticScopePersister.setStore(store);
 
-        // ---- Track the PendingResponse created by HumanInTheLoop so we can unblock Phase 1 during cleanup ----
-        // ---- 跟踪人工介入创建的待处理响应，以便清理阶段解除第一阶段阻塞 ----
-        AtomicReference<PendingResponse<String>> phase1PendingRef = new AtomicReference<>();
-
-        // ---- Build the workflow ----
-        // ---- 构建工作流 ----
-        RecoverableWorkflow workflow = buildWorkflow(phase1PendingRef);
+        RecoverableWorkflow workflow = buildWorkflow();
 
         // ================================================================
-        //  PHASE 1: Start workflow — it will block waiting for human input
+        //  PHASE 1: Start workflow — it will suspend (not block!)
         // ================================================================
+        // 第一阶段：启动工作流 — 流程将挂起（抛出异常），等待人工输入
         // ================================================================
-        // 第一阶段：启动工作流 — 流程将阻塞，等待人工输入
-        // ================================================================
-        CompletableFuture<String> phase1Future = CompletableFuture.supplyAsync(
+        AgenticSystemSuspendedException suspended = assertThrows(
+                AgenticSystemSuspendedException.class,
                 () -> workflow.process("session-1", "raw data to process"));
 
-        // Wait until the HumanInTheLoop agent has executed and persisted the PendingResponse
-        // The per-step checkpointing saves state after each agent invocation
-        // 等待人工介入智能体执行完成并持久化待处理响应
-        // 分步检查点机制会在每次调用智能体后保存状态
-        awaitPendingResponse(workflow, "session-1");
+        assertThat(suspended.scope().pendingResponseIds()).containsExactly("human-review");
 
-        // At this point:
-        // - DataProcessor has run → state contains "processed_data"
-        // - HumanInTheLoop has run → state contains PendingResponse("human-review") under key "approval"
-        // - ResultFinalizer is blocked on readState("approval") → waiting for PendingResponse completion
-        // - Per-step checkpointing has saved the scope with cursor position = 2
-        // 此时状态：
-        // - 数据处理器已执行 → 状态中存在"processed_data"
-        // - 人工介入模块已执行 → 状态键"approval"下存有待处理响应（人工审核）
-        // - 结果定稿器读取状态"approval"时阻塞 → 等待待处理响应完成
-        // - 分步检查点已保存作用域，游标位置为2
-
-        AgenticScope scopeBeforeCrash = workflow.getAgenticScope("session-1");
+        AgenticScope scopeBeforeCrash = suspended.scope();
         assertThat(scopeBeforeCrash.readState("processed_data", "")).isEqualTo("PROCESSED: raw data to process");
-        assertThat(scopeBeforeCrash.pendingResponseIds()).containsExactly("human-review");
 
         // Verify that the planner execution state was saved in scope state (by PlannerLoop)
         // 校验规划器执行状态已由规划循环存入作用域状态
@@ -207,17 +181,8 @@ class RecoverabilityIT {
         // ================================================================
         //  PHASE 2: Simulate crash — clear all in-memory state
         // ================================================================
-        // Note: Phase 1 thread is still blocked on PendingResponse.blockingGet() in the Finalizer.
-        // We do NOT complete the Phase 1 PendingResponse here — that would cause rootCallEnded
-        // to replace the PendingResponse in state with the resolved value and flush to the store.
-        // Instead we simulate a hard crash by simply clearing in-memory state.
-        // ================================================================
         // 第二阶段：模拟崩溃 — 清空全部内存状态
         // ================================================================
-        // 注：第一阶段线程仍在定稿器中阻塞执行PendingResponse.blockingGet()
-        // 此处不完成第一阶段的待处理响应——否则会触发rootCallEnded
-        // 将状态内的待处理响应替换为已解析值并刷新至存储
-        // 取而代之，直接清空内存状态以模拟程序强制崩溃
         AgenticScopeRegistry registry = ((AgenticScopeOwner) workflow).registry();
         registry.clearInMemory();
 
@@ -242,21 +207,14 @@ class RecoverabilityIT {
         // 校验状态在崩溃后未丢失
         assertThat(recoveredScope.readState("processed_data", "")).isEqualTo("PROCESSED: raw data to process");
         // The PendingResponse was deserialized as a new incomplete future
-        // 待处理响应已反序列化为全新未完成异步任务
+        // 挂起响应已在恢复的作用域中登记，等待外部提供结果
         assertThat(recoveredScope.pendingResponseIds()).containsExactly("human-review");
 
-        // Simulate the human providing their response (e.g., via a REST endpoint in a Quarkus extension)
-        // Replace the PendingResponse with the actual value so the finalizer can read it immediately
-        // 模拟人工提交审核结果（例如通过Quarkus扩展的REST接口）
-        // 使用实际值替换待处理响应，使定稿器可立即读取
+        // Provide the human response by replacing the PendingResponse with the actual value
         recoveredScope.writeState("approval", "APPROVED by human reviewer");
 
         // Re-invoke the workflow with the same session ID
-        // The SequentialPlanner will restore cursor=2 from state and skip DataProcessor + HumanInTheLoop
-        // Only ResultFinalizer runs
-        // 使用相同会话ID重新执行工作流
-        // 顺序规划器将从状态恢复游标值2，跳过数据处理器与人工介入模块
-        // 仅执行结果定稿器
+        // The SequentialPlanner restores cursor and skips DataProcessor + HumanReviewer
         String finalResult = workflow.process("session-1", "raw data to process");
 
         // ================================================================
@@ -266,25 +224,12 @@ class RecoverabilityIT {
         // 校验：工作流依托恢复状态成功完成
         // ================================================================
         assertThat(finalResult).isEqualTo("Final result: PROCESSED: raw data to process | Approval: APPROVED by human reviewer");
-
-        // Cleanup: unblock the Phase 1 thread (it's blocked on the OLD PendingResponse object)
-        // 清理操作：解除第一阶段线程阻塞（该线程阻塞于旧的待处理响应对象）
-        PendingResponse<String> phase1Pending = phase1PendingRef.get();
-        if (phase1Pending != null) {
-            phase1Pending.complete("cleanup");
-        }
-        try {
-            phase1Future.get(5, TimeUnit.SECONDS);
-        } catch (Exception ignored) {
-            // Phase 1 result is irrelevant
-        }
     }
 
     // ---- Workflow construction ----
     // ---- 工作流构建 ----
 
-    @SuppressWarnings("unchecked")
-    private RecoverableWorkflow buildWorkflow(AtomicReference<PendingResponse<String>> pendingRef) {
+    private RecoverableWorkflow buildWorkflow() {
         // Agent 1: DataProcessor — transforms raw input and writes to state
         // 智能体1：数据处理器——转换原始输入并写入状态
         AgenticServices.AgenticScopeAction dataProcessor = AgenticServices.agentAction(
@@ -298,11 +243,7 @@ class RecoverabilityIT {
         HumanInTheLoop humanReviewer = AgenticServices.humanInTheLoopBuilder()
                 .description("Request human approval for the processed data")
                 .outputKey("approval")
-                .responseProvider(scope -> {
-                    PendingResponse<String> pending = new PendingResponse<>("human-review");
-                    pendingRef.set(pending);
-                    return pending;
-                })
+                .responseProvider(scope -> new SuspendedResponse<>("human-review"))
                 .build();
 
         // Agent 3: ResultFinalizer — combines processed data with human approval
@@ -319,30 +260,5 @@ class RecoverabilityIT {
                 .subAgents(dataProcessor, humanReviewer, resultFinalizer)
                 .outputKey("final_result")
                 .build();
-    }
-
-    // ---- Helpers ----
-
-    /**
-     * Polls until the HumanInTheLoop agent has executed and the PendingResponse
-     * is visible in the scope state.
-     */
-    /**
-     * 循环轮询直至人工介入智能体执行完毕，且待处理响应已在作用域状态中可见
-     */
-    private void awaitPendingResponse(RecoverableWorkflow workflow, String sessionId) throws InterruptedException {
-        long deadline = System.currentTimeMillis() + 10_000;
-        while (System.currentTimeMillis() < deadline) {
-            try {
-                AgenticScope scope = workflow.getAgenticScope(sessionId);
-                if (scope != null && !scope.pendingResponseIds().isEmpty()) {
-                    return;
-                }
-            } catch (Exception ignored) {
-                // Scope may not exist yet
-            }
-            Thread.sleep(100);
-        }
-        throw new AssertionError("Timed out waiting for PendingResponse to appear in scope state");
     }
 }

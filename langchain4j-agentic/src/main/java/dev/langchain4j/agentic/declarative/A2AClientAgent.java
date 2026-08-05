@@ -19,10 +19,11 @@ public @interface A2AClientAgent {
     /**
      * URL of the A2A server to which the requests will be sent.
      * 请求将被发送到的A2A服务器的URL。
+     * 若未提供，同一接口上必须存在标注了{@link A2AServerUrlSupplier}的方法。
      *
      * @return URL of the A2A server.
      */
-    String a2aServerUrl();
+    String a2aServerUrl() default "";
 
     /**
      * Name of the agent. If not provided, method name will be used.

@@ -99,6 +99,13 @@ public class ComposedAgentListener implements AgentListener {
         }
     }
 
+    @Override
+    public void onAgenticSystemSuspended(final AgenticScope agenticScope) {
+        for (AgentListener listener : listeners) {
+            listener.onAgenticSystemSuspended(agenticScope);
+        }
+    }
+
     public boolean contains(AgentListener listener) {
         if (listener instanceof ComposedAgentListener composed) {
             return listeners.containsAll(composed.listeners);

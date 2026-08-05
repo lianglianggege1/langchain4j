@@ -21,6 +21,9 @@ public interface AgentListener {
     // 在代理调用期间销毁代理之前
     default void beforeAgenticScopeDestroyed(AgenticScope agenticScope) { }
 
+    // 在agentic系统挂起时
+    default void onAgenticSystemSuspended(AgenticScope agenticScope) { }
+
     // 在代理调用期间执行工具之前
     default void beforeAgentToolExecution(BeforeAgentToolExecution beforeAgentToolExecution) { }
 

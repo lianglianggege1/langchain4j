@@ -29,4 +29,11 @@ public interface InternalAgent extends AgentInstance {
     default boolean allowChatMemory() {
         return true;
     }
+
+    default boolean compensateOnError() {
+        return false;
+    }
+
+    default void enableCrossAgentCompensation() {
+    }
 }
