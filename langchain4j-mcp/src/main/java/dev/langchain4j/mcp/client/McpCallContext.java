@@ -2,6 +2,7 @@ package dev.langchain4j.mcp.client;
 
 import dev.langchain4j.invocation.InvocationContext;
 import dev.langchain4j.mcp.protocol.McpClientMessage;
+import java.util.Map;
 import org.jspecify.annotations.Nullable;
 
 /**
@@ -15,5 +16,14 @@ import org.jspecify.annotations.Nullable;
  *
  * 当处于 AI 服务调用期间时，包含 AI 服务调用上下文
  *（其他情况下，调用上下文为 null）。
+ * 还可携带 MCP 参数级别的 HTTP 头（{@code mcpParamHeaders}，可为 null）。
  */
-public record McpCallContext(@Nullable InvocationContext invocationContext, McpClientMessage message) {}
+public record McpCallContext(
+        @Nullable InvocationContext invocationContext,
+        McpClientMessage message,
+        @Nullable Map<String, String> mcpParamHeaders) {
+
+    public McpCallContext(@Nullable InvocationContext invocationContext, McpClientMessage message) {
+        this(invocationContext, message, null);
+    }
+}

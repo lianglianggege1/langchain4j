@@ -108,6 +108,8 @@ public class PlannerBasedInvocationHandler implements InvocationHandler, Interna
     // 子代理
     private final List<AgentInstance> subagents;
 
+    private final Supplier<Object> defaultMemoryIdSupplier;
+
     // agent id
     private String agentId;
     // 父agent
@@ -150,6 +152,7 @@ public class PlannerBasedInvocationHandler implements InvocationHandler, Interna
         this.arguments = service.agenticMethod != null ? argumentsFromMethod(service.agenticMethod) : List.of();
         this.subagents =
                 service.subagents.stream().map(AgentInstance.class::cast).toList();
+        this.defaultMemoryIdSupplier = service.defaultMemoryIdSupplier;
         setParent(parent);
     }
 
@@ -352,8 +355,7 @@ public class PlannerBasedInvocationHandler implements InvocationHandler, Interna
             return;
         }
         crossAgentCompensationEnabled = true;
-        subagents.stream().map(InternalAgent.class::cast)
-                .forEach(InternalAgent::enableCrossAgentCompensation);
+        subagents.stream().map(InternalAgent.class::cast).forEach(InternalAgent::enableCrossAgentCompensation);
     }
 
     @Override
@@ -516,7 +518,14 @@ public class PlannerBasedInvocationHandler implements InvocationHandler, Interna
                 Thread.currentThread().interrupt();
                 throw new RuntimeException(e);
             } catch (ExecutionException e) {
-                throw new RuntimeException(e);
+                Throwable cause = e.getCause();
+                if (cause instanceof RuntimeException runtimeException) {
+                    throw runtimeException;
+                }
+                if (cause instanceof Error error) {
+                    throw error;
+                }
+                throw new RuntimeException(cause);
             }
         }
 
@@ -661,6 +670,9 @@ public class PlannerBasedInvocationHandler implements InvocationHandler, Interna
             if (parameters[i].getAnnotation(MemoryId.class) != null) {
                 return args[i];
             }
+        }
+        if (defaultMemoryIdSupplier != null) {
+            return defaultMemoryIdSupplier.get();
         }
         return null;
     }

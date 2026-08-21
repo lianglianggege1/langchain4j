@@ -58,8 +58,7 @@ public class DefaultContentInjector implements ContentInjector {
      使用以下信息回答：
      {{contents}}
      */
-    public static final PromptTemplate DEFAULT_PROMPT_TEMPLATE = PromptTemplate.from(
-            """
+    public static final PromptTemplate DEFAULT_PROMPT_TEMPLATE = PromptTemplate.from("""
                     {{userMessage}}
 
                     Answer using the following information:
@@ -132,9 +131,10 @@ public class DefaultContentInjector implements ContentInjector {
     }
 
     protected String format(Metadata metadata) {
+        Map<String, Object> metadataMap = metadata.toMap();
         StringBuilder formattedMetadata = new StringBuilder();
         for (String metadataKey : metadataKeysToInclude) {
-            String metadataValue = metadata.getString(metadataKey);
+            Object metadataValue = metadataMap.get(metadataKey);
             if (metadataValue != null) {
                 if (!formattedMetadata.isEmpty()) {
                     formattedMetadata.append("\n");
