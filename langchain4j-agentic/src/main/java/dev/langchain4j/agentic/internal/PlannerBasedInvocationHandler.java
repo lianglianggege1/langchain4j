@@ -60,7 +60,6 @@ import java.util.function.Supplier;
 
 // 基于Planner的调用处理程序
 public class PlannerBasedInvocationHandler implements InvocationHandler, InternalAgent {
-
     // 执行器
     private final Executor executor;
 
@@ -73,7 +72,6 @@ public class PlannerBasedInvocationHandler implements InvocationHandler, Interna
     // 在调用方法之前调用
     private final Consumer<AgenticScope> beforeCall;
 
-    // 默认的AgenticScope
     private final DefaultAgenticScope agenticScope;
 
     // 错误处理
@@ -99,7 +97,6 @@ public class PlannerBasedInvocationHandler implements InvocationHandler, Interna
     private final String description;
     // 输出类型
     private final Type outputType;
-    // 输出键
     private boolean allowStreamingOutput;
     // 输出键
     private final String outputKey;
@@ -107,6 +104,8 @@ public class PlannerBasedInvocationHandler implements InvocationHandler, Interna
     private final List<AgentArgument> arguments;
     // 子代理
     private final List<AgentInstance> subagents;
+
+    private final Supplier<Object> defaultMemoryIdSupplier;
 
     // agent id
     private String agentId;
@@ -150,6 +149,7 @@ public class PlannerBasedInvocationHandler implements InvocationHandler, Interna
         this.arguments = service.agenticMethod != null ? argumentsFromMethod(service.agenticMethod) : List.of();
         this.subagents =
                 service.subagents.stream().map(AgentInstance.class::cast).toList();
+        this.defaultMemoryIdSupplier = service.defaultMemoryIdSupplier;
         setParent(parent);
     }
 
@@ -216,7 +216,6 @@ public class PlannerBasedInvocationHandler implements InvocationHandler, Interna
         return executeAgentMethod(registry, method, args);
     }
 
-    // 获取或创建AgenticScope
     private AgenticScopeRegistry agenticScopeRegistry() {
         if (isRootCall()) {
             agenticScopeRegistry.compareAndSet(null, new AgenticScopeRegistry(type.getName()));
@@ -240,7 +239,7 @@ public class PlannerBasedInvocationHandler implements InvocationHandler, Interna
 
         Object result;
         try {
-            result = new PlannerLoop(planner, currentScope, registry).loop(); // 此部分太重要了 todo
+            result = new PlannerLoop(planner, currentScope, registry).loop();
         } catch (Exception e) {
             currentScope.compensateAll();
             if (isRootCall()) {
@@ -352,8 +351,7 @@ public class PlannerBasedInvocationHandler implements InvocationHandler, Interna
             return;
         }
         crossAgentCompensationEnabled = true;
-        subagents.stream().map(InternalAgent.class::cast)
-                .forEach(InternalAgent::enableCrossAgentCompensation);
+        subagents.stream().map(InternalAgent.class::cast).forEach(InternalAgent::enableCrossAgentCompensation);
     }
 
     @Override
@@ -460,7 +458,7 @@ public class PlannerBasedInvocationHandler implements InvocationHandler, Interna
                 nextAction = null;
                 switch (agents.size()) {
                     case 0 -> Thread.yield(); // 不调用
-                    case 1 -> agents.get(0).execute(agenticScope, this);// 同步调用
+                    case 1 -> agents.get(0).execute(agenticScope, this);
                     default -> parallelExecution(agents); // 并发调用
                 }
             }
@@ -505,18 +503,25 @@ public class PlannerBasedInvocationHandler implements InvocationHandler, Interna
         }
 
         private void parallelExecution(List<AgentExecutor> agents) {
-            Executor exec = executor != null ? executor : DefaultExecutorProvider.getDefaultExecutorService();// 并行计数器还是用了虚拟线程
+            Executor exec = executor != null ? executor : DefaultExecutorProvider.getDefaultExecutorService();
             var tasks = agents.stream()
                     .map(agentExecutor ->
                             CompletableFuture.supplyAsync(() -> agentExecutor.execute(agenticScope, this), exec))
                     .toArray(CompletableFuture[]::new);
             try {
-                CompletableFuture.allOf(tasks).get(); // 并行执行，逐个等待结果
+                CompletableFuture.allOf(tasks).get();
             } catch (InterruptedException e) {
                 Thread.currentThread().interrupt();
                 throw new RuntimeException(e);
             } catch (ExecutionException e) {
-                throw new RuntimeException(e);
+                Throwable cause = e.getCause();
+                if (cause instanceof RuntimeException runtimeException) {
+                    throw runtimeException;
+                }
+                if (cause instanceof Error error) {
+                    throw error;
+                }
+                throw new RuntimeException(cause);
             }
         }
 
@@ -564,7 +569,6 @@ public class PlannerBasedInvocationHandler implements InvocationHandler, Interna
             lock.lock();
             try {
                 completedAgentIds.add(agentInvocation.agentId());
-                // 让LLM决定是下一步怎么办
                 this.nextAction = composeActions(
                         this.nextAction, planner.nextAction(new PlanningContext(agenticScope, agentInvocation)));
                 saveExecutionState();
@@ -661,6 +665,9 @@ public class PlannerBasedInvocationHandler implements InvocationHandler, Interna
             if (parameters[i].getAnnotation(MemoryId.class) != null) {
                 return args[i];
             }
+        }
+        if (defaultMemoryIdSupplier != null) {
+            return defaultMemoryIdSupplier.get();
         }
         return null;
     }
