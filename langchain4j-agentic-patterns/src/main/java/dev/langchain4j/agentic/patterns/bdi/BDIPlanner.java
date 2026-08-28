@@ -24,6 +24,10 @@ import static java.util.stream.Collectors.toMap;
  * current intention and re-deliberates. Among desires with equal priority, the one declared first
  * in the list is selected (stable ordering).
  */
+/**
+ * 信念‑愿望‑意图（BDI）规划器，维护带优先级的目标（{@link Desire 愿望}），并随着{@link AgenticScope}的变化动态切换目标。
+ * 每一步规划时，该规划器会检测是否出现优先级更高且可达成的愿望；若存在，则抢占当前意图并重新进行决策。优先级相同的愿望，选取列表中最先声明的那一个（顺序稳定）。
+ */
 public class BDIPlanner implements Planner {
 
     private static final Logger LOG = LoggerFactory.getLogger(BDIPlanner.class);
