@@ -1,8 +1,6 @@
 package dev.langchain4j.mcp.protocol;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.node.ObjectNode;
 import dev.langchain4j.Internal;
 import java.util.Map;
 
@@ -18,17 +16,17 @@ public class McpCallToolParams extends McpClientParams {
     private String name;
 
     @JsonInclude(JsonInclude.Include.ALWAYS)
-    private ObjectNode arguments;
+    private Map<String, Object> arguments;
 
     @JsonInclude(JsonInclude.Include.NON_NULL)
     private Map<String, Object> inputResponses;
 
     @JsonInclude(JsonInclude.Include.NON_NULL)
-    private JsonNode requestState;
+    private Object requestState;
 
     public McpCallToolParams() {}
 
-    public McpCallToolParams(String name, ObjectNode arguments) {
+    public McpCallToolParams(String name, Map<String, Object> arguments) {
         this.name = name;
         this.arguments = arguments;
     }
@@ -41,11 +39,11 @@ public class McpCallToolParams extends McpClientParams {
         this.name = name;
     }
 
-    public ObjectNode getArguments() {
+    public Map<String, Object> getArguments() {
         return arguments;
     }
 
-    public void setArguments(ObjectNode arguments) {
+    public void setArguments(Map<String, Object> arguments) {
         this.arguments = arguments;
     }
 
@@ -57,11 +55,11 @@ public class McpCallToolParams extends McpClientParams {
         this.inputResponses = inputResponses;
     }
 
-    public JsonNode getRequestState() {
+    public Object getRequestState() {
         return requestState;
     }
 
-    public void setRequestState(JsonNode requestState) {
+    public void setRequestState(Object requestState) {
         this.requestState = requestState;
     }
 }

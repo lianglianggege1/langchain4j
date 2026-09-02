@@ -16,6 +16,15 @@ import java.util.function.Predicate;
  * @param satisfied  predicate on {@link dev.langchain4j.agentic.scope.AgenticScope} — has this desire been achieved?
  * @param agentTypes ordered agent classes forming the intention; resolved to instances at init time
  */
+/**
+ * {@link BDIPlanner}使用的带优先级目标。每个愿望会定义自身何时可执行、何时已完成，以及构成其意图的有序代理类型序列。数值越大优先级越高；优先级相同时，按声明先后顺序选择（顺序稳定）。
+ *
+ * @param name 可读名称，用于日志与错误诊断
+ * @param priority 优先级，数值越大越重要；严格更高优先级会触发抢占
+ * @param achievable 基于{@link dev.langchain4j.agentic.scope.AgenticScope}的断言：当前是否可以执行该愿望
+ * @param satisfied 基于{@link dev.langchain4j.agentic.scope.AgenticScope}的断言：该愿望是否已经达成
+ * @param agentTypes 构成意图的有序代理类；初始化时解析为实例对象
+ */
 public record Desire(String name, int priority,
                      Predicate<AgenticScope> achievable,
                      Predicate<AgenticScope> satisfied,
