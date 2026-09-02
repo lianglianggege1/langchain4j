@@ -46,6 +46,12 @@ import java.util.Map;
  */
 public class DefaultContentInjector implements ContentInjector {
 
+    /**
+     {{userMessage}}
+
+     使用以下信息回答：
+     {{contents}}
+     */
     public static final PromptTemplate DEFAULT_PROMPT_TEMPLATE = PromptTemplate.from("""
                     {{userMessage}}
 

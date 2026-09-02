@@ -88,11 +88,19 @@ public interface McpClient extends AutoCloseable {
      * @deprecated Use {@link #subscribeToResources(List)} for MCP 2026-07-28 and later.
      *             Throws {@link UnsupportedOperationException} when using the modern protocol.
      */
+    /**
+     * 订阅指定URI资源的更新通知。
+     * 当资源发生变更时，服务器会发送一条 {@code notifications/resources/updated} 通知。
+     * 客户端会调用已配置的 {@code onResourceUpdated} 回调函数，并传入已更新资源的URI。
+     *
+     * @deprecated 在 MCP 2026-07-28 及更高版本中，请改用 {@link #subscribeToResources(List)}。
+     */
     @Deprecated(since = "1.19.0-beta29")
     void subscribeToResource(String uri);
 
     /**
      * Unsubscribes from updates for the resource with the specified URI.
+     * 取消订阅指定URI资源的更新通知。
      *
      * @deprecated Use {@link #unsubscribeFromResources(long)} for MCP 2026-07-28 and later.
      *             Throws {@link UnsupportedOperationException} when using the modern protocol.
@@ -169,6 +177,12 @@ public interface McpClient extends AutoCloseable {
      *
      * @deprecated Roots are deprecated in MCP protocol version 2026-07-28. This method throws
      *     {@link UnsupportedOperationException} when the modern protocol is in use.
+     */
+    /**
+     * 设置服务器请求时可访问的根路径。
+     * 调用此方法后，客户端还会向服务器发送 `notifications/roots/list_changed` 消息。
+     *
+     * @deprecated Roots 在 MCP 协议 2026-07-28 版本中已废弃，使用新协议时调用此方法会抛出 {@link UnsupportedOperationException}。
      */
     @Deprecated(since = "1.19.0-beta29")
     void setRoots(List<McpRoot> roots);
