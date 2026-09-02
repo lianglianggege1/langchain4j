@@ -34,6 +34,21 @@ import static java.util.stream.Collectors.toMap;
  * If the maximum number of invocations is reached before the goal is satisfied, the planner throws an
  * {@link IllegalStateException}.
  */
+/**
+ * 黑板规划器，依据共享作用域内的数据可用情况来激活代理。
+ * <p>
+ * 代理作为知识源，将部分结果发布到{@link AgenticScope}（黑板）中。
+ * 每个代理执行完成后，规划器会检查黑板，激活下一个能够产出贡献的代理。
+ * 当存在多个就绪代理时，由{@link ConflictResolutionStrategy}决定执行哪一个；
+ * 若未指定策略，则按照声明顺序执行。
+ * <p>
+ * 规划器成功终止条件：
+ * <ul>
+ *   <li>目标断言条件满足（默认：规划器的 outputKey 已存在于作用域中）</li>
+ *   <li>没有代理可以执行（静默状态）</li>
+ * </ul>
+ * 如果在目标达成前就达到最大调用次数，规划器会抛出{@link IllegalStateException}。
+ */
 public class BlackboardPlanner implements Planner {
 
     private static final Logger LOG = LoggerFactory.getLogger(BlackboardPlanner.class);

@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>P2P Cheatsheet · 速查手册</title>
+<link rel="stylesheet" href="../assets/lesson.css">
+</head>
+<body>
+<main>
+
+<header class="lesson-header">
+  <div class="lesson-kicker">reference · 速查手册</div>
+  <h1>P2P 模式速查表</h1>
+  <p class="lesson-sub">数据驱动激活 · 稳定态终止 · 变脏重跑。配套课程：<a href="../lessons/0002-p2p-pattern.html">第 2 课</a></p>
+</header>
+
+<h2>一句话定位</h2>
+<p>P2PPlanner 不做智能决策，只做机械激活：<strong>输入齐 → 执行；输入变 → 重跑；全员静止 → 结束</strong>。agent 间零调用，全靠 AgenticScope（STAR 拓扑）传数据。</p>
+
+<h2>构建模板</h2>
+<pre><code>// 1. 声明 peer：@V = 输入(前置条件)，outputKey = 输出(效果)
+LiteratureAgent a = AgenticServices.agentBuilder(LiteratureAgent.class)
+        .chatModel(model).tools(tools).outputKey("researchFindings").build();
+
+// 2. 装配：typed 入口（参数直接成为状态）
+ResearchAgent r = AgenticServices.plannerBuilder(ResearchAgent.class)
+        .subAgents(a, b, c).outputKey("hypothesis")
+        .planner(() -> new P2PPlanner(maxInvocations, exitCondition)).build();
+r.research("black holes");
+
+// 2'. 装配：untyped 入口（自然语言 → LLM 提取变量，必须给 ChatModel）
+P2PAgent r = AgenticServices.plannerBuilder(P2PAgent.class)
+        .subAgents(a, b, c).outputKey("hypothesis")
+        .planner(() -> new P2PPlanner(model, maxInvocations, exitCond)).build();
+r.invoke("produce a research about black holes");</code></pre>
+
+<h2>AgentActivator：两个标志位</h2>
+<table>
+  <thead><tr><th>标志</th><th>语义</th><th>置位 / 复位</th></tr></thead>
+  <tbody>
+    <tr><td><code>executing</code>（锁位）</td><td>当前在执行，防重复调度、防误判稳定态</td><td>startExecution 置 / finishExecution 复</td></tr>
+    <tr><td><code>shouldExecute</code>（脏位，初始 true）</td><td>数据要求（重新）执行</td><td>激活时清 / 我的输入 key 被改时置回</td></tr>
+  </tbody>
+</table>
+<p><strong>canActivate = !executing &amp;&amp; shouldExecute &amp;&amp; 全部输入 ∈ scope</strong>（P2PPlanner.java:145-147）</p>
+
+<h2>决策三方法</h2>
+<table>
+  <thead><tr><th>方法</th><th>时机</th><th>职责</th></tr></thead>
+  <tbody>
+    <tr><td><code>firstAction</code></td><td>循环开始一次</td><td>scope 有 p2pRequest → VariablesExtractorAgent(LLM) 提取变量写入 scope</td></tr>
+    <tr><td><code>nextCallAction</code></td><td>每轮扫描</td><td>收集 canActivate 者 → startExecution + counter+=n → call(agents)；n=0 且无人执行 → done()（稳定态）</td></tr>
+    <tr><td><code>nextAction</code></td><td>每次完成回调</td><td>terminated()? → done()；否则 finishExecution(刚完成者) + 全员 onStateChanged(outputKey)（变脏广播）</td></tr>
+  </tbody>
+</table>
+
+<h2>运行时关键点（PlannerLoop）</h2>
+<ul>
+  <li>分发三分支：0 个 agent → <code>Thread.yield()</code> 等待；1 个 → 同步；多个 → <code>CompletableFuture.allOf</code> 并行</li>
+  <li>完成回调 <code>onSubagentInvoked</code> 在 ReentrantLock 内：<code>composeActions(当前动作, nextAction)</code> 合并，空 call 可丢弃，done 优先</li>
+  <li>每次回调把 <code>executionState()</code>（invocationCounter）存入 scope，崩溃可恢复</li>
+  <li>结束时 <code>result()</code> 读根 agent 的 outputKey 返回</li>
+</ul>
+
+<h2>终止三保险</h2>
+<table>
+  <thead><tr><th>保险</th><th>条件</th><th>适用</th></tr></thead>
+  <tbody>
+    <tr><td>稳定态 quiescence</td><td>无人可激活 ∧ 无人执行中</td><td>无环 DAG（必然沉降）</td></tr>
+    <tr><td>硬闸</td><td>counter ≥ maxAgentsInvocations（缺省 10）</td><td>有环必配</td></tr>
+    <tr><td>软闸</td><td>exitCondition(scope, counter)</td><td>业务质量目标（如 score ≥ 0.85）</td></tr>
+  </tbody>
+</table>
+
+<h2>两个坑（P2PResearcherIT 至今 @Disabled）</h2>
+<ul>
+  <li><strong>环依赖振荡</strong>：agent 的 outputKey 是（自己或他人的）输入 → 每轮写回都触发再激活。设计时先画依赖图，见回边必配双闸。</li>
+  <li><strong>空动作自旋冻结</strong>：done 被空 call 覆盖 → 主循环永久 yield。回归测试 P2PPlannerComposeActionsIT。</li>
+</ul>
+
+<h2>测试锚点速查</h2>
+<table>
+  <thead><tr><th>测试</th><th>钉死的规则</th></tr></thead>
+  <tbody>
+    <tr><td>P2PPlannerTest · shouldNotInvokeMore…</td><td>ping-pong 互喂，精确执行 max 次（硬闸）</td></tr>
+    <tr><td>P2PPlannerTest · shouldStopBefore…ExitCondition</td><td>软闸优先于硬闸生效</td></tr>
+    <tr><td>P2PPlannerTest · should_terminate_when_no_agent…</td><td>无环 DAG 沉降到稳定态</td></tr>
+    <tr><td>P2PPlannerTest · should_not_terminate_while…executing</td><td>在途 agent 存在时禁止判稳定态（假稳定）</td></tr>
+    <tr><td>P2PPlannerComposeActionsIT · p2p_should_not_freeze…</td><td>composeActions 不丢 done（防冻结）</td></tr>
+  </tbody>
+</table>
+
+<h2>源码地图</h2>
+<ul>
+  <li><code>patterns/p2p/P2PAgent.java</code> — untyped 入口接口 + P2P_REQUEST_KEY</li>
+  <li><code>patterns/p2p/P2PPlanner.java</code> — 激活引擎（AgentActivator:128-173）</li>
+  <li><code>patterns/p2p/VariablesExtractorAgent.java</code> — LLM 变量提取提示词</li>
+  <li><code>agentic/internal/PlannerBasedInvocationHandler.java</code> — PlannerLoop(:418-606)</li>
+  <li><code>agentic/internal/AgentExecutor.java</code> — completeAgentInvocation(:97-122)</li>
+</ul>
+
+<footer class="lesson-footer">
+  <p>速查手册 · 事实来源：本地仓库源码与测试 · 有疑问回课程第 2 课或直接问老师</p>
+</footer>
+
+</main>
+</body>
+</html>

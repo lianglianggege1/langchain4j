@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>GOAP 运行时速查表</title>
+<link rel="stylesheet" href="../assets/lesson.css">
+<style>
+  main { max-width: 60rem; }
+  .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 1.2rem; }
+  @media (max-width: 720px) { .grid2 { grid-template-columns: 1fr; } }
+  .kv dt { font-weight: 700; margin-top: 0.5rem; }
+  .kv dd { margin: 0 0 0.3rem 0; }
+</style>
+</head>
+<body>
+<main>
+
+<header class="lesson-header">
+  <div class="lesson-kicker">reference · 速查表</div>
+  <h1>GOAP 运行时速查表</h1>
+  <p class="lesson-sub">langchain4j-agentic-patterns · GoalOrientedPlanner / GoalOrientedSearchGraph / DependencyGraphSearch / PlannerLoop</p>
+</header>
+
+<h2>一图流：从调用到返回</h2>
+
+<figure class="diagram">
+<svg viewBox="0 0 980 300" xmlns="http://www.w3.org/2000/svg" font-family="-apple-system, BlinkMacSystemFont, 'PingFang SC', sans-serif">
+  <defs>
+    <marker id="ca" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#3267c8"/>
+    </marker>
+  </defs>
+  <g font-size="13">
+    <rect x="20" y="30" width="150" height="58" rx="10" fill="#e3f2ed" stroke="#21856b" stroke-width="1.8"/>
+    <text x="95" y="55" text-anchor="middle" fill="#1d2533">write(参数)</text>
+    <text x="95" y="75" text-anchor="middle" fill="#21856b" font-size="11">写入 scope state</text>
+
+    <rect x="220" y="30" width="180" height="58" rx="10" fill="#efe9fb" stroke="#7a57c9" stroke-width="1.8"/>
+    <text x="310" y="55" text-anchor="middle" fill="#1d2533">init()</text>
+    <text x="310" y="75" text-anchor="middle" fill="#7a57c9" font-size="11">建图；goal=outputKey</text>
+
+    <rect x="450" y="30" width="200" height="58" rx="10" fill="#e8eefb" stroke="#3267c8" stroke-width="1.8"/>
+    <text x="550" y="55" text-anchor="middle" fill="#1d2533">firstAction()：A* 搜索</text>
+    <text x="550" y="75" text-anchor="middle" fill="#3267c8" font-size="11">path = 最短 agent 序列</text>
+
+    <rect x="700" y="30" width="260" height="58" rx="10" fill="#fff" stroke="#677286" stroke-width="1.8"/>
+    <text x="830" y="55" text-anchor="middle" fill="#1d2533">while(!done)：执行 agent</text>
+    <text x="830" y="75" text-anchor="middle" fill="#677286" font-size="11">输出写 scope → nextAction() → 检查点</text>
+
+    <line x1="170" y1="59" x2="216" y2="59" stroke="#3267c8" stroke-width="1.8" marker-end="url(#ca)"/>
+    <line x1="400" y1="59" x2="446" y2="59" stroke="#3267c8" stroke-width="1.8" marker-end="url(#ca)"/>
+    <line x1="650" y1="59" x2="696" y2="59" stroke="#3267c8" stroke-width="1.8" marker-end="url(#ca)"/>
+
+    <path d="M 830 88 L 830 130 L 550 130 L 550 92" fill="none" stroke="#3267c8" stroke-width="1.8" marker-end="url(#ca)"/>
+    <text x="690" y="124" text-anchor="middle" fill="#3267c8" font-size="11">循环</text>
+
+    <rect x="700" y="160" width="260" height="58" rx="10" fill="#fbf0e1" stroke="#b66b14" stroke-width="1.8"/>
+    <text x="830" y="185" text-anchor="middle" fill="#1d2533">done() → 读 scope[goal]</text>
+    <text x="830" y="205" text-anchor="middle" fill="#b66b14" font-size="11">返回 ResultWithAgenticScope</text>
+    <path d="M 830 118 L 830 156" fill="none" stroke="#b66b14" stroke-width="1.8" marker-end="url(#ca)"/>
+    <text x="852" y="142" fill="#21856b" font-size="11" font-weight="700">完成</text>
+
+    <rect x="220" y="220" width="700" height="58" rx="10" fill="#faeaea" stroke="#c94848" stroke-width="1.5" stroke-dasharray="6 4"/>
+    <text x="570" y="245" text-anchor="middle" fill="#1d2533">异常 / 挂起：compensateAll()；恢复时 firstAction() 用当前 scope 重搜（无状态自愈）</text>
+    <text x="570" y="265" text-anchor="middle" fill="#c94848" font-size="11">已执行 agent 的输出已在黑板 → 新路径只含剩余 agent</text>
+  </g>
+</svg>
+<figcaption>GOAP 全链路一图流</figcaption>
+</figure>
+
+<h2>核心 API</h2>
+<div class="grid2">
+<div class="panel">
+<h3>Planner 接口（规划器要实现的）</h3>
+<dl class="kv">
+  <dt><code>init(ctx)</code></dt><dd>一次性初始化。GOAP：取 <code>plannerAgent().outputKey()</code> 为目标 + 建图</dd>
+  <dt><code>firstAction(ctx)</code></dt><dd>每轮执行起点。GOAP：跑图搜索，返回 <code>call(path[0])</code></dd>
+  <dt><code>nextAction(ctx)</code></dt><dd>每个 agent 完成后回调。GOAP：游标 <code>cursor++</code>；越界则 <code>done()</code></dd>
+  <dt><code>executionState()</code> / <code>restoreExecutionState(state)</code></dt><dd>崩溃恢复状态。GOAP：均为空——故意无状态</dd>
+  <dt><code>topology()</code></dt><dd>GOAP 返回 <code>SEQUENCE</code>（线性路径）</dd>
+</dl>
+</div>
+<div class="panel">
+<h3>Action 类型（规划器的回答）</h3>
+<dl class="kv">
+  <dt><code>call(agents...)</code></dt><dd>执行这些 agent；多个则并行（CompletableFuture）。GOAP 每次只给 1 个</dd>
+  <dt><code>done()</code> / <code>done(result)</code></dt><dd>结束；结果默认从 scope 的 outputKey 读</dd>
+  <dt><code>suspend()</code></dt><dd>挂起系统，落检查点，释放调用线程</dd>
+  <dt><code>noOp()</code></dt><dd>空转一步（等待外部事件时用）</dd>
+</dl>
+</div>
+</div>
+
+<h2>依赖图构建规则（GoalOrientedSearchGraph）</h2>
+<table>
+  <thead><tr><th>概念</th><th>来源</th><th>writer 实例对应</th></tr></thead>
+  <tbody>
+    <tr><td>节点</td><td>agent 输入参数名（<code>@V</code>）或 <code>outputKey</code></td><td>topic / style / audience / story / styledStory / finalStory</td></tr>
+    <tr><td>边</td><td>每个 subAgent：每个输入节点 → 输出节点</td><td>storyGenerator、styleReviewLoop、audienceEditor 各自的 输入→输出</td></tr>
+    <tr><td>入图范围</td><td><strong>仅 planner 直接注册的 subAgents</strong></td><td>循环内部的 styleEditor / styleScorer 不入图</td></tr>
+    <tr><td>前置条件</td><td>搜索时 scope 现有 key 集合；图中不存在的 key 被过滤丢弃</td><td>{topic, style, audience}（additionalKey 被滤掉）</td></tr>
+    <tr><td>目标</td><td>规划根代理的 outputKey</td><td>finalStory</td></tr>
+  </tbody>
+</table>
+
+<h2>搜索算法（DependencyGraphSearch：改造版 A*）</h2>
+<div class="grid2">
+<div class="panel">
+<ul>
+  <li><strong>状态</strong> = 已激活节点集合（SearchState）</li>
+  <li><strong>可激活判定</strong> = 该节点<strong>全部</strong>输入依赖已在激活集合中</li>
+  <li><strong>启发函数 h</strong> = 从目标向下 BFS 收集的未激活节点数（可采纳，不高估）</li>
+  <li><strong>单步代价 g</strong> = 1.0（每激活一个节点）</li>
+  <li><strong>f = g + h</strong>，PriorityQueue 弹出最小 f</li>
+  <li><strong>终点</strong> = 当前节点 == goal，<code>cameFrom</code> 回溯重构激活序列</li>
+</ul>
+</div>
+<div class="panel">
+<p><strong>节点路径 → agent 路径</strong>（search 后半段）：</p>
+<ul>
+  <li>遍历节点路径，跳过 precondition 节点</li>
+  <li>对其余节点，从后向前找有边相连的 agent（<code>edges.get(NodePair(前, 当前))</code>）</li>
+  <li>找不到边 → 抛 <code>IllegalStateException("No path found for node: …")</code></li>
+  <li>结果打日志：<code>Agents path sequence: [storyGenerator, styleReviewLoop, audienceEditor]</code></li>
+</ul>
+</div>
+</div>
+
+<h2>运行时循环（PlannerLoop）六步</h2>
+<ol>
+  <li><code>writeAgenticScope()</code>：方法参数写入黑板</li>
+  <li>（若有）恢复执行状态 + 已完成 agent 集合</li>
+  <li><code>firstAction()</code> → 进入 <code>while (!isDone())</code></li>
+  <li>AgentCallAction：1 个 agent 顺序执行；多个 <code>CompletableFuture</code> 并行</li>
+  <li>agent 完成回调 <code>onSubagentInvoked()</code>：<code>saveExecutionState()</code>（GOAP 为空）+ <code>agenticScope.checkpoint()</code>，再 <code>nextAction()</code></li>
+  <li><code>done()</code> → <code>result()</code>：有 outputKey 则 <code>readState(outputKey)</code> 返回</li>
+</ol>
+
+<h2>常见坑</h2>
+<table>
+  <thead><tr><th>坑</th><th>真相</th></tr></thead>
+  <tbody>
+    <tr><td>以为要持久化规划进度</td><td>GOAP 靠「重搜」自愈：恢复时已完成输出在 scope 里，路径自动变短；持久化游标反而可能越界</td></tr>
+    <tr><td>scope 多了脏 key 怕影响规划</td><td>非图中 key 会被 <code>filter(Objects::nonNull)</code> 静默过滤</td></tr>
+    <tr><td>以为循环内 agent 参与顶层规划</td><td>循环对 GOAP 是单个动作（接口方法参数=前置条件，builder 的 outputKey=效果）</td></tr>
+    <tr><td>多个 agent 塞进一个 call() 想「让 GOAP 并行」</td><td>并行通道在运行时（PlannerLoop），但 GOAP 的 A* 只产出线性序列；要并行用 ParallelPlanner</td></tr>
+    <tr><td>找不到路径</td><td>firstAction 抛 <code>IllegalStateException("No path found for goal: …")</code>——检查某 agent 的 <code>@V</code> 名字 / outputKey 是否拼错（图就是靠这些字符串连起来的）</td></tr>
+  </tbody>
+</table>
+
+<h2>关键源码定位</h2>
+<ul class="src-ref" style="line-height:2">
+  <li>goap/GoalOrientedPlanner.java — 规划器（init/firstAction/nextAction/无状态恢复）</li>
+  <li>goap/GoalOrientedSearchGraph.java — 建图 + 节点路径→agent 路径</li>
+  <li>goap/DependencyGraphSearch.java — 改造版 A*（SearchState/Heuristic/reconstructPath）</li>
+  <li>agentic/planner/Planner.java、Action.java — 规划器接口与动作语义</li>
+  <li>agentic/internal/PlannerBasedInvocationHandler.java:418-606 — PlannerLoop 运行时</li>
+  <li>agentic/workflow/impl/LoopPlanner.java — 循环内部规划（环形游标 + 退出条件）</li>
+  <li>patterns/goap/writer/GoapWriterIT.java — 本课实例</li>
+</ul>
+
+<footer class="lesson-footer">
+  <p>GOAP 运行时速查表 · 配套 <a href="../lessons/0001-goap-writer-runtime.html">第 1 课</a> · 事实来源：本地仓库源码</p>
+</footer>
+
+<script src="../assets/quiz.js"></script>
+</main>
+</body>
+</html>

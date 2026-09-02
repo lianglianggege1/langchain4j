@@ -1,0 +1,736 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>第 2 课 · P2P 模式：数据驱动的对等协作</title>
+<link rel="stylesheet" href="../assets/lesson.css">
+<style>
+  .phase-band { display:flex; gap:0.5rem; flex-wrap:wrap; margin:1rem 0; }
+  .phase-band span { font-size:0.78rem; font-weight:600; border-radius:999px; padding:0.15rem 0.7rem; }
+  .pb-init { background:var(--blue-soft); color:var(--blue); border:1px solid var(--blue); }
+  .pb-llm  { background:var(--violet-soft); color:var(--violet); border:1px solid var(--violet); }
+  .pb-loop { background:var(--green-soft); color:var(--green); border:1px solid var(--green); }
+  .pb-par  { background:var(--amber-soft); color:var(--amber); border:1px solid var(--amber); }
+  .pb-end  { background:var(--red-soft); color:var(--red); border:1px solid var(--red); }
+</style>
+</head>
+<body>
+<main>
+
+<header class="lesson-header">
+  <div class="lesson-kicker">langchain4j agentic patterns · 课程第 2 课</div>
+  <h1>P2P 模式：数据驱动的对等协作</h1>
+  <p class="lesson-sub">没有指挥官，只有一块共享黑板（AgenticScope）——谁的输入齐了谁上，谁依赖的数据变了谁重跑。</p>
+</header>
+
+<p><strong>本课的收获（一个可验证的小胜利）：</strong>读完这一课，你应该能不看资料，对着 <code>P2PResearcherUntyped</code> 说出从 <code>invoke("produce a research about black holes")</code> 到返回 hypothesis 的<strong>每一轮激活序列</strong>，并解释为什么 <code>P2PPlannerTest</code> 里那对 ping-pong agent 恰好执行 max 次。所有结论取自本地源码，关键论断附文件行号，可随时跳转验证。</p>
+
+<h2>1. P2P 是什么：从「谁决定下一步」说起</h2>
+
+<p>把本仓库学过的编排模式放到同一把尺子下——<strong>「下一步执行谁」由谁决定</strong>——差异立刻显现：</p>
+
+<table>
+  <thead>
+    <tr><th>模式</th><th>谁决定下一步</th><th>决定依据</th><th>拓扑</th></tr>
+  </thead>
+  <tbody>
+    <tr><td>Sequence / Loop</td><td>写代码的人</td><td>事先写死的顺序</td><td>SEQUENCE / LOOP</td></tr>
+    <tr><td>Supervisor</td><td>LLM（每次现问）</td><td>对话上下文 + 子 agent 描述</td><td>AI_AGENT</td></tr>
+    <tr><td>GOAP（<a href="0001-goap-writer-runtime.html">第 1 课</a>）</td><td>搜索算法</td><td>前置条件/效果 + 目标，一次规划出整条路径</td><td>图搜索</td></tr>
+    <tr><td><strong>P2P（本课）</strong></td><td><strong>数据本身</strong></td><td><strong>「我的输入都齐了吗」+「我依赖的数据变了吗」</strong></td><td>STAR（scope 为中心）</td></tr>
+  </tbody>
+</table>
+
+<p>P2P（peer-to-peer，对等网络）模式里，<code>P2PPlanner</code> 不做任何"聪明"的决策——它是一个<strong>机械的激活引擎</strong>：扫描所有子 agent，谁的输入参数在共享状态里<strong>全部就绪</strong>，就调度谁；某个 agent 写出的结果恰好是别人的输入，别人就被自动激活；如果某 agent 依赖的数据<strong>被更新了</strong>，它还会被标记为"变脏"而<strong>重新执行</strong>。agent 彼此之间从不直接调用，一切通信都经由中心的 <code>AgenticScope</code>——这正是 <code>topology()</code> 返回 <code>AgenticSystemTopology.STAR</code> 的含义<span class="src-ref">P2PPlanner.java:199-201</span>。</p>
+
+<div class="callout blue">
+  <span class="callout-title">与 blackboard 模式对照（你已学过）</span>
+  blackboard 里知识源（KS）由仲裁器挑选下一个触发；P2P 把这套逻辑简化到了极致：<strong>输入齐全即触发</strong>（无需仲裁优先级），<strong>输入变更即重跑</strong>（响应式语义）。可以把它理解为"黑板 + 数据流激活"的合体，非常适合流水线式多 agent 协作，但环依赖会振荡（第 8 节）。
+</div>
+
+<h2>2. 构建三部曲：以 P2PResearcherUntyped 为锚</h2>
+
+<p><code>P2PResearcherUntyped.main()</code> 是本模块最完整的 P2P 实例：5 个 AI agent 协作产出并打磨一个科学假说。搭一个 P2P 系统只需三步。</p>
+
+<h3>第一步：声明对等 agent——只说「我要什么、我产出什么」</h3>
+
+<pre><code>LiteratureAgent literatureAgent = AgenticServices.agentBuilder(LiteratureAgent.class)
+        .chatModel(baseModel())
+        .tools(arxivCrawler)
+        .outputKey("researchFindings")   // 效果：写入 scope 的哪个 key
+        .build();</code></pre>
+
+<p>每个 agent 的<strong>接口签名就是它的依赖声明</strong>：方法参数上的 <code>@V("...")</code> 是前置条件（输入 key），builder 的 <code>outputKey(...)</code> 是效果（输出 key）。P2PPlanner 全靠这两样东西驱动，agent 之间零感知。五个 agent 汇总成一张依赖表：</p>
+
+<table>
+  <thead>
+    <tr><th>Agent</th><th>输入（<code>@V</code>）</th><th>输出（outputKey）</th><th>职责</th></tr>
+  </thead>
+  <tbody>
+    <tr><td><code>LiteratureAgent</code></td><td><code>topic</code></td><td><code>researchFindings</code></td><td>检索文献并总结</td></tr>
+    <tr><td><code>HypothesisAgent</code></td><td><code>topic</code>, <code>researchFindings</code></td><td><code>hypothesis</code></td><td>提出假说</td></tr>
+    <tr><td><code>CriticAgent</code></td><td><code>topic</code>, <code>hypothesis</code></td><td><code>critique</code></td><td>批判性评审</td></tr>
+    <tr><td><code>ValidationAgent</code></td><td><code>topic</code>, <code>hypothesis</code>, <code>critique</code></td><td><code>hypothesis</code> ⚠️</td><td>按评审修订假说</td></tr>
+    <tr><td><code>ScorerAgent</code></td><td><code>topic</code>, <code>hypothesis</code>, <code>critique</code></td><td><code>score</code> (double)</td><td>给假说打分</td></tr>
+  </tbody>
+</table>
+
+<p class="src-ref">P2PResearcherUntyped.java:14-38 · 各 agent 接口见 researcher/ 目录（如 HypothesisAgent.java:18）</p>
+
+<div class="callout red">
+  <span class="callout-title">⚠️ 表里埋着一颗雷</span>
+  <code>ValidationAgent</code> 的输出 key 与自己的输入之一同名（都是 <code>hypothesis</code>）：它修订后的假说会覆盖旧假说，于是「读 hypothesis 的」和「写 hypothesis 的」连成了一个环。这个环正是第 8 节被禁用测试的病根，先记住它。
+</div>
+
+<h3>第二步：装配——plannerBuilder + P2PPlanner</h3>
+
+<pre><code>P2PAgent researcher = AgenticServices.plannerBuilder(P2PAgent.class)
+        .subAgents(literatureAgent, hypothesisAgent, criticAgent, validationAgent, scorerAgent)
+        .outputKey("hypothesis")          // 根 agent 的产出：结束时从 scope 读这个 key
+        .planner(() -> new P2PPlanner(baseModel(), 10, agenticScope -> {
+            if (!agenticScope.hasState("score")) return false;
+            double score = agenticScope.readState("score", 0.0);
+            return score >= 0.85;          // 出口条件：假说足够好才停
+        }))
+        .build();</code></pre>
+
+<p class="src-ref">P2PResearcherUntyped.java:40-51</p>
+
+<p><code>P2PPlanner</code> 的构造参数就是它的全部旋钮<span class="src-ref">P2PPlanner.java:36-64</span>：</p>
+
+<table>
+  <thead><tr><th>参数</th><th>作用</th><th>缺省</th></tr></thead>
+  <tbody>
+    <tr><td><code>ChatModel</code></td><td>供内部的 <code>VariablesExtractorAgent</code> 做变量提取（仅 untyped 入口需要）</td><td><code>null</code>（不用提取时可为空）</td></tr>
+    <tr><td><code>maxAgentsInvocations</code></td><td>调用次数上限，防失控的<strong>硬闸</strong></td><td>10</td></tr>
+    <tr><td><code>exitCondition</code></td><td><code>BiPredicate&lt;AgenticScope, Integer&gt;</code>（scope + 已调用次数），业务级<strong>软闸</strong></td><td>恒 <code>false</code></td></tr>
+  </tbody>
+</table>
+
+<h3>第三步：触发——两种入口，一个关键差异</h3>
+
+<table>
+  <thead><tr><th></th><th>Typed 入口（P2PResearcherIT）</th><th>Untyped 入口（P2PResearcherUntyped）</th></tr></thead>
+  <tbody>
+    <tr><td>根接口</td><td><code>ResearchAgent</code>：<code>research(@V("topic") String topic)</code></td><td><code>P2PAgent</code>：<code>invoke(@V("p2pRequest") String request)</code></td></tr>
+    <tr><td>入参 → scope</td><td><code>topic</code> 直接成为状态</td><td>整段自然语言存入 <code>p2pRequest</code> 状态</td></tr>
+    <tr><td>初始状态来源</td><td>方法签名（结构化）</td><td><strong>LLM 现场提取</strong>（见下）</td></tr>
+    <tr><td>需要给 planner 传 ChatModel？</td><td>不需要</td><td>必须（否则抛 <code>IllegalArgumentException</code>）</td></tr>
+  </tbody>
+</table>
+
+<p>untyped 入口的魔法在 <code>firstAction()</code>：如果 scope 里有 <code>p2pRequest</code>，P2PPlanner 会收集<strong>所有子 agent 的全部输入名</strong>（topic、researchFindings、hypothesis、critique…），让一个临时拼装出的 <code>VariablesExtractorAgent</code> 用 LLM 从用户原话里提取这些变量的值，再逐个写入 scope<span class="src-ref">P2PPlanner.java:73-88 · VariablesExtractorAgent.java:10-18</span>。对本例，LLM 只能从 "produce a research about black holes" 里提取出 <code>{topic: "black holes"}</code>，其余变量提取不到就不写入——恰好符合「输入不齐不激活」的语义。这就是 P2P 的<strong>冷启动引导</strong>：用一次 LLM 调用把自然语言翻译成数据流的源头。</p>
+
+<div class="callout">
+  <span class="callout-title">顺带一提</span>
+  <code>P2PAgent</code> 继承了 <code>AgenticScopeAccess</code>，因此还免费获得 <code>getAgenticScope(memoryId)</code> / <code>evictAgenticScope(...)</code> 两个记忆管理方法，可做跨会话的持久运行<span class="src-ref">P2PAgent.java:8-15</span>。
+</div>
+
+<h2>3. 依赖图：P2P 系统的「电路图」</h2>
+
+<p>把依赖表画出来（topic 是所有 agent 的输入，省略这些边）。注意红色回边：P2P 的行为完全由这张图决定——<strong>图的形状就是程序的形状</strong>。</p>
+
+<figure class="diagram">
+<svg viewBox="0 0 980 650" xmlns="http://www.w3.org/2000/svg" font-family="-apple-system, BlinkMacSystemFont, 'PingFang SC', sans-serif">
+  <defs>
+    <marker id="ar" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#3267c8"/>
+    </marker>
+    <marker id="arRed" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#c94848"/>
+    </marker>
+    <marker id="arGray" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#677286"/>
+    </marker>
+  </defs>
+
+  <text x="700" y="40" font-size="12.5" fill="#677286">topic 是所有 agent 的输入（虚线边省略）</text>
+
+  <!-- topic -->
+  <rect x="395" y="16" width="170" height="44" rx="10" fill="#e3f2ed" stroke="#21856b" stroke-width="1.8"/>
+  <text x="480" y="43" text-anchor="middle" font-size="15" font-family="SF Mono, Menlo, monospace" fill="#1d2533">topic</text>
+
+  <!-- Literature pill -->
+  <rect x="390" y="100" width="180" height="34" rx="17" fill="#e8eefb" stroke="#3267c8" stroke-width="1.6"/>
+  <text x="480" y="122" text-anchor="middle" font-size="13" fill="#3267c8" font-weight="600">LiteratureAgent</text>
+
+  <!-- researchFindings -->
+  <rect x="370" y="172" width="220" height="44" rx="10" fill="#ffffff" stroke="#d8dee9" stroke-width="1.6"/>
+  <text x="480" y="199" text-anchor="middle" font-size="14" font-family="SF Mono, Menlo, monospace" fill="#1d2533">researchFindings</text>
+
+  <!-- Hypothesis pill -->
+  <rect x="390" y="256" width="180" height="34" rx="17" fill="#e8eefb" stroke="#3267c8" stroke-width="1.6"/>
+  <text x="480" y="278" text-anchor="middle" font-size="13" fill="#3267c8" font-weight="600">HypothesisAgent</text>
+
+  <!-- hypothesis -->
+  <rect x="385" y="328" width="190" height="44" rx="10" fill="#fbf0e1" stroke="#b66b14" stroke-width="1.8"/>
+  <text x="480" y="355" text-anchor="middle" font-size="14" font-family="SF Mono, Menlo, monospace" fill="#1d2533">hypothesis</text>
+
+  <!-- Critic pill -->
+  <rect x="150" y="410" width="160" height="34" rx="17" fill="#e8eefb" stroke="#3267c8" stroke-width="1.6"/>
+  <text x="230" y="432" text-anchor="middle" font-size="13" fill="#3267c8" font-weight="600">CriticAgent</text>
+
+  <!-- Scorer pill -->
+  <rect x="650" y="410" width="160" height="34" rx="17" fill="#e8eefb" stroke="#3267c8" stroke-width="1.6"/>
+  <text x="730" y="432" text-anchor="middle" font-size="13" fill="#3267c8" font-weight="600">ScorerAgent</text>
+
+  <!-- critique -->
+  <rect x="155" y="482" width="150" height="44" rx="10" fill="#ffffff" stroke="#d8dee9" stroke-width="1.6"/>
+  <text x="230" y="509" text-anchor="middle" font-size="14" font-family="SF Mono, Menlo, monospace" fill="#1d2533">critique</text>
+
+  <!-- score -->
+  <rect x="655" y="482" width="150" height="44" rx="10" fill="#ffffff" stroke="#d8dee9" stroke-width="1.6"/>
+  <text x="730" y="509" text-anchor="middle" font-size="14" font-family="SF Mono, Menlo, monospace" fill="#1d2533">score</text>
+
+  <!-- Validation pill -->
+  <rect x="390" y="560" width="180" height="34" rx="17" fill="#faeaea" stroke="#c94848" stroke-width="1.8"/>
+  <text x="480" y="582" text-anchor="middle" font-size="13" fill="#c94848" font-weight="600">ValidationAgent</text>
+
+  <!-- edges -->
+  <line x1="480" y1="60" x2="480" y2="98" stroke="#3267c8" stroke-width="1.8" marker-end="url(#ar)"/>
+  <line x1="480" y1="134" x2="480" y2="170" stroke="#3267c8" stroke-width="1.8" marker-end="url(#ar)"/>
+  <line x1="480" y1="216" x2="480" y2="254" stroke="#3267c8" stroke-width="1.8" marker-end="url(#ar)"/>
+  <line x1="480" y1="290" x2="480" y2="326" stroke="#3267c8" stroke-width="1.8" marker-end="url(#ar)"/>
+
+  <!-- hypothesis -> Critic -->
+  <path d="M 385,350 L 230,350 L 230,408" fill="none" stroke="#3267c8" stroke-width="1.8" marker-end="url(#ar)"/>
+  <!-- hypothesis -> Scorer -->
+  <path d="M 575,350 L 730,350 L 730,408" fill="none" stroke="#3267c8" stroke-width="1.8" marker-end="url(#ar)"/>
+  <!-- hypothesis -> Validation -->
+  <line x1="480" y1="372" x2="480" y2="558" stroke="#3267c8" stroke-width="1.8" marker-end="url(#ar)"/>
+  <!-- Critic -> critique -->
+  <line x1="230" y1="444" x2="230" y2="480" stroke="#3267c8" stroke-width="1.8" marker-end="url(#ar)"/>
+  <!-- critique -> Validation -->
+  <path d="M 230,526 L 230,577 L 388,577" fill="none" stroke="#3267c8" stroke-width="1.8" marker-end="url(#ar)"/>
+  <!-- critique -> Scorer -->
+  <path d="M 305,504 L 620,504 L 620,427 L 648,427" fill="none" stroke="#3267c8" stroke-width="1.8" marker-end="url(#ar)"/>
+  <!-- Scorer -> score -->
+  <line x1="730" y1="444" x2="730" y2="480" stroke="#3267c8" stroke-width="1.8" marker-end="url(#ar)"/>
+
+  <!-- Validation -> hypothesis : RED back edge -->
+  <path d="M 570,577 L 885,577 L 885,350 L 577,350" fill="none" stroke="#c94848" stroke-width="2.2" stroke-dasharray="7 5" marker-end="url(#arRed)"/>
+  <text x="895" y="470" font-size="12.5" fill="#c94848" font-weight="600" transform="rotate(90 895 470)" text-anchor="middle">写回 hypothesis（回边）</text>
+
+  <!-- exit badge -->
+  <rect x="630" y="560" width="200" height="34" rx="17" fill="#faeaea" stroke="#c94848" stroke-width="1.4"/>
+  <text x="730" y="582" text-anchor="middle" font-size="12.5" fill="#c94848" font-weight="600">exit：score ≥ 0.85</text>
+  <line x1="730" y1="526" x2="730" y2="558" stroke="#c94848" stroke-width="1.6" stroke-dasharray="4 4" marker-end="url(#arRed)"/>
+
+  <!-- legend -->
+  <rect x="30" y="560" width="340" height="0" fill="none"/>
+  <text x="36" y="30" font-size="12.5" fill="#677286">■ 绿色 = 初始状态（LLM 提取/入口写入）</text>
+  <text x="36" y="604" font-size="12.5" fill="#677286">■ 蓝胶囊 = agent（边上的标签可对照第 2 节依赖表）</text>
+  <text x="36" y="626" font-size="12.5" fill="#c94848">■ 红虚线 = 回写边：把别人的输入改掉，触发再激活</text>
+</svg>
+<figcaption>图 1 · researcher 实例的数据依赖图。hypothesis → Critic → critique → Validation → hypothesis 构成闭环；Validation 还直接消费 hypothesis（穿过中间的竖边）。</figcaption>
+</figure>
+
+<p>推演一遍激活序列（假设 score 一直不达标）： Literature 独跑（只有它只要 topic） → Hypothesis（topic+findings 齐） → Critic（topic+hypothesis 齐） → Validation 与 Scorer <strong>并行</strong>（都等 critique） → Validation 写回 hypothesis，Critic/Validation/Scorer 全部变脏 → 三者并行 → ……直到 counter 或 exitCondition 叫停。注意每轮并行批的成员由「此刻谁脏且输入齐」动态决定——这就是 P2P 的全部调度逻辑。</p>
+
+<h2>4. 运行时全景：流程图</h2>
+
+<p>运行时由两半组成：<strong>执行侧</strong>（<code>PlannerLoop</code>，所有 planner 共用的通用主循环）与<strong>决策侧</strong>（<code>P2PPlanner</code>，P2P 特有的激活规则）。下图是两者的完整协作：</p>
+
+<figure class="diagram">
+<svg viewBox="0 0 980 1080" xmlns="http://www.w3.org/2000/svg" font-family="-apple-system, BlinkMacSystemFont, 'PingFang SC', sans-serif">
+  <defs>
+    <marker id="f" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#677286"/>
+    </marker>
+    <marker id="fG" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#21856b"/>
+    </marker>
+    <marker id="fR" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#c94848"/>
+    </marker>
+    <marker id="fA" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#b66b14"/>
+    </marker>
+  </defs>
+
+  <!-- ===== 左列：主流程 ===== -->
+  <rect x="120" y="20" width="360" height="46" rx="10" fill="#e8eefb" stroke="#3267c8" stroke-width="1.6"/>
+  <text x="300" y="49" text-anchor="middle" font-size="14" fill="#1d2533">invoke("request") / invokeWithAgenticScope(Map)</text>
+
+  <line x1="300" y1="66" x2="300" y2="94" stroke="#677286" stroke-width="1.6" marker-end="url(#f)"/>
+
+  <rect x="120" y="96" width="360" height="46" rx="10" fill="#ffffff" stroke="#d8dee9" stroke-width="1.6"/>
+  <text x="300" y="118" text-anchor="middle" font-size="13.5" fill="#1d2533">入口参数写入 AgenticScope</text>
+  <text x="300" y="136" text-anchor="middle" font-size="12" fill="#677286">p2pRequest / topic / 种子 Map（writeAgenticScope）</text>
+
+  <line x1="300" y1="142" x2="300" y2="170" stroke="#677286" stroke-width="1.6" marker-end="url(#f)"/>
+
+  <rect x="120" y="172" width="360" height="58" rx="10" fill="#ffffff" stroke="#d8dee9" stroke-width="1.6"/>
+  <text x="300" y="196" text-anchor="middle" font-size="13.5" fill="#1d2533">planner.init(subagents)</text>
+  <text x="300" y="216" text-anchor="middle" font-size="12" fill="#677286">每个子 agent → AgentActivator（输入名 + 两个标志位）</text>
+
+  <line x1="300" y1="230" x2="300" y2="258" stroke="#677286" stroke-width="1.6" marker-end="url(#f)"/>
+
+  <rect x="100" y="260" width="400" height="62" rx="10" fill="#efe9fb" stroke="#7a57c9" stroke-width="1.6"/>
+  <text x="300" y="284" text-anchor="middle" font-size="13.5" fill="#1d2533">firstAction：scope 里有 p2pRequest？</text>
+  <text x="300" y="304" text-anchor="middle" font-size="12" fill="#7a57c9">是 → VariablesExtractorAgent(LLM) 提取变量写入 scope</text>
+
+  <line x1="300" y1="322" x2="300" y2="356" stroke="#677286" stroke-width="1.6" marker-end="url(#f)"/>
+
+  <!-- E diamond -->
+  <polygon points="300,358 480,428 300,498 120,428" fill="#e3f2ed" stroke="#21856b" stroke-width="1.8"/>
+  <text x="300" y="416" text-anchor="middle" font-size="13.5" fill="#1d2533" font-weight="600">nextCallAction：</text>
+  <text x="300" y="436" text-anchor="middle" font-size="12.5" fill="#1d2533">canActivate 的 agent 有几个？</text>
+  <text x="300" y="456" text-anchor="middle" font-size="11.5" fill="#21856b">!executing ∧ shouldExecute ∧ 输入齐</text>
+
+  <!-- E -> F (>=1) -->
+  <line x1="300" y1="498" x2="300" y2="534" stroke="#21856b" stroke-width="1.8" marker-end="url(#fG)"/>
+  <text x="312" y="520" font-size="12.5" fill="#21856b" font-weight="600">≥ 1</text>
+
+  <rect x="100" y="536" width="400" height="56" rx="10" fill="#e3f2ed" stroke="#21856b" stroke-width="1.6"/>
+  <text x="300" y="559" text-anchor="middle" font-size="13.5" fill="#1d2533">选中者 startExecution()，counter += n</text>
+  <text x="300" y="579" text-anchor="middle" font-size="12" fill="#21856b">返回 Action：call(agents)</text>
+
+  <line x1="300" y1="592" x2="300" y2="620" stroke="#677286" stroke-width="1.6" marker-end="url(#f)"/>
+
+  <rect x="100" y="622" width="400" height="56" rx="10" fill="#ffffff" stroke="#d8dee9" stroke-width="1.6"/>
+  <text x="300" y="645" text-anchor="middle" font-size="13.5" fill="#1d2533">PlannerLoop 分发（switch size）</text>
+  <text x="300" y="665" text-anchor="middle" font-size="12" fill="#677286">1 个 → 同步执行 · n 个 → CompletableFuture.allOf 并行</text>
+
+  <line x1="300" y1="678" x2="300" y2="706" stroke="#677286" stroke-width="1.6" marker-end="url(#f)"/>
+
+  <rect x="100" y="708" width="400" height="62" rx="10" fill="#ffffff" stroke="#d8dee9" stroke-width="1.6"/>
+  <text x="300" y="731" text-anchor="middle" font-size="13.5" fill="#1d2533">AgentExecutor 完成：</text>
+  <text x="300" y="751" text-anchor="middle" font-size="12" fill="#677286">writeState(outputKey) → onSubagentInvoked（ReentrantLock 内）</text>
+
+  <!-- H -> L -->
+  <line x1="300" y1="770" x2="300" y2="804" stroke="#677286" stroke-width="1.6" marker-end="url(#f)"/>
+
+  <!-- L diamond -->
+  <polygon points="300,806 460,886 300,966 140,886" fill="#faeaea" stroke="#c94848" stroke-width="1.8"/>
+  <text x="300" y="874" text-anchor="middle" font-size="13.5" fill="#1d2533" font-weight="600">nextAction：</text>
+  <text x="300" y="894" text-anchor="middle" font-size="12.5" fill="#1d2533">terminated()？</text>
+  <text x="300" y="914" text-anchor="middle" font-size="11.5" fill="#c94848">counter ≥ max 或 exitCondition</text>
+
+  <!-- L -> N (否) -->
+  <path d="M 300,966 L 300,1000 L 560,1000 L 560,1030" fill="none" stroke="#21856b" stroke-width="1.8" marker-end="url(#fG)"/>
+  <text x="312" y="990" font-size="12.5" fill="#21856b" font-weight="600">否：finishExecution(刚完成者) + 全员 onStateChanged(outputKey)，被改输入者变脏</text>
+
+  <rect x="420" y="1032" width="440" height="40" rx="10" fill="#e3f2ed" stroke="#21856b" stroke-width="1.6"/>
+  <text x="640" y="1057" text-anchor="middle" font-size="13" fill="#1d2533">回到 nextCallAction —— 数据驱动的循环</text>
+
+  <!-- ===== 右列 ===== -->
+  <!-- E -> I (=0) -->
+  <line x1="480" y1="428" x2="580" y2="428" stroke="#677286" stroke-width="1.8" marker-end="url(#f)"/>
+  <text x="500" y="418" font-size="12.5" fill="#677286" font-weight="600">= 0</text>
+
+  <polygon points="730,366 880,428 730,490 580,428" fill="#fbf0e1" stroke="#b66b14" stroke-width="1.8"/>
+  <text x="730" y="422" text-anchor="middle" font-size="13" fill="#1d2533" font-weight="600">还有 agent 在执行？</text>
+  <text x="730" y="442" text-anchor="middle" font-size="11.5" fill="#b66b14">noneMatch(isExecuting)？</text>
+
+  <!-- I -> J 是 -->
+  <line x1="730" y1="490" x2="730" y2="524" stroke="#b66b14" stroke-width="1.8" marker-end="url(#fA)"/>
+  <text x="742" y="512" font-size="12.5" fill="#b66b14" font-weight="600">是</text>
+
+  <rect x="580" y="526" width="300" height="56" rx="10" fill="#fbf0e1" stroke="#b66b14" stroke-width="1.6"/>
+  <text x="730" y="549" text-anchor="middle" font-size="13" fill="#1d2533">返回空 call() → 主循环 Thread.yield()</text>
+  <text x="730" y="569" text-anchor="middle" font-size="12" fill="#b66b14">「暂不决策」：等下一个完成回调</text>
+
+  <!-- I -> K 否 -->
+  <line x1="730" y1="490" x2="920" y2="490" stroke="#21856b" stroke-width="1.8"/>
+  <line x1="920" y1="490" x2="920" y2="600" stroke="#21856b" stroke-width="1.8" marker-end="url(#fG)"/>
+  <line x1="920" y1="600" x2="884" y2="600" stroke="#21856b" stroke-width="1.8" marker-end="url(#fG)"/>
+  <text x="930" y="512" font-size="12.5" fill="#21856b" font-weight="600" transform="rotate(90 930 512)" text-anchor="middle">否</text>
+
+  <rect x="584" y="572" width="300" height="56" rx="10" fill="#e3f2ed" stroke="#21856b" stroke-width="1.8"/>
+  <text x="734" y="595" text-anchor="middle" font-size="13.5" fill="#1d2533" font-weight="600">done()：稳定态（quiescence）</text>
+  <text x="734" y="615" text-anchor="middle" font-size="12" fill="#21856b">没人能跑也没人在跑 → 自然终止</text>
+
+  <!-- J -> H (等待下一个回调) -->
+  <path d="M 580,554 L 520,554 L 520,739 L 498,739" fill="none" stroke="#b66b14" stroke-width="1.6" stroke-dasharray="6 4" marker-end="url(#fA)"/>
+  <text x="528" y="660" font-size="11.5" fill="#b66b14" transform="rotate(90 528 660)" text-anchor="middle">等待下一个完成回调</text>
+
+  <!-- L -> M 是 -->
+  <line x1="460" y1="886" x2="580" y2="886" stroke="#c94848" stroke-width="1.8" marker-end="url(#fR)"/>
+  <text x="500" y="876" font-size="12.5" fill="#c94848" font-weight="600">是</text>
+
+  <rect x="582" y="858" width="280" height="56" rx="10" fill="#faeaea" stroke="#c94848" stroke-width="1.8"/>
+  <text x="722" y="881" text-anchor="middle" font-size="13.5" fill="#1d2533" font-weight="600">done()：强制终止</text>
+  <text x="722" y="901" text-anchor="middle" font-size="12" fill="#c94848">硬闸（次数上限）或软闸（exit 条件）</text>
+
+  <!-- done boxes -> O -->
+  <path d="M 722,914 L 722,950 L 60,950 L 60,1052 L 416,1052" fill="none" stroke="#c94848" stroke-width="1.6" marker-end="url(#fR)"/>
+  <path d="M 734,628 L 734,648 L 948,648 L 948,940 L 740,940" fill="none" stroke="#21856b" stroke-width="1.6" marker-end="url(#fG)"/>
+
+  <rect x="100" y="960" width="360" height="0" fill="none"/>
+  <!-- O result box, moved to avoid overlap: place at bottom-left -->
+  <rect x="60" y="1030" width="360" height="44" rx="10" fill="#e8eefb" stroke="#3267c8" stroke-width="1.6" transform="translate(0,0)"/>
+  <text x="240" y="1057" text-anchor="middle" font-size="13.5" fill="#1d2533">result()：读 outputKey → 返回调用方</text>
+</svg>
+<figcaption>图 2 · P2P 运行时全景流程图。左列是通用执行侧（PlannerLoop）+ P2P 决策入口；右上是静默判定（quiescence / 等待）；右下是每次完成回调后的终止判断与「变脏再激活」循环。</figcaption>
+</figure>
+
+<p>对应源码锚点：入口写状态与创建 PlannerLoop 在 <span class="src-ref">PlannerBasedInvocationHandler.java:226-271</span>；主循环分发（0/1/n 三分支）在 <span class="src-ref">PlannerBasedInvocationHandler.java:459-463</span>；并行执行 <span class="src-ref">:505-526</span>；完成回调 <span class="src-ref">:568-581</span>；P2P 的决策三方法 <span class="src-ref">P2PPlanner.java:73-122</span>。</p>
+
+<h2>5. 运行时时序图：一轮完整调用</h2>
+
+<p>下面是 untyped researcher 从 <code>invoke()</code> 到返回的完整时序（并行批以 Validation+Scorer 为例）。五个阶段用左侧色带标出：</p>
+
+<div class="phase-band">
+  <span class="pb-init">① 初始化</span>
+  <span class="pb-llm">② LLM 冷启动引导</span>
+  <span class="pb-loop">③ 数据驱动循环（单 agent 轮）</span>
+  <span class="pb-par">④ 并行轮与动作合成</span>
+  <span class="pb-end">⑤ 终止与取数</span>
+</div>
+
+<figure class="diagram">
+<svg viewBox="0 0 1100 1010" xmlns="http://www.w3.org/2000/svg" font-family="-apple-system, BlinkMacSystemFont, 'PingFang SC', sans-serif">
+  <defs>
+    <marker id="s" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#3267c8"/>
+    </marker>
+    <marker id="sG" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#21856b"/>
+    </marker>
+    <marker id="sA" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#b66b14"/>
+    </marker>
+    <marker id="sR" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#c94848"/>
+    </marker>
+    <marker id="sV" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#7a57c9"/>
+    </marker>
+  </defs>
+
+  <!-- lifeline headers -->
+  <g font-size="13" font-weight="600">
+    <rect x="10" y="14" width="130" height="40" rx="8" fill="#eef1f7" stroke="#d8dee9"/>
+    <text x="75" y="39" text-anchor="middle" fill="#1d2533">调用方</text>
+    <rect x="185" y="14" width="170" height="40" rx="8" fill="#eef1f7" stroke="#d8dee9"/>
+    <text x="270" y="33" text-anchor="middle" fill="#1d2533">InvocationHandler</text>
+    <text x="270" y="49" text-anchor="middle" fill="#677286" font-size="10.5" font-weight="400">(PlannerBased…)</text>
+    <rect x="375" y="14" width="150" height="40" rx="8" fill="#eef1f7" stroke="#d8dee9"/>
+    <text x="450" y="39" text-anchor="middle" fill="#1d2533">PlannerLoop</text>
+    <rect x="565" y="14" width="150" height="40" rx="8" fill="#eef1f7" stroke="#d8dee9"/>
+    <text x="640" y="39" text-anchor="middle" fill="#1d2533">P2PPlanner</text>
+    <rect x="755" y="14" width="150" height="40" rx="8" fill="#eef1f7" stroke="#d8dee9"/>
+    <text x="830" y="39" text-anchor="middle" fill="#1d2533">AgentExecutor</text>
+    <rect x="935" y="14" width="150" height="40" rx="8" fill="#eef1f7" stroke="#d8dee9"/>
+    <text x="1010" y="39" text-anchor="middle" fill="#1d2533">AgenticScope</text>
+  </g>
+
+  <!-- lifelines -->
+  <g stroke="#c3cad6" stroke-dasharray="5 5" stroke-width="1.2">
+    <line x1="75" y1="54" x2="75" y2="975"/>
+    <line x1="270" y1="54" x2="270" y2="975"/>
+    <line x1="450" y1="54" x2="450" y2="975"/>
+    <line x1="640" y1="54" x2="640" y2="975"/>
+    <line x1="830" y1="54" x2="830" y2="975"/>
+    <line x1="1010" y1="54" x2="1010" y2="975"/>
+  </g>
+
+  <!-- phase bands -->
+  <rect x="0" y="80" width="7" height="140" fill="#3267c8" rx="3"/>
+  <rect x="0" y="222" width="7" height="118" fill="#7a57c9" rx="3"/>
+  <rect x="0" y="342" width="7" height="290" fill="#21856b" rx="3"/>
+  <rect x="0" y="634" width="7" height="170" fill="#b66b14" rx="3"/>
+  <rect x="0" y="806" width="7" height="165" fill="#c94848" rx="3"/>
+
+  <!-- messages -->
+  <g font-size="12.5">
+    <!-- ① 初始化 -->
+    <line x1="75" y1="100" x2="268" y2="100" stroke="#3267c8" stroke-width="1.8" marker-end="url(#s)"/>
+    <text x="82" y="93" fill="#1d2533">invoke("produce a research about black holes")</text>
+
+    <line x1="270" y1="132" x2="1008" y2="132" stroke="#3267c8" stroke-width="1.8" marker-end="url(#s)"/>
+    <text x="278" y="125" fill="#1d2533">writeState(p2pRequest, 文本)　（writeAgenticScope）</text>
+
+    <line x1="270" y1="164" x2="638" y2="164" stroke="#3267c8" stroke-width="1.8" marker-end="url(#s)"/>
+    <text x="278" y="157" fill="#1d2533">planner.init(subagents)</text>
+    <rect x="655" y="150" width="330" height="34" rx="7" fill="#eef1f7" stroke="#d8dee9"/>
+    <text x="660" y="164" font-size="11.5" fill="#677286">为每个子 agent 建 AgentActivator</text>
+    <text x="660" y="179" font-size="11.5" fill="#677286">（输入名列表 + executing / shouldExecute）</text>
+
+    <line x1="270" y1="208" x2="448" y2="208" stroke="#3267c8" stroke-width="1.8" marker-end="url(#s)"/>
+    <text x="278" y="201" fill="#1d2533">new PlannerLoop(...).loop()</text>
+
+    <!-- ② LLM 引导 -->
+    <line x1="450" y1="244" x2="638" y2="244" stroke="#3267c8" stroke-width="1.8" marker-end="url(#s)"/>
+    <text x="458" y="237" fill="#1d2533">firstAction(ctx)</text>
+
+    <line x1="640" y1="272" x2="1008" y2="272" stroke="#3267c8" stroke-width="1.8" marker-end="url(#s)"/>
+    <text x="648" y="265" fill="#1d2533">hasState(p2pRequest) → true</text>
+
+    <path d="M 640,300 L 690,300 L 690,326 L 644,326" fill="none" stroke="#7a57c9" stroke-width="1.8" marker-end="url(#sV)"/>
+    <rect x="700" y="294" width="300" height="42" rx="7" fill="#efe9fb" stroke="#7a57c9"/>
+    <text x="706" y="311" font-size="11.5" fill="#7a57c9">VariablesExtractorAgent.extractVariables(文本, 变量名) —— LLM</text>
+    <text x="706" y="328" font-size="11.5" fill="#7a57c7">只提到 topic → 只提取 topic</text>
+
+    <line x1="640" y1="352" x2="1008" y2="352" stroke="#7a57c9" stroke-width="1.8" marker-end="url(#sV)"/>
+    <text x="648" y="345" fill="#7a57c9">writeState(topic, "black holes")</text>
+
+    <!-- ③ 数据驱动循环 -->
+    <line x1="640" y1="384" x2="452" y2="384" stroke="#21856b" stroke-width="1.8" stroke-dasharray="6 4" marker-end="url(#sG)"/>
+    <text x="470" y="377" fill="#21856b">return call(Literature)　（counter=1）</text>
+
+    <line x1="450" y1="416" x2="828" y2="416" stroke="#21856b" stroke-width="1.8" marker-end="url(#sG)"/>
+    <text x="458" y="409" fill="#21856b">execute(scope, loop)　（size=1 → 同步分支）</text>
+
+    <line x1="830" y1="448" x2="1008" y2="448" stroke="#21856b" stroke-width="1.8" marker-end="url(#sG)"/>
+    <text x="838" y="441" fill="#21856b">writeState(researchFindings, …)</text>
+
+    <line x1="830" y1="480" x2="452" y2="480" stroke="#21856b" stroke-width="1.8" marker-end="url(#sG)"/>
+    <text x="470" y="473" fill="#21856b">onSubagentInvoked(invocation)　🔒 ReentrantLock</text>
+
+    <line x1="450" y1="512" x2="638" y2="512" stroke="#21856b" stroke-width="1.8" marker-end="url(#sG)"/>
+    <text x="458" y="505" fill="#21856b">nextAction(ctx)　（previousAgentInvocation=Literature）</text>
+
+    <rect x="655" y="522" width="340" height="38" rx="7" fill="#e3f2ed" stroke="#21856b"/>
+    <text x="660" y="537" font-size="11.5" fill="#21856b">terminated? ✗ → finishExecution(Literature)</text>
+    <text x="660" y="553" font-size="11.5" fill="#21856b">→ 全员 onStateChanged("researchFindings") → Hypothesis 变脏</text>
+
+    <line x1="640" y1="576" x2="452" y2="576" stroke="#21856b" stroke-width="1.8" stroke-dasharray="6 4" marker-end="url(#sG)"/>
+    <text x="470" y="569" fill="#21856b">return call(Hypothesis)　（composeActions 合并）</text>
+
+    <rect x="330" y="592" width="480" height="30" rx="7" fill="#f6f7fb" stroke="#d8dee9"/>
+    <text x="570" y="612" text-anchor="middle" font-size="12" fill="#677286">…… 同样的一轮：Hypothesis 写 hypothesis → Critic 激活（counter=3）→ Critic 写 critique ……</text>
+
+    <!-- ④ 并行轮 -->
+    <line x1="450" y1="652" x2="828" y2="652" stroke="#b66b14" stroke-width="1.8" marker-end="url(#sA)"/>
+    <text x="458" y="645" fill="#b66b14">并行 execute(Validation) ∥ execute(Scorer)　（CompletableFuture.allOf）</text>
+
+    <line x1="830" y1="684" x2="1008" y2="684" stroke="#b66b14" stroke-width="1.8" marker-end="url(#sA)"/>
+    <text x="838" y="677" fill="#b66b14">writeState(hypothesis / score)</text>
+
+    <line x1="830" y1="716" x2="452" y2="716" stroke="#b66b14" stroke-width="1.8" marker-end="url(#sA)"/>
+    <text x="470" y="709" fill="#b66b14">onSubagentInvoked(Scorer 先完成) → nextAction → 空 call()</text>
+    <rect x="180" y="726" width="630" height="30" rx="7" fill="#fbf0e1" stroke="#b66b14"/>
+    <text x="495" y="746" text-anchor="middle" font-size="11.5" fill="#b66b14">Validation 仍在执行 → 不能判稳定态 → 返回空动作，主循环 Thread.yield() 等待</text>
+
+    <line x1="830" y1="780" x2="452" y2="780" stroke="#b66b14" stroke-width="1.8" marker-end="url(#sA)"/>
+    <text x="470" y="773" fill="#b66b14">onSubagentInvoked(Validation 完成) → nextAction</text>
+    <rect x="180" y="790" width="630" height="30" rx="7" fill="#fbf0e1" stroke="#b66b14"/>
+    <text x="495" y="810" text-anchor="middle" font-size="11.5" fill="#b66b14">hypothesis 被改 → Critic / Validation / Scorer 全部变脏 → call(三者)，composeActions 合并</text>
+
+    <!-- ⑤ 终止 -->
+    <line x1="450" y1="846" x2="638" y2="846" stroke="#c94848" stroke-width="1.8" marker-end="url(#sR)"/>
+    <text x="458" y="839" fill="#c94848">nextAction(ctx)</text>
+    <rect x="655" y="824" width="340" height="44" rx="7" fill="#faeaea" stroke="#c94848"/>
+    <text x="660" y="841" font-size="11.5" fill="#c94848">terminated()：counter ≥ 10 或 exitCondition</text>
+    <text x="660" y="858" font-size="11.5" fill="#c94848">（score ≥ 0.85）→ 命中 → done()</text>
+
+    <line x1="640" y1="886" x2="452" y2="886" stroke="#c94848" stroke-width="1.8" stroke-dasharray="6 4" marker-end="url(#sR)"/>
+    <text x="470" y="879" fill="#c94848">return done()</text>
+
+    <line x1="450" y1="918" x2="1008" y2="918" stroke="#c94848" stroke-width="1.8" marker-end="url(#sR)"/>
+    <text x="458" y="911" fill="#c94848">result()：readState("hypothesis")　（outputKey）</text>
+
+    <line x1="270" y1="950" x2="77" y2="950" stroke="#3267c8" stroke-width="1.8" stroke-dasharray="6 4" marker-end="url(#s)"/>
+    <text x="86" y="943" fill="#1d2533">return hypothesis（String）</text>
+  </g>
+</svg>
+<figcaption>图 3 · untyped researcher 的运行时序。③ 中「变脏 → call(下一个)」的往复就是 P2P 的心跳；④ 展示并行批完成顺序不确定时，靠空动作 + 动作合成保证既不早停也不冻结。</figcaption>
+</figure>
+
+<h2>6. 内部逻辑深潜：AgentActivator 状态机</h2>
+
+<p>P2P 的全部"智能"浓缩在 <code>P2PPlanner</code> 的私有内部类 <code>AgentActivator</code> 里<span class="src-ref">P2PPlanner.java:128-173</span>。每个子 agent 对应一个 activator，持有<strong>两个 volatile 布尔位</strong>——一个是「锁」，一个是「脏位」：</p>
+
+<ul>
+  <li><code>executing</code>（锁位）：这个 agent 当前是否在执行。用于并行场景下防止重复调度、防止误判稳定态。</li>
+  <li><code>shouldExecute</code>（脏位，初始 <code>true</code>）：数据是否要求我（重新）执行。激活即消费掉脏位，输入被改又置回。</li>
+</ul>
+
+<figure class="diagram">
+<svg viewBox="0 0 980 400" xmlns="http://www.w3.org/2000/svg" font-family="-apple-system, BlinkMacSystemFont, 'PingFang SC', sans-serif">
+  <defs>
+    <marker id="a1" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#21856b"/>
+    </marker>
+    <marker id="a2" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#c94848"/>
+    </marker>
+  </defs>
+
+  <!-- formula -->
+  <rect x="300" y="14" width="400" height="58" rx="10" fill="#e8eefb" stroke="#3267c8" stroke-width="1.6"/>
+  <text x="500" y="38" text-anchor="middle" font-size="13.5" fill="#3267c8" font-weight="700">canActivate = !executing &amp;&amp; shouldExecute</text>
+  <text x="500" y="58" text-anchor="middle" font-size="13.5" fill="#3267c8" font-weight="700">&amp;&amp; 全部输入名 ∈ AgenticScope</text>
+
+  <!-- 待命 -->
+  <rect x="80" y="140" width="260" height="96" rx="14" fill="#e3f2ed" stroke="#21856b" stroke-width="2"/>
+  <text x="210" y="172" text-anchor="middle" font-size="15" font-weight="700" fill="#1d2533">待命（可激活）</text>
+  <text x="210" y="196" text-anchor="middle" font-size="12.5" fill="#677286" font-family="SF Mono, Menlo, monospace">shouldExecute = true</text>
+  <text x="210" y="216" text-anchor="middle" font-size="12.5" fill="#677286" font-family="SF Mono, Menlo, monospace">executing = false</text>
+
+  <!-- 执行中 -->
+  <rect x="640" y="140" width="260" height="96" rx="14" fill="#efe9fb" stroke="#7a57c9" stroke-width="2"/>
+  <text x="770" y="172" text-anchor="middle" font-size="15" font-weight="700" fill="#1d2533">执行中（已上锁）</text>
+  <text x="770" y="196" text-anchor="middle" font-size="12.5" fill="#677286" font-family="SF Mono, Menlo, monospace">shouldExecute = false</text>
+  <text x="770" y="216" text-anchor="middle" font-size="12.5" fill="#677286" font-family="SF Mono, Menlo, monospace">executing = true</text>
+
+  <!-- 待命 -> 执行中 -->
+  <line x1="340" y1="162" x2="638" y2="162" stroke="#21856b" stroke-width="1.8" marker-end="url(#a1)"/>
+  <text x="490" y="152" text-anchor="middle" font-size="12.5" fill="#21856b" font-weight="600">startExecution()：被 call() 选中（输入齐全）</text>
+
+  <!-- 执行中 -> 待命 -->
+  <line x1="640" y1="214" x2="342" y2="214" stroke="#7a57c9" stroke-width="1.8" marker-end="url(#a1)"/>
+  <text x="490" y="234" text-anchor="middle" font-size="12.5" fill="#7a57c9" font-weight="600">finishExecution()：完成回调进入 nextAction 时</text>
+
+  <!-- dirty arrow -->
+  <path d="M 490,330 C 490,290 300,290 210,288 L 210,240" fill="none" stroke="#c94848" stroke-width="2" stroke-dasharray="7 5" marker-end="url(#a2)"/>
+  <text x="500" y="330" text-anchor="middle" font-size="12.5" fill="#c94848" font-weight="600">onStateChanged(我输入的 key 被改) → 置脏</text>
+  <text x="500" y="350" text-anchor="middle" font-size="11.5" fill="#c94848">即便正在执行也会置脏：完成后立即可再次激活（volatile 保证可见性）</text>
+
+  <text x="210" y="290" text-anchor="middle" font-size="12" fill="#677286">canActivate = true → 下一轮被收集进 call()</text>
+</svg>
+<figcaption>图 4 · AgentActivator 的「锁位 + 脏位」状态机。源码：canActivate（P2PPlanner.java:145-147）、startExecution（:149-153）、finishExecution（:155-158）、onStateChanged（:164-168）。</figcaption>
+</figure>
+
+<p>围绕这组标志位，三个决策方法各司其职：</p>
+
+<h3>nextCallAction —— 扫描与收集<span class="src-ref">P2PPlanner.java:106-122</span></h3>
+<pre><code>AgentInstance[] agentsToCall = agentActivators.values().stream()
+        .filter(a -> a.canActivate(agenticScope))   // 锁未占 ∧ 脏 ∧ 输入齐
+        .peek(AgentActivator::startExecution)       // 立刻上锁、清脏位
+        .map(AgentActivator::agent)
+        .toArray(AgentInstance[]::new);
+
+if (agentsToCall.length == 0 && agentActivators.values().stream().noneMatch(AgentActivator::isExecuting)) {
+    return done();   // 没人能跑，也没人在跑 → 稳定态
+}
+invocationCounter += agentsToCall.length;
+return call(agentsToCall);   // 可能是空数组 → "暂不决策"</code></pre>
+
+<p>注意两个易错点：<strong>（a）</strong>收集与上锁在同一个流里原子完成，扫描到的 agent 立刻 <code>startExecution</code>，不会在下一次扫描中重复出现；<strong>（b）</strong>「没人能跑」不等于「结束了」——必须<strong>同时</strong>没人正在跑才算稳定态，否则返回空 <code>call()</code>，让主循环 <code>Thread.yield()</code> 干等下一个完成回调（图 2 右上的琥珀分支）。</p>
+
+<h3>nextAction —— 终止判断 + 变脏广播<span class="src-ref">P2PPlanner.java:91-104</span></h3>
+<pre><code>if (terminated(agenticScope)) return done();          // 先查闸门
+
+AgentActivator lastExecutedAgent = agentActivators.get(planningContext.previousAgentInvocation().agentId());
+if (lastExecutedAgent != null) {
+    lastExecutedAgent.finishExecution();              // 解锁
+    agentActivators.values()                          // 变脏广播：
+        .forEach(a -> a.onStateChanged(lastExecutedAgent.agent.outputKey()));
+}                                                     // 输入含此 key 的 activator 全部置脏
+return nextCallAction(agenticScope);</code></pre>
+
+<p><strong>变脏广播</strong>是 P2P 响应式语义的核心：刚完成的 agent 把自己的 <code>outputKey</code> 吆喝给所有 activator，谁的输入名单里含这个 key，谁的脏位就被置回——哪怕它刚跑完，哪怕它正在跑。这就是图 1 里红回边「写回 hypothesis」能驱动 Critic/Validation/Scorer 无限循环的机制根源。</p>
+
+<h3>firstAction —— 冷启动<span class="src-ref">P2PPlanner.java:73-88</span></h3>
+
+<p>只在 scope 含 <code>p2pRequest</code> 时做一次 LLM 变量提取（第 2 节第三步），然后直接进入 <code>nextCallAction</code>。typed 入口（如 <code>ResearchAgent.research(@V("topic"))</code>）没有 <code>p2pRequest</code>，这一步整体跳过——<strong>同一个 P2PPlanner，两种引导方式</strong>。</p>
+
+<h3>执行侧：PlannerLoop 主循环<span class="src-ref">PlannerBasedInvocationHandler.java:437-478</span></h3>
+
+<pre><code>nextAction = planner.firstAction(new PlanningContext(agenticScope, null));
+while (nextAction == null || !nextAction.isDone()) {
+    if (nextAction == null) { Thread.yield(); continue; }
+    List&lt;AgentExecutor&gt; agents = ((Action.AgentCallAction) nextAction).agentsToCall();
+    nextAction = null;
+    switch (agents.size()) {
+        case 0  -&gt; Thread.yield();            // 空动作：等待下一个完成回调
+        case 1  -&gt; agents.get(0).execute(agenticScope, this);
+        default -&gt; parallelExecution(agents);  // CompletableFuture.allOf 并行
+    }
+}</code></pre>
+
+<p>agent 执行完毕后，<code>AgentExecutor.completeAgentInvocation</code> 依次做三件事：把返回值 <code>writeState(outputKey, response)</code> 写进 scope、登记 <code>AgentInvocation</code>（供审计与恢复）、回调 <code>planner.onSubagentInvoked(...)</code><span class="src-ref">AgentExecutor.java:97-122</span>。回调在 <code>ReentrantLock</code> 内执行 <code>composeActions(当前动作, planner.nextAction(...))</code><span class="src-ref">PlannerBasedInvocationHandler.java:568-581</span>——并行批里两个 agent 一先一后完成时，两次决策的动作会被<strong>合并成一个大 call</strong>，而不是后者覆盖前者<span class="src-ref">:588-600</span>。另外每次回调都会把 <code>invocationCounter</code> 等执行态存进 scope（<code>executionState()</code>），崩溃后可恢复<span class="src-ref">P2PPlanner.java:185-196</span>。</p>
+
+<h2>7. 终止的三重保险：用单测逐个验证</h2>
+
+<p>P2P 没有天然的"结束"——数据流可能永远流下去。运行时的出口有三个，<code>P2PPlannerTest</code> 用纯 Java agent（无 LLM）把它们逐一钉死：</p>
+
+<table>
+  <thead><tr><th>保险</th><th>判定处</th><th>验证测试</th></tr></thead>
+  <tbody>
+    <tr><td>① 稳定态（quiescence）</td><td>nextCallAction：无人可激活 ∧ 无人执行</td><td><code>should_terminate_when_no_agent_can_be_activated_anymore</code></td></tr>
+    <tr><td>② 硬闸：次数上限</td><td><code>terminated()</code>：counter ≥ max</td><td><code>shouldNotInvokeMoreAgentsThanMaxAgentsInvocations</code></td></tr>
+    <tr><td>③ 软闸：exit 条件</td><td><code>terminated()</code>：exitCondition(scope, counter)</td><td><code>shouldStopBeforeMaxAgentsInvocationsWhenExitConditionIsMet</code></td></tr>
+  </tbody>
+</table>
+
+<h3>保险 ②：ping-pong 精确执行 max 次<span class="src-ref">P2PPlannerTest.java:30-57</span></h3>
+
+<pre><code>pingAgent:  @Agent(outputKey="ping")  ping(@V("pong"))  → "ping-" + pong
+pongAgent:  @Agent(outputKey="pong")  pong(@V("ping"))  → "pong-" + ping
+// 种子：invokeWithAgenticScope(Map.of("pong", "seed"))</code></pre>
+
+<p>这两个 agent 互为输入输出，<strong>永远有活干</strong>——稳定态永远达不到，唯一出口是硬闸。手推 max=3 的轨迹：</p>
+
+<table>
+  <thead><tr><th>轮次</th><th>决策</th><th>执行</th><th>counter</th><th>scope 新变化</th></tr></thead>
+  <tbody>
+    <tr><td>1</td><td>ping canActivate（pong 已种子化）</td><td>ping → <code>ping-seed</code></td><td>1</td><td><code>ping</code> 写入 → pong 置脏</td></tr>
+    <tr><td>2</td><td>pong canActivate</td><td>pong → <code>pong-ping-seed</code></td><td>2</td><td><code>pong</code> 被改 → ping 置脏</td></tr>
+    <tr><td>3</td><td>ping canActivate（脏位回来了）</td><td>ping → <code>ping-pong-ping-seed</code></td><td>3</td><td>—</td></tr>
+    <tr><td>—</td><td>nextAction：<code>3 ≥ 3</code> → terminated</td><td>—</td><td>—</td><td>done()，断言 invocations == 3 ✓</td></tr>
+  </tbody>
+</table>
+
+<p>参数化跑 max = 1/3/6/10，断言全部精确命中——因为 <code>terminated()</code> 在每次完成回调的<strong>开头</strong>就检查，一个不多、一个不少<span class="src-ref">P2PPlannerTest.java:46-57</span>。把 max 换成 exit 条件 <code>invocationCounter >= 2</code>，同样精确停在 2 次<span class="src-ref">P2PPlannerTest.java:59-69</span>。</p>
+
+<h3>保险 ①：无环 DAG 自然沉降<span class="src-ref">P2PPlannerTest.java:93-117</span></h3>
+
+<p>producer（零输入）写 <code>key1</code>，consumer 读 <code>key1</code> 写 <code>result2</code>，没有 exit 条件、上限放宽到 15。轨迹：producer 先跑（零输入 agent 天然可激活）→ key1 出现 → consumer 激活 → result2 出现但<strong>没有任何 agent 的输入名单里有 result2</strong>，无人在跑、无人变脏 → <code>done()</code>。<strong>DAG 一定会沉降到稳定态</strong>，这是无环依赖的数学保证。</p>
+
+<h3>防"假稳定"：还有人干着活呢<span class="src-ref">P2PPlannerTest.java:119-160</span></h3>
+
+<p>最精妙的一个测试。slowConsumer 和 fastConsumer 并行（都被 key1 激活），fastConsumer 先完成时，用 <code>CountDownLatch</code> 强制 slowConsumer 还挂在半路。此刻 <code>nextCallAction</code> 的扫描结果：无人可激活（slowConsumer 锁位占着）——<strong>如果只看这一半条件就会误判稳定态、提前 done()</strong>，slowConsumer 的 result2 就永远丢了。正是 <code>noneMatch(AgentActivator::isExecuting)</code> 这半个条件救了场：返回空动作 → 主循环 yield → slowConsumer 完成后再决策 → 正确沉降。</p>
+
+<h3>防"冻结"：composeActions 回归<span class="src-ref">P2PPlannerComposeActionsIT.java:55-108</span></h3>
+
+<p>同样的 producer + 双 consumer 结构（随机 sleep 制造完成顺序的不确定性），exit 条件是 result2 和 result3 都在。测试的失败信息直言病灶：<em>"composeActions likely dropped a done() action in favor of an empty call()"</em>。设想并行批里 A 先完成且触发了 <code>done()</code>，而 B 随后完成时又产生一个空 <code>call()</code>——如果合成逻辑拿空动作<strong>覆盖</strong>了 done，主循环就永远 <code>yield()</code> 下去：没人会再完成，没人会再决策。现在的 <code>composeActions</code> 明确把空 call 当作「可丢弃」的一方，done 优先<span class="src-ref">PlannerBasedInvocationHandler.java:588-600</span>。</p>
+
+<div class="callout">
+  <span class="callout-title">记忆口诀</span>
+  <strong>空动作 = "我暂时不决策"，done = "我永远不决策"。</strong>合成时后者赢；扫描时"无人可激活"必须叠加"无人执行中"才能升级成 done。
+</div>
+
+<h2>8. 被禁用的 IT：P2P 的两个坑</h2>
+
+<p><code>P2PResearcherIT.p2p_tests()</code> 至今挂着 <code>@Disabled("TODO: fix. It enters an infinite loop")</code><span class="src-ref">P2PResearcherIT.java:15-17</span>。它是全模块唯一的"真实 LLM"P2P 集成测试，恰好也是两大风险的临床标本：</p>
+
+<p><strong>坑一：环依赖 → 结构性振荡。</strong>回看图 1：Validation 写 <code>hypothesis</code>，而 <code>hypothesis</code> 是 Critic、Validation（自己！）、Scorer 三者的输入。每一轮 Validation 的修订都会把这三家全部置脏，新一轮并行批又会写出新的 critique / hypothesis / score……如果 LLM 打分始终到不了 0.85，理论上只有硬闸（本例 max=10）能拦住。真实 LLM 的输出不确定性 + 环依赖，就是无限循环的温床。<strong>设计 P2P 系统时，先画出依赖图——凡是有回边的，必须同时配备硬闸（maxAgentsInvocations）与可收敛的软闸（exitCondition），缺一不可。</strong></p>
+
+<p><strong>坑二：空动作自旋 → 运行时冻结。</strong>即使没有环，历史版本也曾因 <code>composeActions</code> 的合成缺陷而"冻结"：done 动作被空 call 覆盖后，主循环在 <code>Thread.yield()</code> 上永远空转——没有任何在途 agent 会再来唤醒它。上一节的 ComposeActionsIT 就是针对这个缺陷的回归测试。这两个坑一个在<strong>设计层</strong>（你的依赖图形状），一个在<strong>运行时层</strong>（动作合成的正确性），排查 P2P 问题时先问自己：是图有环，还是循环被冻结？</p>
+
+<h2>9. 测验：不看源码，凭图推演</h2>
+
+<div class="quiz">
+  <p class="quiz-q">Q1 · P2PPlanner 判断一个 agent「此刻可激活」需要同时满足哪三个条件？</p>
+  <button class="reveal-btn">显示答案</button>
+  <div class="quiz-a">① 锁位空闲（<code>executing == false</code>）；② 脏位为真（<code>shouldExecute == true</code>）；③ 它的全部输入名都已在 AgenticScope 中就绪。三者缺一不可，见 <code>canActivate</code>（P2PPlanner.java:145-147）。</div>
+</div>
+
+<div class="quiz">
+  <p class="quiz-q">Q2 · 扫描时「没有任何 agent 可激活」，planner 一定返回 done() 吗？为什么？</p>
+  <button class="reveal-btn">显示答案</button>
+  <div class="quiz-a">不一定。必须再叠加「也没有任何 agent 正在执行」才判稳定态返回 done()；若还有人执行中，则返回空 call() 让主循环等待——否则会丢掉在途 agent 的产出（假稳定）。</div>
+</div>
+
+<div class="quiz">
+  <p class="quiz-q">Q3 · ping-pong 测试中 max=3 时，为什么恰好执行 3 次而不是 4 次？</p>
+  <button class="reveal-btn">显示答案</button>
+  <div class="quiz-a">因为 terminated() 在每次完成回调的 nextAction 开头检查：第 3 次执行完 counter==3 已达上限，第 4 次的 call 在生成前就被 done() 拦下，所以精确等于 3。</div>
+</div>
+
+<div class="quiz">
+  <p class="quiz-q">Q4 · ValidationAgent 的 outputKey 为何会引发振荡？给出修复思路。</p>
+  <button class="reveal-btn">显示答案</button>
+  <div class="quiz-a">它写回的 hypothesis 恰是 Critic、自己和 Scorer 的输入，每轮修订都把三者置脏形成自持回路。修复：让 Validation 写入独立的 key（如 refinedHypothesis）断开回边，或确保 exit 条件必然收敛。</div>
+</div>
+
+<h2>10. 收尾与下一步</h2>
+
+<p><strong>首选精读：</strong><code>langchain4j-agentic-patterns/src/main/java/dev/langchain4j/agentic/patterns/p2p/P2PPlanner.java</code> 全文只有 200 行，却浓缩了本课全部内容——先读 <code>AgentActivator</code>（128-173 行）再读三个决策方法，顺序反过来容易迷路。测试侧精读 <code>P2PPlannerTest.java</code>，四个用例各自钉死一条规则。</p>
+
+<p>到这里，你已经掌握了两类截然不同的规划哲学：GOAP 的「一次规划、按图执行」和 P2P 的「不规划、数据说话」。下一课可以对比 <code>SupervisorPlanner</code>（LLM 当调度员）补全第三种哲学，或者深入 <code>composeActions</code> 背后的并行语义。有任何一处推演卡壳——尤其是图 3 时序图里的某一步——直接把疑问发给我，我就是你的答疑老师。</p>
+
+<footer class="lesson-footer">
+  <p>上一课：<a href="0001-goap-writer-runtime.html">GOAP 运行模式：writer 实例拆解</a> · 速查手册：<a href="../reference/p2p-cheatsheet.html">P2P Cheatsheet</a></p>
+  <p>课程事实来源：本地仓库 langchain4j / langchain4j-agentic / langchain4j-agentic-patterns 源码与测试。读不懂哪一行，随时来问。</p>
+</footer>
+
+<script src="../assets/quiz.js"></script>
+</main>
+</body>
+</html>

@@ -48,8 +48,12 @@ public class DebateExampleIT {
                 .planner(() -> new DebatePlanner(3, ConvergenceStrategy.unanimousLastWord()))
                 .build();
 
+        /*String result = panel.debate(
+                "Is it ethical to use AI-generated art in commercial products without crediting the AI tool?");*/
+
         String result = panel.debate(
-                "Is it ethical to use AI-generated art in commercial products without crediting the AI tool?");
+                "在商业产品中使用AI生成的艺术作品，却不标注AI工具来源，这是否符合伦理？"
+        );
 
         assertThat(result).isNotBlank();
         System.out.println("Final Verdict: " + result);

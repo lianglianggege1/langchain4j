@@ -1,0 +1,443 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>第 2 课 · Voting 模式：并行投票与共识聚合</title>
+<link rel="stylesheet" href="../assets/lesson.css">
+</head>
+<body>
+<main>
+
+<header class="lesson-header">
+  <div class="lesson-kicker">langchain4j agentic patterns · 课程第 2 课</div>
+  <h1>Voting 模式：并行投票与共识聚合</h1>
+  <p class="lesson-sub">VotingPlanner + VotingStrategy —— 不决定「先做谁」，而是让所有投票者同时上钟，最后把一堆答案聚合成一个。</p>
+</header>
+
+<p><strong>本课的收获：</strong>读完这一课，你应该能脱稿画出 classifier 实例的 fan-out/fan-in 图，说清「一票从产生到被计入」的完整运行时路径，并且能独立推演出 VotingPlanner 的一个隐藏坑（崩溃恢复）。前提是你已学过 <a href="./0001-goap-writer-runtime.html">第 1 课（GOAP 与 PlannerLoop 运行时）</a>——本课全程复用那里的运行时知识。</p>
+
+<h2>1. 一句话定位：GOAP 的镜像</h2>
+
+<p>用你熟悉的算法语言说：<strong>GOAP 是在依赖图上搜一条最短路（决策「顺序」），Voting 是一次扇出-汇聚（求「共识」）</strong>。它就是集成学习（ensemble learning）在智能体框架里的直系亲戚——随机森林对多棵树做多数表决，这里对多个 LLM 投票者做聚合。LLM 侧的理论根基是 Self-Consistency：对同一问题采样多条推理路径再表决，准确率显著高于单路推理（本课首选延伸阅读，文末有链接）。</p>
+
+<table>
+  <thead><tr><th></th><th>GOAP（第 1 课）</th><th>Voting（本课）</th></tr></thead>
+  <tbody>
+    <tr><td>规划器回答的问题</td><td>「先执行谁、后执行谁？」</td><td>「大家各自的意见，最终算谁的？」</td></tr>
+    <tr><td>拓扑（topology()）</td><td><code>SEQUENCE</code>，一次 call 一个 agent</td><td><code>PARALLEL</code>，一次 call <strong>全部</strong> agent</td></tr>
+    <tr><td>决策依据</td><td>黑板 state key 的依赖图搜索</td><td>对「调用返回值」做聚合函数运算</td></tr>
+    <tr><td>核心扩展点</td><td>搜索算法 / 图结构</td><td><code>VotingStrategy</code>（聚合规则）</td></tr>
+    <tr><td>经典对照</td><td>A* / 拓扑排序</td><td>集成学习多数表决 / Self-Consistency</td></tr>
+  </tbody>
+</table>
+
+<p>还有一个只有学过第 1 课才能品出来的点：<code>PlannerLoop</code> 里那个 <code>default -&gt; parallelExecution(agents)</code> 分支——GOAP 从来不走（每次只有一个 agent），<strong>Voting 是第一个真正用上这条并行通道的模式</strong>。</p>
+
+<h2>2. VotingPlanner：全文 57 行走读</h2>
+
+<p>整个规划器只有四个状态字段和一个决策循环，比 GOAP 简单一个数量级：</p>
+
+<pre><code>public class VotingPlanner implements Planner {
+    private final VotingStrategy strategy;   // 聚合规则（注入）
+    private List&lt;AgentInstance&gt; subagents;  // 投票者名单（init 时拿到）
+    private int completedCount;               // 已收回的票数
+    private final List&lt;Object&gt; votes = new ArrayList&lt;&gt;(); // 票箱（内存）
+
+    public Action firstAction(PlanningContext ctx) {
+        if (subagents.isEmpty()) return done();
+        return call(subagents);              // ★ 一口气 call 全部 → 运行时并行派发
+    }
+
+    public Action nextAction(PlanningContext ctx) {
+        votes.add(ctx.previousAgentInvocation().output());  // ★ 票 = agent 的返回值
+        completedCount++;
+        if (completedCount &lt; subagents.size())
+            return noOp();                    // 票没收齐：空转等待
+        return done(strategy.aggregate(votes)); // 票齐：聚合出最终结果
+    }
+}</code></pre>
+
+<p class="src-ref">voting/VotingPlanner.java:13-57</p>
+
+<p>四个关键观察：</p>
+<ul>
+  <li><strong>并行从哪来</strong>：<code>call(subagents)</code> 把所有投票者塞进一个 Action——第 1 课讲过，PlannerLoop 对多 agent 的 Action 用 <code>CompletableFuture.allOf</code> 并行执行。VotingPlanner 自己一行并发代码都没写。</li>
+  <li><strong>票是什么</strong>：<code>previousAgentInvocation().output()</code> 是 agent 的<strong>返回值</strong>（如 "POSITIVE"、<code>CritiqueResult</code> record），不是从黑板 state 读的——所以三个投票者即使 outputKey 撞车，票也不会丢；但实例里仍给每人独立 outputKey（vote1/2/3），是为了黑板上留痕可审计。</li>
+  <li><strong>收票是线程安全的</strong>：三个并行 agent 各自完成时都会回调 <code>onSubagentInvoked()</code>（第 1 课时序图第 5 步），内部用 <code>ReentrantLock</code> 串行化地调 <code>nextAction()</code>——<code>votes.add</code> 全程持锁，票箱不会脏。</li>
+  <li><strong>noOp 的用途</strong>：前 N−1 张票到达时无事可做，返回 <code>NoOpAction</code>（空 agent 列表的 AgentCallAction）占位；最后一张票到达时返回 <code>done(aggregate)</code>。PlannerLoop 的 <code>composeActions</code> 会把中间的 noOp 吞掉、让 done 生效。</li>
+</ul>
+
+<h2>3. VotingStrategy：聚合规则即扩展点</h2>
+
+<pre><code>@FunctionalInterface
+public interface VotingStrategy {
+    Object aggregate(Collection&lt;Object&gt; votes);
+
+    static VotingStrategy majority() { ... } // 分组计数，取出现最多的值
+    static VotingStrategy average()  { ... } // 数值票求均值
+    static VotingStrategy highest()  { ... } // Comparable 票取最大
+}</code></pre>
+
+<p class="src-ref">voting/VotingStrategy.java:9-37</p>
+
+<p>三个内置策略各对应一种集成学习惯例：majority = 随机森林式表决，average = 回归集成取均值，highest = 「乐观边界」。而它是个 <code>@FunctionalInterface</code>——意味着<strong>聚合逻辑可以是任意函数</strong>，critic 实例正是靠自定义聚合器把「投票」变成了「评审团合议」（见第 5 节）。</p>
+
+<div class="callout">
+  <span class="callout-title">内置 majority 的两个坑</span>
+  ① <strong>平票无仲裁</strong>：三个投票者若给出三个互不相同的答案，计数全是 1，<code>max</code> 只取 HashMap 遍历中碰到的第一个——结果不确定。要确定性平票裁决，得自己写策略（比如加权重）。② <strong>等值靠 equals</strong>：LLM 返回 "POSITIVE"、"Positive."、" positive" 会被当成三张不同的票——所以 classifier 的 prompt 里才反复强调 <em>Reply with exactly one word</em>，这是用提示词工程在给 majority() 的语义兜底。
+</div>
+
+<h2>4. 实例一：classifier（最小 Voting 系统）</h2>
+
+<p>三个情感分类器，<strong>同一个输入、三套不同人设的 prompt</strong>，majority 表决：</p>
+
+<figure class="diagram">
+<svg viewBox="0 0 980 330" xmlns="http://www.w3.org/2000/svg" font-family="-apple-system, BlinkMacSystemFont, 'PingFang SC', sans-serif">
+  <defs>
+    <marker id="va" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#3267c8"/>
+    </marker>
+    <marker id="vg" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#21856b"/>
+    </marker>
+  </defs>
+
+  <!-- input -->
+  <rect x="20" y="120" width="130" height="70" rx="12" fill="#e3f2ed" stroke="#21856b" stroke-width="1.8"/>
+  <text x="85" y="150" text-anchor="middle" font-size="13" fill="#1d2533">text</text>
+  <text x="85" y="170" text-anchor="middle" font-size="11" fill="#677286">"I absolutely love</text>
+  <text x="85" y="184" text-anchor="middle" font-size="11" fill="#677286">this product!…"</text>
+
+  <!-- fan-out lines -->
+  <line x1="150" y1="138" x2="300" y2="60" stroke="#3267c8" stroke-width="1.8" marker-end="url(#va)"/>
+  <line x1="150" y1="155" x2="300" y2="155" stroke="#3267c8" stroke-width="1.8" marker-end="url(#va)"/>
+  <line x1="150" y1="172" x2="300" y2="250" stroke="#3267c8" stroke-width="1.8" marker-end="url(#va)"/>
+  <text x="215" y="128" text-anchor="middle" font-size="11" fill="#3267c8">并行派发（同一输入）</text>
+
+  <!-- three voters -->
+  <g>
+    <rect x="305" y="34" width="270" height="56" rx="12" fill="#ffffff" stroke="#7a57c9" stroke-width="1.8"/>
+    <text x="440" y="57" text-anchor="middle" font-size="13" font-weight="700" fill="#1d2533">SentimentClassifier1</text>
+    <text x="440" y="77" text-anchor="middle" font-size="11" fill="#677286">人设：直接分类 → vote1 = "POSITIVE"</text>
+  </g>
+  <g>
+    <rect x="305" y="127" width="270" height="56" rx="12" fill="#ffffff" stroke="#7a57c9" stroke-width="1.8"/>
+    <text x="440" y="150" text-anchor="middle" font-size="13" font-weight="700" fill="#1d2533">SentimentClassifier2</text>
+    <text x="440" y="170" text-anchor="middle" font-size="11" fill="#677286">人设：情感专家 → vote2 = "POSITIVE"</text>
+  </g>
+  <g>
+    <rect x="305" y="222" width="270" height="56" rx="12" fill="#ffffff" stroke="#7a57c9" stroke-width="1.8"/>
+    <text x="440" y="245" text-anchor="middle" font-size="13" font-weight="700" fill="#1d2533">SentimentClassifier3</text>
+    <text x="440" y="265" text-anchor="middle" font-size="11" fill="#677286">人设：反馈分析师 → vote3 = "NEUTRAL"</text>
+  </g>
+
+  <!-- fan-in lines -->
+  <line x1="575" y1="62" x2="730" y2="140" stroke="#21856b" stroke-width="1.8" marker-end="url(#vg)"/>
+  <line x1="575" y1="155" x2="726" y2="155" stroke="#21856b" stroke-width="1.8" marker-end="url(#vg)"/>
+  <line x1="575" y1="250" x2="730" y2="170" stroke="#21856b" stroke-width="1.8" marker-end="url(#vg)"/>
+
+  <!-- aggregate -->
+  <rect x="735" y="108" width="220" height="94" rx="12" fill="#e8eefb" stroke="#3267c8" stroke-width="2"/>
+  <text x="845" y="133" text-anchor="middle" font-size="13" font-weight="700" fill="#1d2533">majority() 聚合</text>
+  <text x="845" y="153" text-anchor="middle" font-size="11.5" fill="#677286">POSITIVE ×2 &gt; NEUTRAL ×1</text>
+  <text x="845" y="173" text-anchor="middle" font-size="11.5" fill="#677286">→ done("POSITIVE") 写入黑板</text>
+  <text x="845" y="192" text-anchor="middle" font-size="11" font-family="SF Mono, Menlo, monospace" fill="#21856b">classification = "POSITIVE"</text>
+
+  <!-- parallel note -->
+  <rect x="305" y="296" width="270" height="26" rx="8" fill="#f6f7fb" stroke="#d8dee9"/>
+  <text x="440" y="313" text-anchor="middle" font-size="11" fill="#677286">⏱ 三个投票者同时在跑，互不等待</text>
+</svg>
+<figcaption>图 1 · classifier 实例：fan-out（同一输入并行发给全部投票者）→ fan-in（majority 聚合）。三个 prompt 人设各不相同，这是刻意为之——<strong>多样性</strong>让错误不相关，投票才有意义（同构集成 = 白花三倍钱）。</figcaption>
+</figure>
+
+<p>调用侧代码只有一步组装（plannerBuilder 挂上 VotingPlanner），与第 1 课的 writer 完全同构：</p>
+
+<pre><code>SentimentVoter voter = AgenticServices.plannerBuilder(SentimentVoter.class)
+        .subAgents(c1, c2, c3)
+        .outputKey("classification")   // 聚合结果最终写到这个 key
+        .planner(VotingPlanner::new)   // 无参构造 → 默认 majority 策略
+        .build();
+String result = voter.classify("I absolutely love this product!…");</code></pre>
+
+<p class="src-ref">voting/classifier/VotingClassifierIT.java:21-45</p>
+
+<h2>5. 实例二：critic（Voting 的完全体）</h2>
+
+<p>critic 实例把 Voting 嵌进了一个更大的复合系统，一次展示三个新能力：<strong>自定义聚合器</strong>、<strong>按状态动态选模型</strong>、<strong>投票 × 循环 × 顺序的嵌套</strong>。</p>
+
+<figure class="diagram">
+<svg viewBox="0 0 980 560" xmlns="http://www.w3.org/2000/svg" font-family="-apple-system, BlinkMacSystemFont, 'PingFang SC', sans-serif">
+  <defs>
+    <marker id="ca2" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#3267c8"/>
+    </marker>
+    <marker id="cg" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#21856b"/>
+    </marker>
+    <marker id="cr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#c94848"/>
+    </marker>
+  </defs>
+
+  <!-- evaluator container -->
+  <rect x="14" y="10" width="952" height="540" rx="16" fill="#ffffff" stroke="#3267c8" stroke-width="2"/>
+  <text x="40" y="36" font-size="13" font-weight="700" fill="#3267c8">StoryEvaluator（SequenceAgent：顺序拓扑）</text>
+
+  <!-- writer -->
+  <rect x="50" y="60" width="200" height="74" rx="12" fill="#e8eefb" stroke="#3267c8" stroke-width="1.8"/>
+  <text x="150" y="85" text-anchor="middle" font-size="13" font-weight="700" fill="#1d2533">CreativeWriter</text>
+  <text x="150" y="105" text-anchor="middle" font-size="11" fill="#677286">GPT-4o-mini</text>
+  <text x="150" y="122" text-anchor="middle" font-size="11" font-family="SF Mono, Menlo, monospace" fill="#21856b">topic → story</text>
+
+  <line x1="150" y1="134" x2="150" y2="168" stroke="#3267c8" stroke-width="1.8" marker-end="url(#ca2)"/>
+
+  <!-- review loop container -->
+  <rect x="30" y="172" width="920" height="290" rx="16" fill="#f6f7fb" stroke="#c94848" stroke-width="2" stroke-dasharray="8 5"/>
+  <text x="56" y="198" font-size="13" font-weight="700" fill="#c94848">reviewLoop（LoopAgent：最多 5 圈，exit 条件 score ≥ 8.5）</text>
+
+  <!-- voting critics container -->
+  <rect x="50" y="212" width="560" height="230" rx="14" fill="#ffffff" stroke="#7a57c9" stroke-width="2"/>
+  <text x="76" y="238" font-size="13" font-weight="700" fill="#7a57c9">votingCritics（VotingPlanner：并行投票 + 自定义聚合）</text>
+
+  <!-- story input -->
+  <line x1="150" y1="172" x2="150" y2="172" stroke="none"/>
+  <text x="150" y="262" text-anchor="middle" font-size="11" font-family="SF Mono, Menlo, monospace" fill="#677286">story ↓（扇出）</text>
+
+  <!-- three critics -->
+  <g>
+    <rect x="66" y="272" width="166" height="64" rx="10" fill="#efe9fb" stroke="#7a57c9" stroke-width="1.5"/>
+    <text x="149" y="295" text-anchor="middle" font-size="12" font-weight="700" fill="#1d2533">StyleCritic</text>
+    <text x="149" y="313" text-anchor="middle" font-size="10.5" fill="#677286">文风评审 → styleCritique</text>
+    <text x="149" y="328" text-anchor="middle" font-size="10.5" fill="#677286">CritiqueResult(7.2, "…")</text>
+  </g>
+  <g>
+    <rect x="248" y="272" width="166" height="64" rx="10" fill="#efe9fb" stroke="#7a57c9" stroke-width="1.5"/>
+    <text x="331" y="295" text-anchor="middle" font-size="12" font-weight="700" fill="#1d2533">OriginalityCritic</text>
+    <text x="331" y="313" text-anchor="middle" font-size="10.5" fill="#677286">原创性评审 → originalityCritique</text>
+    <text x="331" y="328" text-anchor="middle" font-size="10.5" fill="#677286">CritiqueResult(8.0, "…")</text>
+  </g>
+  <g>
+    <rect x="430" y="272" width="166" height="64" rx="10" fill="#efe9fb" stroke="#7a57c9" stroke-width="1.5"/>
+    <text x="513" y="295" text-anchor="middle" font-size="12" font-weight="700" fill="#1d2533">EngagementCritic</text>
+    <text x="513" y="313" text-anchor="middle" font-size="10.5" fill="#677286">吸引力评审 → engagementCritique</text>
+    <text x="513" y="328" text-anchor="middle" font-size="10.5" fill="#677286">CritiqueResult(7.5, "…")</text>
+  </g>
+
+  <!-- fan-in to aggregator -->
+  <line x1="149" y1="336" x2="290" y2="370" stroke="#21856b" stroke-width="1.6" marker-end="url(#cg)"/>
+  <line x1="331" y1="336" x2="315" y2="370" stroke="#21856b" stroke-width="1.6" marker-end="url(#cg)"/>
+  <line x1="513" y1="336" x2="340" y2="370" stroke="#21856b" stroke-width="1.6" marker-end="url(#cg)"/>
+
+  <!-- aggregator -->
+  <rect x="250" y="374" width="250" height="58" rx="10" fill="#e8eefb" stroke="#3267c8" stroke-width="1.8"/>
+  <text x="375" y="396" text-anchor="middle" font-size="12" font-weight="700" fill="#1d2533">critiquesAggregator()（自定义策略）</text>
+  <text x="375" y="414" text-anchor="middle" font-size="10.5" fill="#677286">score 取均值 7.57；suggestions 拼接</text>
+  <text x="375" y="426" text-anchor="middle" font-size="10.5" font-family="SF Mono, Menlo, monospace" fill="#21856b">→ critique</text>
+
+  <!-- editor -->
+  <rect x="640" y="212" width="290" height="120" rx="12" fill="#fbf0e1" stroke="#b66b14" stroke-width="2"/>
+  <text x="785" y="238" text-anchor="middle" font-size="13" font-weight="700" fill="#1d2533">StoryEditor（按分动态选模型）</text>
+  <text x="785" y="260" text-anchor="middle" font-size="11.5" fill="#677286">critique.score &gt; 7.8 ?</text>
+  <text x="785" y="278" text-anchor="middle" font-size="11.5" fill="#b66b14">是 → GPT-5.1（高分才值得精修）</text>
+  <text x="785" y="296" text-anchor="middle" font-size="11.5" fill="#677286">否 → GPT-4o-mini（便宜模型打草稿）</text>
+  <text x="785" y="318" text-anchor="middle" font-size="11" font-family="SF Mono, Menlo, monospace" fill="#21856b">story + critique → story（新版）</text>
+  <line x1="500" y1="402" x2="700" y2="402" stroke="#b66b14" stroke-width="1.8" marker-end="url(#cg)" transform="translate(0,-130)"/>
+
+  <!-- loop back edge -->
+  <path d="M 785 332 L 785 470 L 375 470 L 375 436" fill="none" stroke="#c94848" stroke-width="1.8" marker-end="url(#cr)"/>
+  <text x="580" y="490" text-anchor="middle" font-size="11" fill="#c94848">score &lt; 8.5 → 回到循环开头，评审团重新投票（新 story）</text>
+
+  <!-- exit note -->
+  <path d="M 860 250 L 940 250 L 940 120 L 700 97" fill="none" stroke="#21856b" stroke-width="1.8" marker-end="url(#cg)"/>
+  <text x="920" y="180" font-size="11" fill="#21856b" transform="rotate(90 920 180)" text-anchor="middle">score ≥ 8.5 → 出圈</text>
+
+  <!-- output -->
+  <rect x="330" y="478" width="320" height="56" rx="12" fill="#e3f2ed" stroke="#21856b" stroke-width="1.8"/>
+  <text x="490" y="500" text-anchor="middle" font-size="12.5" font-weight="700" fill="#1d2533">@Output：ScoredStory(story, score, suggestions)</text>
+  <text x="490" y="520" text-anchor="middle" font-size="11" fill="#677286">从黑板收尾读取三个 key 组装成最终返回值</text>
+</svg>
+<figcaption>图 2 · critic 实例全景：顺序（外）套循环（中）套并行投票（内）——三层规划器嵌套，全部共享同一块 AgenticScope 黑板。</figcaption>
+</figure>
+
+<p>三个新能力逐一点名：</p>
+
+<p><strong>① 自定义聚合器 = 投票变合议。</strong>critic 的票不再是字符串而是 <code>CritiqueResult(score, suggestions)</code> record，聚合函数自己写：分数取均值、建议拼接。此时「Voting」的本质显露无遗——它只是「并行扇出 + 任意收敛函数」，majority 只是个特例：</p>
+
+<pre><code>static VotingStrategy critiquesAggregator() {
+    return votes -> {
+        var critiques = votes.stream().map(v -&gt; (CritiqueResult) v).toList();
+        double averageScore = critiques.stream().mapToDouble(CritiqueResult::score).average().orElse(0.0);
+        String allSuggestions = critiques.stream().map(CritiqueResult::suggestions)
+                .collect(Collectors.joining("; "));
+        return new CritiqueResult(averageScore, allSuggestions);
+    };
+}</code></pre>
+
+<p class="src-ref">voting/critic/VotingCriticIT.java:28-45</p>
+
+<p><strong>② 按状态动态选模型。</strong>StoryEditor 的 chatModel 是个函数：分数高于 7.8（接近出圈线）才用 GPT-5.1 精修，否则 GPT-4o-mini 打草稿——<em>质量逼近阈值时才花钱</em>的成本控制模式：</p>
+
+<pre><code>.chatModel(scope -&gt; {
+    CritiqueResult critique = (CritiqueResult) scope.readState("critique");
+    return critique != null &amp;&amp; critique.score() &gt; 7.8 ? enhancedModel() : baseModel();
+})</code></pre>
+
+<p><strong>③ 组装方式与声明式等价物。</strong>同一个系统有两种写法，行为完全一致——builder 流水线 vs 纯注解（<code>DeclarativeVotingCriticIT</code> 用 <code>createAgenticSystem</code> 一行拉起）：</p>
+
+<table>
+  <thead><tr><th>编程式（builder）</th><th>声明式（注解）</th></tr></thead>
+  <tbody>
+    <tr><td><code>plannerBuilder().subAgents(…).outputKey("critique").planner(() -&gt; new VotingPlanner(agg))</code></td><td><code>@PlannerAgent(name, outputKey, subAgents)</code> + <code>@PlannerSupplier</code> 静态方法返回 Planner</td></tr>
+    <tr><td><code>loopBuilder().subAgents(…).maxIterations(5).exitCondition(…)</code></td><td><code>@LoopAgent(name, outputKey, maxIterations, subAgents)</code> + <code>@ExitCondition</code> 静态方法</td></tr>
+    <tr><td><code>sequenceBuilder(Class).subAgents(…).output(…)</code></td><td><code>@SequenceAgent(subAgents)</code> + <code>@Output</code> 静态方法</td></tr>
+    <tr><td><code>.chatModel(scope -&gt; …)</code>（动态模型）</td><td><code>@ChatModelSupplier</code> 静态方法，参数可带 <code>@V</code> 注入黑板状态</td></tr>
+  </tbody>
+</table>
+
+<p class="src-ref">voting/critic/DeclarativeCriticAgents.java:64-107 · DeclarativeVotingCriticIT.java:17-32</p>
+
+<h2>6. Runtime：一票的生命周期</h2>
+
+<p>把第 1 课的 PlannerLoop 时序套到 classifier 实例上，重点看并行分支和收票：</p>
+
+<figure class="diagram">
+<svg viewBox="0 0 980 620" xmlns="http://www.w3.org/2000/svg" font-family="-apple-system, BlinkMacSystemFont, 'PingFang SC', sans-serif">
+  <defs>
+    <marker id="ta" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#3267c8"/>
+    </marker>
+    <marker id="tv" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#7a57c9"/>
+    </marker>
+    <marker id="tg" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#21856b"/>
+    </marker>
+  </defs>
+
+  <!-- lifelines -->
+  <g font-size="12.5" font-weight="700">
+    <rect x="20" y="10" width="110" height="32" rx="8" fill="#e8eefb" stroke="#3267c8"/><text x="75" y="31" text-anchor="middle" fill="#1d2533">调用方</text>
+    <rect x="215" y="10" width="130" height="32" rx="8" fill="#e8eefb" stroke="#3267c8"/><text x="280" y="31" text-anchor="middle" fill="#1d2533">PlannerLoop</text>
+    <rect x="430" y="10" width="160" height="32" rx="8" fill="#efe9fb" stroke="#7a57c9"/><text x="510" y="31" text-anchor="middle" fill="#1d2533">VotingPlanner</text>
+    <rect x="640" y="10" width="140" height="32" rx="8" fill="#faeaea" stroke="#c94848"/><text x="710" y="31" text-anchor="middle" fill="#1d2533">投票者×3（并行）</text>
+    <rect x="830" y="10" width="130" height="32" rx="8" fill="#e3f2ed" stroke="#21856b"/><text x="895" y="31" text-anchor="middle" fill="#1d2533">AgenticScope</text>
+  </g>
+  <g stroke="#c3ccd9" stroke-width="1.2" stroke-dasharray="5 5">
+    <line x1="75" y1="42" x2="75" y2="600"/>
+    <line x1="280" y1="42" x2="280" y2="600"/>
+    <line x1="510" y1="42" x2="510" y2="600"/>
+    <line x1="710" y1="42" x2="710" y2="600"/>
+    <line x1="895" y1="42" x2="895" y2="600"/>
+  </g>
+
+  <g font-size="12">
+    <!-- 1: call -->
+    <line x1="75" y1="70" x2="276" y2="70" stroke="#3267c8" stroke-width="1.8" marker-end="url(#ta)"/>
+    <text x="175" y="62" text-anchor="middle" fill="#1d2533">classify(text)</text>
+
+    <!-- 2: firstAction -->
+    <line x1="280" y1="106" x2="506" y2="106" stroke="#7a57c9" stroke-width="1.8" marker-end="url(#tv)"/>
+    <text x="393" y="98" text-anchor="middle" fill="#1d2533">firstAction()</text>
+    <line x1="506" y1="130" x2="284" y2="130" stroke="#7a57c9" stroke-width="1.5" stroke-dasharray="5 4" marker-end="url(#tv)"/>
+    <text x="393" y="122" text-anchor="middle" fill="#7a57c9">call(c1, c2, c3) ← 三个 agent 一个 Action</text>
+
+    <!-- 3: parallel dispatch -->
+    <line x1="280" y1="168" x2="706" y2="168" stroke="#c94848" stroke-width="1.8" marker-end="url(#ta)"/>
+    <text x="493" y="160" text-anchor="middle" fill="#c94848">parallelExecution：3 × CompletableFuture（同时开跑）</text>
+
+    <!-- 4: votes return (three staggered) -->
+    <line x1="710" y1="214" x2="506" y2="214" stroke="#7a57c9" stroke-width="1.5" stroke-dasharray="5 4" marker-end="url(#tv)"/>
+    <text x="608" y="206" text-anchor="middle" fill="#1d2533">c1 完成 → onSubagentInvoked(v1)</text>
+    <line x1="710" y1="252" x2="506" y2="252" stroke="#7a57c9" stroke-width="1.5" stroke-dasharray="5 4" marker-end="url(#tv)"/>
+    <text x="608" y="244" text-anchor="middle" fill="#1d2533">c2 完成 → onSubagentInvoked(v2)</text>
+    <line x1="710" y1="290" x2="506" y2="290" stroke="#7a57c9" stroke-width="1.5" stroke-dasharray="5 4" marker-end="url(#tv)"/>
+    <text x="608" y="282" text-anchor="middle" fill="#1d2533">c3 完成 → onSubagentInvoked(v3)（最后一张）</text>
+
+    <!-- 5: nextAction results -->
+    <rect x="440" y="318" width="420" height="96" rx="10" fill="#f6f7fb" stroke="#d8dee9"/>
+    <text x="650" y="340" text-anchor="middle" fill="#1d2533">nextAction()：votes.add(返回值)；completedCount++（全程持 ReentrantLock）</text>
+    <text x="650" y="360" text-anchor="middle" fill="#7a57c9">第 1、2 张票 → noOp（等待占位，被 composeActions 吞掉）</text>
+    <text x="650" y="380" text-anchor="middle" fill="#21856b">第 3 张票 → done(majority(votes)) = done("POSITIVE")</text>
+    <text x="650" y="400" text-anchor="middle" fill="#677286">票 = previousAgentInvocation().output()（调用返回值，非黑板读取）</text>
+
+    <!-- 6: write votes to scope (individual outputKeys) -->
+    <line x1="710" y1="440" x2="891" y2="440" stroke="#21856b" stroke-width="1.5" marker-end="url(#tg)"/>
+    <text x="800" y="432" text-anchor="middle" fill="#21856b">vote1/vote2/vote3 各自写黑板（留痕）</text>
+
+    <!-- 7: loop exits -->
+    <line x1="280" y1="486" x2="506" y2="486" stroke="#7a57c9" stroke-width="1.5" stroke-dasharray="5 4" marker-end="url(#tv)"/>
+    <text x="393" y="478" text-anchor="middle" fill="#1d2533">allOf().get() 返回，nextAction 已是 done</text>
+
+    <!-- 8: result -->
+    <line x1="280" y1="524" x2="891" y2="524" stroke="#b66b14" stroke-width="1.8" marker-end="url(#ta)"/>
+    <text x="585" y="516" text-anchor="middle" fill="#b66b14">result()：聚合值 writeState("classification") 后返回</text>
+
+    <!-- 9: return -->
+    <line x1="280" y1="570" x2="79" y2="570" stroke="#3267c8" stroke-width="1.8" marker-end="url(#ta)"/>
+    <text x="175" y="562" text-anchor="middle" fill="#1d2533">"POSITIVE"</text>
+  </g>
+</svg>
+<figcaption>图 3 · Voting 运行时时序：与第 1 课 GOAP 时序的唯一结构性差异在第 3 步——一次 call 派发全部 agent，收票在并行回调（持锁）中完成。</figcaption>
+</figure>
+
+<h2>7. 检索练习</h2>
+
+<div class="quiz">
+  <p class="quiz-q">Q1. VotingPlanner 的「票」从哪里来？为什么不从黑板读？</p>
+  <button class="reveal-btn">显示答案</button>
+  <div class="quiz-a">来自 <code>planningContext.previousAgentInvocation().output()</code>，即每个 agent 的<strong>方法返回值</strong>。从黑板读会有覆盖问题（三个投票者写同一个 key 只剩最后一份），而返回值在每次调用回调时独立送达——票天然不会互相冲掉。</div>
+</div>
+
+<div class="quiz">
+  <p class="quiz-q">Q2. VotingPlanner 自己没写任何并发代码，并行是谁做的？</p>
+  <button class="reveal-btn">显示答案</button>
+  <div class="quiz-a">PlannerLoop 运行时：Action 里带多个 agent 时走 <code>parallelExecution()</code>（CompletableFuture.allOf）。规划器只负责「一个 Action 塞 N 个 agent」这个声明，执行机制是运行时的通用能力——GOAP 是同一机制下「每 Action 只 1 个」的退化用法。</div>
+</div>
+
+<div class="quiz">
+  <p class="quiz-q">Q3. classifier 的三个 prompt 人设为什么故意不同？</p>
+  <button class="reveal-btn">显示答案</button>
+  <div class="quiz-a">投票的价值来自<strong>错误不相关</strong>（集成学习原理）：三个不同视角各自犯错的位置不同，多数表决才能纠错。若三份 prompt 完全相同，就是三倍成本买一份答案。Self-Consistency 论文用温度采样制造多样性，这里用 prompt 人设制造——同一原理的两种实现。</div>
+</div>
+
+<div class="quiz">
+  <p class="quiz-q">Q4. done(strategy.aggregate(votes)) 的聚合结果是怎么到达调用方的？</p>
+  <button class="reveal-btn">显示答案</button>
+  <div class="quiz-a">PlannerLoop.result() 拿到 <code>DoneWithResultAction.result()</code>（聚合值），若规划根有 outputKey 则 <code>writeState(outputKey, 聚合值)</code>（classifier 的 "classification"、critic 的 "critique" 都是这么写进黑板的）再返回；方法返回值即聚合结果。</div>
+</div>
+
+<div class="quiz">
+  <p class="quiz-q">Q5.（推演题，第 1 课知识的迁移）假设三个投票者已并行完成 2 个时进程崩溃，恢复执行会发生什么？</p>
+  <button class="reveal-btn">显示答案</button>
+  <div class="quiz-a">会出问题：<code>votes</code> 和 <code>completedCount</code> 只在规划器实例内存里（executionState() 未持久化，恢复后清零）；而 PlannerLoop 的 <code>filterCompletedAgents</code> 会把已完成的 2 个 agent 从重发的 call() 里剔除，只重跑剩下的 1 个——completedCount 最多到 1，永远凑不齐 subagents.size()=3，nextAction 持续返回 noOp，主循环空转（活锁）。根因：GOAP 的自愈靠「黑板状态可重搜」，而投票的票源是「调用返回值」这种易失事件，黑板里救不回来。结论：Voting 适合短平快的并行任务，别指望它挂起续跑。</div>
+</div>
+
+<div class="quiz">
+  <p class="quiz-q">Q6. critic 实例里 majority 一张票都没用上，那 VotingPlanner 在其中的作用还剩什么？</p>
+  <button class="reveal-btn">显示答案</button>
+  <div class="quiz-a">剩下的是模式骨架：<strong>并行扇出（3 个评审同时跑）+ 票齐才收敛 + 聚合函数决定收敛结果</strong>。VotingStrategy 是可替换的收敛函数——critiquesAggregator 把「表决」换成「合议」（均值分 + 拼接建议）。换句话说 VotingPlanner ≈ 并行 fan-out/fan-in 的骨架，majority 只是默认收敛函数。</div>
+</div>
+
+<h2>8. 延伸与下一步</h2>
+
+<ul>
+  <li><strong>首选精读</strong>：<a href="https://arxiv.org/abs/2203.11171">Self-Consistency Improves Chain of Thought Reasoning in Language Models（Wang et al., 2022）</a>——LLM 投票有效性的原始论证，读完你会明白为什么 majority 的对照组是「单次采样」。</li>
+  <li><strong>对照阅读</strong>：<a href="https://en.wikipedia.org/wiki/Ensemble_learning">Ensemble learning（Wikipedia）</a>——majority/average/highest 三个内置策略与经典集成方法的对应关系。</li>
+  <li><strong>速查手册</strong>：<a href="../reference/voting-cheatsheet.html">Voting 模式速查表</a>——源码要点、两种实例的组装配方、坑位清单，适合打印。</li>
+  <li><strong>同门对照</strong>：仓库里还有 <code>debate/DebatePlanner</code>（辩论模式）——投票是「各说各话后静默聚合」，辩论是「多轮互相说服后收敛」。学完本课看 debate，会发现它们共享「多 agent 表决」的问题域，差别在收敛机制。可作为第 3 课候选。</li>
+</ul>
+
+<div class="callout">
+  <span class="callout-title">有疑问随时问我</span>
+  推演题（Q5）如果推不下来，说明 PlannerLoop 的恢复机制还没吃透——这正是它和 GOAP「无状态自愈」形成反差的地方。想验证的话，我们可以现场写个小实验：把投票者换成 mock，人为制造部分完成后挂起的场景。
+</div>
+
+<footer class="lesson-footer">
+  <p>第 2 课 · Voting 模式（classifier + critic 实例）· 基于 langchain4j 仓库本地源码 · <a href="../reference/voting-cheatsheet.html">配套速查表</a> · <a href="./0001-goap-writer-runtime.html">上一课：GOAP</a></p>
+</footer>
+
+<script src="../assets/quiz.js"></script>
+</main>
+</body>
+</html>

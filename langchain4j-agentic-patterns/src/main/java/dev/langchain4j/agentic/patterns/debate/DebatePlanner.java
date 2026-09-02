@@ -26,6 +26,14 @@ import java.util.stream.Collectors;
  * Rounds continue until the {@link ConvergenceStrategy} reports convergence or {@code maxRounds}
  * is reached, at which point the judge agent (the last registered subagent) renders a final verdict.
  */
+/**
+ * 辩论规划器，用于调度辩论代理之间多轮对抗迭代。
+ * <p>
+ * 辩论者并行生成各自独立立场，随后进入辩驳轮次：
+ * 各方通过作用域键 {@code "debateContext"} 获取对方推理内容，并可以修正自身立场。
+ * 轮次持续执行，直到 {@link ConvergenceStrategy} 判断收敛，或达到 {@code maxRounds} 最大轮数；
+ * 此时由裁判代理（最后注册的子代理）给出最终裁决。
+ */
 public class DebatePlanner implements Planner {
 
     private static final Logger LOG = LoggerFactory.getLogger(DebatePlanner.class);

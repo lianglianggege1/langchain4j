@@ -4,6 +4,7 @@ import dev.langchain4j.model.chat.ChatModel;
 import dev.langchain4j.model.ollama.OllamaChatModel;
 import dev.langchain4j.model.openai.OpenAiChatModel;
 import dev.langchain4j.model.openai.OpenAiChatModelName;
+import org.slf4j.LoggerFactory;
 
 import java.time.Duration;
 
@@ -63,10 +64,16 @@ public class Models {
             .build();
 
     public static ChatModel baseModel() {
-        return switch (modelProvider) {
-            case OPENAI -> OPENAI_BASE_MODEL;
-            case OLLAMA -> OLLAMA_BASE_MODEL;
-        };
+        return OpenAiChatModel.builder()
+                .apiKey("sk-cp-Qv51DmOc6s1zNZKoPUbX_neOzy-cnwZnoFzQFALenU-QQ5I_-dB9-4OHC9hRgxsRQj7DifcJ1EC451lZFeYafXJMq8bVu6pw9ERWL8p5FlGI_rt_ldbwuL0")
+                .baseUrl("https://api.minimaxi.com/v1")
+                .modelName("MiniMax-M3")
+                .maxTokens(16384)
+                .timeout(Duration.ofSeconds(120))
+                .logRequests(true)
+                .logResponses(true)
+                .logger(LoggerFactory.getLogger("dev.langchain4j.http.client.log.HttpRequestLogger"))
+                .build();
     }
 
     public static ChatModel plannerModel() {
