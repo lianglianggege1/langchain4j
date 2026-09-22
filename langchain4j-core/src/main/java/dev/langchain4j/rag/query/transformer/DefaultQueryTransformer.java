@@ -3,6 +3,7 @@ package dev.langchain4j.rag.query.transformer;
 import dev.langchain4j.rag.query.Query;
 
 import java.util.Collection;
+import java.util.concurrent.CompletableFuture;
 
 import static java.util.Collections.singletonList;
 
@@ -29,5 +30,11 @@ public class DefaultQueryTransformer implements QueryTransformer {
     @Override
     public Collection<Query> transform(Query query) {
         return singletonList(query); // 就是不进行query的拆分整理直接进行搜索
+    }
+
+    @Override
+    public CompletableFuture<Collection<Query>> transformAsync(Query query) {
+        // Pass-through, no I/O: complete synchronously so the async RAG flow treats this stage as non-blocking.
+        return CompletableFuture.completedFuture(transform(query));
     }
 }

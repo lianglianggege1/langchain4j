@@ -62,6 +62,13 @@ public class AiServiceContext {
     // 存储检索到的内容到聊天内存里面
     public boolean storeRetrievedContentInChatMemory = true;
 
+    /**
+     * Bounded back-pressure buffer size for the reactive ({@code Flow.Publisher}) streaming path. {@code null}
+     * means "unset" — {@link AiServiceStreamingEventPublisher#DEFAULT_BUFFER_SIZE} is applied (and the value
+     * validated) in {@link AiServiceStreamingEventPublisher}'s constructor.
+     */
+    public Integer streamingBufferSize;
+
     // 获取用户消息
     public Function<Object, Optional<String>> userMessageProvider = DEFAULT_USER_MESSAGE_PROVIDER;
     // 获取系统消息

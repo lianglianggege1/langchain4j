@@ -4,6 +4,7 @@ import static dev.langchain4j.agentic.declarative.DeclarativeUtil.agenticScopePr
 import static dev.langchain4j.agentic.declarative.DeclarativeUtil.checkReturnType;
 import static dev.langchain4j.agentic.declarative.DeclarativeUtil.configureAgent;
 import static dev.langchain4j.agentic.declarative.DeclarativeUtil.invokeStatic;
+import static dev.langchain4j.agentic.declarative.DeclarativeUtil.invokeSupplierWithResolvers;
 import static dev.langchain4j.agentic.declarative.DeclarativeUtil.predicateMethod;
 import static dev.langchain4j.agentic.declarative.DeclarativeUtil.selectMethod;
 import static dev.langchain4j.agentic.internal.AgentUtil.agentInvocationArguments;
@@ -31,19 +32,19 @@ import dev.langchain4j.agentic.declarative.ParallelMapperAgent;
 import dev.langchain4j.agentic.declarative.PlannerAgent;
 import dev.langchain4j.agentic.declarative.RegistryAgent;
 import dev.langchain4j.agentic.declarative.SequenceAgent;
-import dev.langchain4j.agentic.internal.AbstractServiceBuilder;
 import dev.langchain4j.agentic.internal.A2AClientBuilder;
 import dev.langchain4j.agentic.internal.A2AService;
+import dev.langchain4j.agentic.internal.AbstractServiceBuilder;
 import dev.langchain4j.agentic.internal.AgentExecutor;
 import dev.langchain4j.agentic.internal.AgentInvoker;
 import dev.langchain4j.agentic.internal.AgentUtil;
-import dev.langchain4j.agentic.planner.AgentArgument;
-import dev.langchain4j.agentic.planner.AgentInstance;
-import dev.langchain4j.agentic.planner.AgentsRegistry;
 import dev.langchain4j.agentic.internal.InternalAgent;
 import dev.langchain4j.agentic.internal.McpService;
 import dev.langchain4j.agentic.observability.AgentListener;
+import dev.langchain4j.agentic.planner.AgentArgument;
+import dev.langchain4j.agentic.planner.AgentInstance;
 import dev.langchain4j.agentic.planner.AgenticService;
+import dev.langchain4j.agentic.planner.AgentsRegistry;
 import dev.langchain4j.agentic.planner.PlannerBasedService;
 import dev.langchain4j.agentic.planner.PlannerBasedServiceImpl;
 import dev.langchain4j.agentic.scope.AgenticScope;
@@ -382,8 +383,7 @@ public class AgenticServices {
 
         private static final AgentConfigurator EMPTY = new AgentConfigurator(ctx -> {});
 
-        public AgentConfigurator(
-                Consumer<DeclarativeAgentCreationContext<?>> configurator) {
+        public AgentConfigurator(Consumer<DeclarativeAgentCreationContext<?>> configurator) {
             this(configurator, null, null, null);
         }
 
@@ -543,8 +543,12 @@ public class AgenticServices {
     }
 
     private static void buildAgentSpecs(
-            Method agentMethod, String name, String description, String outputKey,
-            boolean compensateOnError, AgenticService<?, ?> builder) {
+            Method agentMethod,
+            String name,
+            String description,
+            String outputKey,
+            boolean compensateOnError,
+            AgenticService<?, ?> builder) {
         if (!isNullOrBlank(name)) {
             builder.name(name);
         } else {
@@ -862,12 +866,11 @@ public class AgenticServices {
                 .outputKey(AgentUtil.outputKey(a2aClient.outputKey(), a2aClient.typedOutputKey()))
                 .async(a2aClient.async());
 
-        selectMethod(agentServiceClass,
-                     method ->
-                                method.isAnnotationPresent(A2AClientCustomizer.class)
-                                        && method.getParameterCount() == 1)
-                .ifPresent(method ->
-                        a2aClientBuilder.clientCustomizer( cb -> invokeStatic(method, cb)));
+        selectMethod(
+                        agentServiceClass,
+                        method -> method.isAnnotationPresent(A2AClientCustomizer.class)
+                                && method.getParameterCount() == 1)
+                .ifPresent(method -> a2aClientBuilder.clientCustomizer(cb -> invokeStatic(method, cb)));
 
         getAnnotatedMethodOnClass(agentServiceClass, AgentListenerSupplier.class)
                 .ifPresent(method -> {
@@ -880,7 +883,8 @@ public class AgenticServices {
 
     private static String resolveA2AServerUrl(Class<?> agentServiceClass, A2AClientAgent a2aClient) {
         String annotationUrl = a2aClient.a2aServerUrl();
-        Optional<Method> supplierMethod = selectMethod(agentServiceClass,
+        Optional<Method> supplierMethod = selectMethod(
+                agentServiceClass,
                 method -> method.isAnnotationPresent(A2AServerUrlSupplier.class) && method.getParameterCount() == 0);
 
         if (!isNullOrBlank(annotationUrl) && supplierMethod.isPresent()) {
@@ -906,9 +910,8 @@ public class AgenticServices {
 
         Object mcpClient = selectMethod(
                         agentServiceClass,
-                        method ->
-                                method.isAnnotationPresent(McpClientSupplier.class) && method.getParameterCount() == 0)
-                .map(method -> invokeStatic(method))
+                        method -> method.isAnnotationPresent(McpClientSupplier.class))
+                .map(method -> invokeSupplierWithResolvers(agentServiceClass, method, Object.class))
                 .orElseThrow(
                         () -> new IllegalArgumentException(
                                 "An MCP client agent requires a method annotated with @McpClientSupplier that returns the McpClient instance."));
