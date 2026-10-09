@@ -74,6 +74,18 @@ public interface InvocationContext {
     }
 
     /**
+     * The {@link UserMessage} created from the AI Service method and its prompt template, before any transformation
+     * (RAG augmentation, content injection, input guardrails, output format instructions).
+     * It is what the user asked, without the retrieved content, for example to decide which tools or models are
+     * relevant to the question.
+     *
+     * @since 1.21.0
+     */
+    default UserMessage originalUserMessage() {
+        return null;
+    }
+
+    /**
      * The chat memory id parameter of the method
      * 方法的**对话记忆ID参数**
      */
@@ -146,12 +158,14 @@ public interface InvocationContext {
         private String methodName;
         private List<@NonNull Object> methodArguments = new ArrayList<>();
         private UserMessage userMessage;
+        private UserMessage originalUserMessage;
         private Object chatMemoryId;
         private ChatRequestParameters defaultRequestParameters;
         private ModelProvider modelProvider;
         private InvocationParameters invocationParameters;
         private Map<Class<? extends LangChain4jManaged>, LangChain4jManaged> managedParameters;
         private Instant timestamp;
+        dev.langchain4j.spi.CapturedContext capturedContext;
 
         protected Builder() {}
 
@@ -161,12 +175,16 @@ public interface InvocationContext {
             methodName(invocationContext.methodName());
             methodArguments(invocationContext.methodArguments());
             userMessage(invocationContext.userMessage());
+            originalUserMessage(invocationContext.originalUserMessage());
             chatMemoryId(invocationContext.chatMemoryId());
             defaultRequestParameters(invocationContext.defaultRequestParameters());
             modelProvider(invocationContext.modelProvider());
             invocationParameters(invocationContext.invocationParameters());
             managedParameters(invocationContext.managedParameters());
             timestamp(invocationContext.timestamp());
+            if (invocationContext instanceof DefaultInvocationContext defaultInvocationContext) {
+                this.capturedContext = defaultInvocationContext.capturedContext();
+            }
         }
 
         /**
@@ -222,6 +240,16 @@ public interface InvocationContext {
          */
         public Builder userMessage(UserMessage userMessage) {
             this.userMessage = userMessage;
+            return this;
+        }
+
+        /**
+         * Sets the user message before any transformation, see {@link InvocationContext#originalUserMessage()}.
+         *
+         * @since 1.21.0
+         */
+        public Builder originalUserMessage(UserMessage originalUserMessage) {
+            this.originalUserMessage = originalUserMessage;
             return this;
         }
 
@@ -307,6 +335,10 @@ public interface InvocationContext {
 
         public UserMessage userMessage() {
             return userMessage;
+        }
+
+        public UserMessage originalUserMessage() {
+            return originalUserMessage;
         }
 
         public Object chatMemoryId() {

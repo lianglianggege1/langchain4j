@@ -28,6 +28,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
@@ -294,6 +295,10 @@ public class SupervisorPlanner implements Planner, ChatMemoryAccessProvider {
                         .plan(agenticScope.memoryId(), agentsList, request, lastResponse, supervisorContext));
         LOG.info("Agent Invocation: {}", agentInvocation);
 
+        if (agentInvocation.getAgentName() == null) {
+            throw new IllegalStateException("No agent name in the planning reply");
+        }
+
         // 3. LLM 返回 "done" → 任务完成
         if (agentInvocation.getAgentName().equalsIgnoreCase("done")) {
             return doneAction(agenticScope, lastResponse, agentInvocation);
@@ -303,7 +308,8 @@ public class SupervisorPlanner implements Planner, ChatMemoryAccessProvider {
         AgentInstance agent = findAgentByName(agentInvocation.getAgentName());
 
         // 5. 将 LLM 生成的参数写入 AgenticScope（状态共享）
-        agentInvocation.getArguments().entrySet().stream()
+        Map<String, Object> arguments = Objects.requireNonNullElse(agentInvocation.getArguments(), Map.of());
+        arguments.entrySet().stream()
                 .filter(entry -> writeArgumentToScope(agenticScope, agent, entry.getKey(), entry.getValue()))
                 .forEach(entry -> agenticScope.writeState(entry.getKey(), entry.getValue()));
         // 6. 返回"调用该子Agent"的 Action

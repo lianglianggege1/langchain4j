@@ -14,6 +14,7 @@ import static dev.langchain4j.model.chat.request.ResponseFormatType.JSON;
 import static dev.langchain4j.model.output.FinishReason.TOOL_EXECUTION;
 import static dev.langchain4j.service.AiServiceParamsUtil.chatRequestParameters;
 import static dev.langchain4j.service.AiServiceParamsUtil.findArgumentOfType;
+import static dev.langchain4j.service.AiServiceValidation.isImplementedByModel;
 import static dev.langchain4j.service.AiServiceValidation.validateParameters;
 import static dev.langchain4j.service.IllegalConfigurationException.illegalConfiguration;
 import static dev.langchain4j.service.TypeUtils.getRawClass;
@@ -39,6 +40,7 @@ import dev.langchain4j.guardrail.InputGuardrailRequest;
 import dev.langchain4j.guardrail.OutputGuardrailRequest;
 import dev.langchain4j.internal.DefaultExecutorProvider;
 import dev.langchain4j.internal.InternalFlowUtils;
+import dev.langchain4j.invocation.CapturedContextSupport;
 import dev.langchain4j.invocation.InvocationContext;
 import dev.langchain4j.invocation.InvocationParameters;
 import dev.langchain4j.invocation.LangChain4jManaged;
@@ -95,6 +97,7 @@ import java.util.concurrent.Executor;
 import java.util.concurrent.Flow;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 @Internal
 class DefaultAiServices<T> extends AiServices<T> {
@@ -126,6 +129,25 @@ class DefaultAiServices<T> extends AiServices<T> {
         AiServiceValidation.validate(context);
     }
 
+    private Object invokeImplementedByProxy(Object proxy, Method method, Object[] args) throws Throwable {
+        if (method.isDefault()) {
+            return InvocationHandler.invokeDefault(proxy, method, args);
+        }
+        if (method.getDeclaringClass() == Object.class) {
+            return switch (method.getName()) {
+                case "equals" -> proxy == args[0];
+                case "hashCode" -> System.identityHashCode(proxy);
+                case "toString" ->
+                    context.aiServiceClass.getName() + "@" + Integer.toHexString(System.identityHashCode(proxy));
+                default -> throw new IllegalStateException("Unexpected Object method: " + method);
+            };
+        }
+        if (method.getDeclaringClass() == ChatMemoryAccess.class) {
+            return handleChatMemoryAccess(method, args);
+        }
+        throw new IllegalStateException("Unexpected method: " + method);
+    }
+
     // 处理聊天内存访问
     private Object handleChatMemoryAccess(Method method, Object[] args) {
         return switch (method.getName()) {
@@ -139,8 +161,49 @@ class DefaultAiServices<T> extends AiServices<T> {
         };
     }
 
+    private CompletableFutureAdapter findCompletableFutureAdapter(Type returnType) {
+        for (CompletableFutureAdapter adapter : completableFutureAdapters) {
+            if (adapter.canAdapt(returnType)) {
+                return adapter;
+            }
+        }
+        return null;
+    }
+
+    private PublisherAdapter findPublisherAdapter(Type returnType) {
+        for (PublisherAdapter adapter : publisherAdapters) {
+            if (adapter.canAdapt(returnType)) {
+                return adapter;
+            }
+        }
+        return null;
+    }
+
+    /**
+     * Whether a method with this return type is served by the asynchronous or the reactive path,
+     * rather than by the blocking one.
+     */
+    private boolean isAsynchronousOrReactive(Type returnType) {
+        return typeHasRawClass(returnType, CompletableFuture.class)
+                || typeHasRawClass(returnType, CompletionStage.class)
+                || typeHasRawClass(returnType, Flow.Publisher.class)
+                || findCompletableFutureAdapter(returnType) != null
+                || findPublisherAdapter(returnType) != null;
+    }
+
+    /**
+     * Whether the AI Service has a method that calls the model and returns neither an asynchronous
+     * nor a reactive type.
+     */
+    boolean hasBlockingMethod() {
+        return Stream.of(context.aiServiceClass.getMethods())
+                .filter(AiServiceValidation::isImplementedByModel)
+                .anyMatch(method -> !isAsynchronousOrReactive(method.getGenericReturnType()));
+    }
+
     public T build() {
         validate();
+        ToolErrorHandlingNotice.logOnceIfNeeded(context, this::hasBlockingMethod);
 
         context.streamingBufferSize = ensureGreaterThanZero(
                 getOrDefault(context.streamingBufferSize, AiServiceStreamingEventPublisher.DEFAULT_BUFFER_SIZE),
@@ -153,27 +216,8 @@ class DefaultAiServices<T> extends AiServices<T> {
 
                     @Override
                     public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
-                        if (method.isDefault()) {
-                            return InvocationHandler.invokeDefault(proxy, method, args);
-                        }
-
-                        if (method.getDeclaringClass() == Object.class) {
-                            switch (method.getName()) {
-                                case "equals":
-                                    return proxy == args[0];
-                                case "hashCode":
-                                    return System.identityHashCode(proxy);
-                                case "toString":
-                                    return context.aiServiceClass.getName() + "@"
-                                            + Integer.toHexString(System.identityHashCode(proxy));
-                                default:
-                                    throw new IllegalStateException("Unexpected Object method: " + method);
-                            }
-                        }
-
-                        if (method.getDeclaringClass() == ChatMemoryAccess.class) {
-                            // 处理聊天内存访问
-                            return handleChatMemoryAccess(method, args);
+                        if (!isImplementedByModel(method)) {
+                            return invokeImplementedByProxy(proxy, method, args);
                         }
 
                         // TODO do it once, when creating AI Service?
@@ -196,7 +240,9 @@ class DefaultAiServices<T> extends AiServices<T> {
                                 .timestampNow()
                                 .build();
                         try {
-                            return invoke(method, args, invocationContext);
+                            InvocationContext withCapturedContext =
+                                    CapturedContextSupport.captureInto(invocationContext.toBuilder()).build();
+                            return invoke(method, args, withCapturedContext);
                         } catch (Exception ex) {
                             context.eventListenerRegistrar.fireEvent(AiServiceErrorEvent.builder()
                                     .invocationContext(invocationContext)
@@ -306,6 +352,9 @@ class DefaultAiServices<T> extends AiServices<T> {
                                 userMessageTemplate, method, args);
                         UserMessage originalUserMessage =
                                 prepareUserMessage(method, args, userMessageTemplate, variables);
+                        invocationContext = invocationContext.toBuilder()
+                                .originalUserMessage(originalUserMessage)
+                                .build();
 
                         Type declaredReturnType =
                                 context.returnType != null ? context.returnType : method.getGenericReturnType();
@@ -680,7 +729,8 @@ class DefaultAiServices<T> extends AiServices<T> {
                         List<ChatMessage> messages =
                                 assembleMessages(chatMemory, systemMessage, userMessage, originalUserMessage);
 
-                        CompletableFuture<Moderation> moderationFuture = triggerModerationIfNeeded(method, messages);
+                        CompletableFuture<Moderation> moderationFuture =
+                                triggerModerationIfNeeded(method, messages, invocationContext);
 
                         ToolServiceContext toolServiceContext =
                                 context.toolService.createContext(invocationContext, userMessage, messages);
@@ -1325,24 +1375,6 @@ class DefaultAiServices<T> extends AiServices<T> {
                         return false;
                     }
 
-                    private CompletableFutureAdapter findCompletableFutureAdapter(Type returnType) {
-                        for (CompletableFutureAdapter adapter : completableFutureAdapters) {
-                            if (adapter.canAdapt(returnType)) {
-                                return adapter;
-                            }
-                        }
-                        return null;
-                    }
-
-                    private PublisherAdapter findPublisherAdapter(Type returnType) {
-                        for (PublisherAdapter adapter : publisherAdapters) {
-                            if (adapter.canAdapt(returnType)) {
-                                return adapter;
-                            }
-                        }
-                        return null;
-                    }
-
                     private Object adapt(TokenStream tokenStream, Type returnType) {
                         for (TokenStreamAdapter tokenStreamAdapter : tokenStreamAdapters) {
                             if (tokenStreamAdapter.canAdaptTokenStreamTo(returnType)) {
@@ -1402,9 +1434,10 @@ class DefaultAiServices<T> extends AiServices<T> {
                     }
 
                     private CompletableFuture<Moderation> triggerModerationIfNeeded(
-                            Method method, List<ChatMessage> messages) {
+                            Method method, List<ChatMessage> messages, InvocationContext invocationContext) {
                         if (method.isAnnotationPresent(Moderate.class)) {
-                            Executor executor = DefaultExecutorProvider.getDefaultExecutor();
+                            Executor executor = CapturedContextSupport.restoringIn(
+                                    DefaultExecutorProvider.getDefaultExecutor(), invocationContext);
                             return CompletableFuture.supplyAsync(
                                     () -> {
                                         List<ChatMessage> messagesToModerate = removeToolMessages(messages);
@@ -1716,6 +1749,7 @@ class DefaultAiServices<T> extends AiServices<T> {
         for (int i = 0; i < parameters.length; i++) {
             if (parameters[i].isAnnotationPresent(dev.langchain4j.service.UserMessage.class)) {
                 if (args[i] instanceof Content content) {
+                    hasTextContent |= content instanceof TextContent;
                     contents.add(content);
                 } else if (isListOfContents(args[i])) {
                     hasTextContent |= ((List<Content>) args[i]).stream().anyMatch(TextContent.class::isInstance);
