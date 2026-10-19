@@ -48,6 +48,7 @@ public class AiServiceTokenStream implements TokenStream {
     private final ToolExecutionErrorHandler toolExecutionErrorHandler;
     // 工具执行器
     private final Executor toolExecutor;
+    private final Executor completeResponseProcessingExecutor;
 
     // 检索内容
     private final List<Content> retrievedContents;
@@ -98,6 +99,8 @@ public class AiServiceTokenStream implements TokenStream {
         this.toolArgumentsErrorHandler = parameters.toolArgumentsErrorHandler();
         this.toolExecutionErrorHandler = parameters.toolExecutionErrorHandler();
         this.toolExecutor = CapturedContextSupport.restoringIn(parameters.toolExecutor(), parameters.invocationContext());
+        this.completeResponseProcessingExecutor = CapturedContextSupport.restoringIn(
+                parameters.completeResponseProcessingExecutor(), parameters.invocationContext());
         this.retrievedContents = copy(parameters.retrievedContents());
         this.context = ensureNotNull(parameters.context(), "context");
         ensureNotNull(this.context.streamingChatModel, "streamingChatModel");
@@ -249,6 +252,7 @@ public class AiServiceTokenStream implements TokenStream {
                 toolArgumentsErrorHandler,
                 toolExecutionErrorHandler,
                 toolExecutor,
+                completeResponseProcessingExecutor,
                 commonGuardrailParams,
                 methodKey);
 

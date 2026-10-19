@@ -45,6 +45,7 @@ import dev.langchain4j.invocation.InvocationContext;
 import dev.langchain4j.invocation.InvocationParameters;
 import dev.langchain4j.invocation.LangChain4jManaged;
 import dev.langchain4j.memory.ChatMemory;
+import dev.langchain4j.memory.chat.MessageWindowChatMemory;
 import dev.langchain4j.model.ModelProvider;
 import dev.langchain4j.model.chat.request.ChatRequest;
 import dev.langchain4j.model.chat.request.ChatRequestParameters;
@@ -817,6 +818,7 @@ class DefaultAiServices<T> extends AiServices<T> {
                                 toolServiceContext,
                                 toolServiceResult,
                                 chatExecutor,
+                                chatRequest,
                                 memoryId,
                                 parameters,
                                 commonGuardrailParam);
@@ -883,6 +885,7 @@ class DefaultAiServices<T> extends AiServices<T> {
                                         toolServiceContext,
                                         toolServiceResult,
                                         chatExecutor,
+                                        chatRequest,
                                         memoryId,
                                         parameters,
                                         commonGuardrailParam))
@@ -1114,6 +1117,7 @@ class DefaultAiServices<T> extends AiServices<T> {
                             ToolServiceContext toolServiceContext,
                             ToolServiceResult toolServiceResult,
                             ChatExecutor chatExecutor,
+                            ChatRequest chatRequest,
                             Object memoryId,
                             ChatRequestParameters parameters,
                             GuardrailRequestParams commonGuardrailParam) {
@@ -1147,8 +1151,10 @@ class DefaultAiServices<T> extends AiServices<T> {
                                 context.guardrailService(),
                                 method,
                                 aggregateResponse,
+                                lastChatRequest(toolServiceResult, chatRequest),
                                 toolAwareRepromptExecutor,
-                                commonGuardrailParam);
+                                outputGuardrailParams(
+                                        context.guardrailService(), method, commonGuardrailParam, toolServiceResult));
 
                         return finishToolServiceResult(
                                 response,
@@ -1176,6 +1182,7 @@ class DefaultAiServices<T> extends AiServices<T> {
                             ToolServiceContext toolServiceContext,
                             ToolServiceResult toolServiceResult,
                             ChatExecutor chatExecutor,
+                            ChatRequest chatRequest,
                             Object memoryId,
                             ChatRequestParameters parameters,
                             GuardrailRequestParams commonGuardrailParam) {
@@ -1210,8 +1217,13 @@ class DefaultAiServices<T> extends AiServices<T> {
                                         context.guardrailService(),
                                         method,
                                         aggregateResponse,
+                                        lastChatRequest(toolServiceResult, chatRequest),
                                         toolAwareRepromptExecutor,
-                                        commonGuardrailParam)
+                                        outputGuardrailParams(
+                                                context.guardrailService(),
+                                                method,
+                                                commonGuardrailParam,
+                                                toolServiceResult))
                                 .thenApply(response -> finishToolServiceResult(
                                         response,
                                         invocationContext,
@@ -1512,10 +1524,35 @@ class DefaultAiServices<T> extends AiServices<T> {
      */
     private record GuardedInput(UserMessage userMessage, InvocationContext invocationContext) {}
 
+    /**
+     * Output guardrails retry and reprompt from the chat memory, so without one they get a temporary memory holding
+     * this call's conversation.
+     */
+    private static GuardrailRequestParams outputGuardrailParams(
+            GuardrailService guardrailService,
+            Method method,
+            GuardrailRequestParams commonGuardrailParams,
+            ToolServiceResult toolServiceResult) {
+        if (commonGuardrailParams.chatMemory() != null || !guardrailService.hasOutputGuardrails(method)) {
+            return commonGuardrailParams;
+        }
+        ChatMemory temporaryMemory = MessageWindowChatMemory.withMaxMessages(Integer.MAX_VALUE);
+        temporaryMemory.add(toolServiceResult.messages());
+        return commonGuardrailParams.toBuilder().chatMemory(temporaryMemory).build();
+    }
+
+    /**
+     * The request that produced the final response: the last request of the tool loop, or the request that started it.
+     */
+    private static ChatRequest lastChatRequest(ToolServiceResult toolServiceResult, ChatRequest chatRequest) {
+        return toolServiceResult.lastChatRequest() != null ? toolServiceResult.lastChatRequest() : chatRequest;
+    }
+
     private <T> T invokeOutputGuardrails(
             GuardrailService guardrailService,
             Method method,
             ChatResponse responseFromLLM,
+            ChatRequest chatRequest,
             ChatExecutor chatExecutor,
             GuardrailRequestParams commonGuardrailParams) {
 
@@ -1524,6 +1561,7 @@ class DefaultAiServices<T> extends AiServices<T> {
                     .responseFromLLM(responseFromLLM)
                     .chatExecutor(chatExecutor)
                     .requestParams(commonGuardrailParams)
+                    .chatRequest(chatRequest)
                     .build();
             return guardrailService.executeGuardrails(method, outputGuardrailRequest);
         }
@@ -1535,6 +1573,7 @@ class DefaultAiServices<T> extends AiServices<T> {
             GuardrailService guardrailService,
             Method method,
             ChatResponse responseFromLLM,
+            ChatRequest chatRequest,
             ChatExecutor chatExecutor,
             GuardrailRequestParams commonGuardrailParams) {
 
@@ -1543,6 +1582,7 @@ class DefaultAiServices<T> extends AiServices<T> {
                     .responseFromLLM(responseFromLLM)
                     .chatExecutor(chatExecutor)
                     .requestParams(commonGuardrailParams)
+                    .chatRequest(chatRequest)
                     .build();
             return guardrailService.executeGuardrailsAsync(method, outputGuardrailRequest);
         }
